@@ -15,6 +15,7 @@ use App\Models\PaymentAccount;
 use App\Models\TradingAccount;
 use Illuminate\Support\Carbon;
 use App\Services\CTraderService;
+use App\Services\MetaFourService;
 use App\Models\AssetSubscription;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
@@ -54,14 +55,14 @@ class TradingAccountController extends Controller
             ->where('status', 'active')
             ->get()
             ->map(function ($accountType) use ($locale) {
-                $translations = json_decode($accountType->descriptions, true);
+                // $translations = json_decode($accountType->descriptions, true);
                 return [
                     'id' => $accountType->id,
                     'name' => $accountType->name,
                     'slug' => $accountType->slug,
                     'account_group' => $accountType->account_group,
                     'leverage' => $accountType->leverage,
-                    'descriptions' => $translations[$locale],
+                    // 'descriptions' => $translations[$locale],
                 ];
             });
 
@@ -85,12 +86,12 @@ class TradingAccountController extends Controller
         $user = User::find($request->user_id);
 
         // Only create ct_user_id if it is null
-        if ($user->ct_user_id === null) {
-            // Create CT ID to link ctrader account
-            $ctUser = (new CTraderService)->CreateCTID($user->email);
-            $user->ct_user_id = $ctUser['userId'];
-            $user->save();
-        }
+        // if ($user->ct_user_id === null) {
+        //     // Create CT ID to link ctrader account
+        //     $ctUser = (new CTraderService)->CreateCTID($user->email);
+        //     $user->ct_user_id = $ctUser['userId'];
+        //     $user->save();
+        // }
 
         // Retrieve the account type by account_group
         $accountType = AccountType::where('account_group', $request->accountType)->first();
@@ -109,11 +110,15 @@ class TradingAccountController extends Controller
             ]);
         }
 
-        if (App::environment('production')) {
-            $mainPassword = Str::random(8);
-            $investorPassword = Str::random(8);
-            (new CTraderService)->createUser($user,  $mainPassword, $investorPassword, $accountType->account_group, $request->leverage, $accountType->id, null, null, '');
-        }
+        $mainPassword = Str::random(8);
+        $investorPassword = Str::random(8);
+        (new MetaFourService)->createUser($user, $accountType->account_group, $request->leverage, $mainPassword, $investorPassword);
+
+        // if (App::environment('production')) {
+        //     $mainPassword = Str::random(8);
+        //     $investorPassword = Str::random(8);
+        //     (new CTraderService)->createUser($user,  $mainPassword, $investorPassword, $accountType->account_group, $request->leverage, $accountType->id, null, null, '');
+        // }
 
         return back()->with('toast', [
             'title' => trans("public.toast_open_live_account_success"),

@@ -191,18 +191,18 @@ const noticeVisible = ref(true);
                             <span class="self-stretch text-gray-950 font-bold md:text-lg">{{ $t('public.account_banner_header') }}</span>
                             <span class="self-stretch text-gray-700 text-xs md:text-sm">{{ $t('public.account_banner_message') }}</span>
                         </div>
-                        <div class="flex flex-col justify-center items-start gap-3 self-stretch md:flex-row md:justify-end md:items-center md:gap-5">
+                        <div class="flex flex-col justify-center items-start gap-3 self-stretch md:flex-row md:justify-start md:items-center md:gap-5">
                             <Button
                                 type="button"
                                 variant="primary-flat"
-                                class="w-[142px] md:w-full"
+                                class="w-[142px] md:w-1/2"
                                 :size="buttonSize"
                                 @click="openDialog('live', liveAccountForm)"
                                 :disabled="!accountOptions.length"
                             >
                                 {{ $t('public.live_account') }}
                             </Button>
-                            <Button
+                            <!-- <Button
                                 type="button"
                                 variant="primary-outlined"
                                 class="w-[142px] md:w-full"
@@ -210,7 +210,7 @@ const noticeVisible = ref(true);
                                 @click="openDialog('demo', demoAccountForm)"
                             >
                                 {{ $t('public.demo_account') }}
-                            </Button>
+                            </Button> -->
                         </div>
                     </div>
                 </div>
@@ -228,17 +228,17 @@ const noticeVisible = ref(true);
         </div>
     </AuthenticatedLayout>
 
-    <Dialog v-model:visible="showLiveAccountDialog" modal :header="$t('public.open_live_account')" class="dialog-xs sm:dialog-sm">
+    <Dialog v-model:visible="showLiveAccountDialog" modal :header="$t('public.open_live_account')" class="dialog-sm sm:dialog-md">
         <div class="flex flex-col items-center gap-8 self-stretch sm:gap-10">
             <div class="flex flex-col items-center gap-5 self-stretch">
                 <div class="flex flex-col items-start gap-2 self-stretch">
                     <InputLabel for="accountType" :value="$t('public.account_type_placeholder')" />
-                    <div class="flex flex-col items-start gap-3 self-stretch">
+                    <div class="grid grid-cols-2 items-start gap-3 self-stretch">
                         <div
                             v-for="(account, index) in accountOptions"
                             :key="account.account_group"
                             @click="selectAccount(account.account_group)"
-                            class="group flex flex-col items-start py-3 px-4 gap-1 self-stretch rounded-lg border shadow-input transition-colors duration-300 select-none cursor-pointer"
+                            class="group col-span-1 items-start py-3 px-4 gap-1 self-stretch rounded-lg border shadow-input transition-colors duration-300 select-none cursor-pointer"
                             :class="{
                                 'bg-primary-50 border-primary-500': selectedAccountType === account.account_group,
                                 'bg-white border-gray-300 hover:bg-primary-50 hover:border-primary-500': selectedAccountType !== account.account_group,
@@ -269,14 +269,14 @@ const noticeVisible = ref(true);
                         </div>
                     </div>
                 </div>
-                <div class="flex flex-col items-start gap-1 self-stretch">
-                    <InputLabel for="leverage" :value="$t('public.leverages')" />
+                <div class="grid grid-cols-2 items-start gap-1 self-stretch">
+                    <InputLabel for="leverage" :value="$t('public.leverages')" class="col-span-2"/>
                     <Dropdown
                         v-model="liveAccountForm.leverage"
                         :options="leverages"
                         optionLabel="name"
                         optionValue="value"
-                        class="w-full"
+                        class="col-span-1"
                         scroll-height="236px"
                         :invalid="!!liveAccountForm.errors.leverage"
                         :disabled="!accountOptions.find(account => account.account_group === selectedAccountType) || accountOptions.find(account => account.account_group === selectedAccountType)?.leverage !== 0"
