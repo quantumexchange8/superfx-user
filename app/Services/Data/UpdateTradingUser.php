@@ -26,11 +26,11 @@ class UpdateTradingUser
 
         $tradingUser->meta_group = $data['groupName'];
         $tradingUser->account_type_id = $accountType->id;
-        $tradingUser->leverage = $data['leverageInCents'] / 100;
-        $tradingUser->registration = $data['registrationTimestamp'];
-
-        if (isset($data['lastConnectionTimestamp'])) {
-            $tradingUser->last_access = Carbon::createFromTimestamp($data['lastConnectionTimestamp'] / 1000)->toDateTimeString();
+        $tradingUser->leverage = $data['leverage'];
+        $tradingUser->registration = $data['registration_date'];
+        $tradingUser->last_ip = $data['last_ip'];
+        if (isset($data['last_login'])) { 
+            $tradingUser->last_access = $data['last_login'];
         }
 
         $tradingUser->balance = $data['balance'] / 100;

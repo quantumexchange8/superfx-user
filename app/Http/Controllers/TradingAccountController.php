@@ -345,25 +345,15 @@ class TradingAccountController extends Controller
 
         $amount = $request->amount;
 
-        // request withdrawal
-         $conn = (new CTraderService)->connectionStatus();
-         if ($conn['code'] != 0) {
-             return back()
-                 ->with('toast', [
-                     'title' => 'Connection Error',
-                     'type' => 'error'
-                 ]);
-         }
-
          $tradingAccount = TradingAccount::find($request->account_id);
-         (new CTraderService)->getUserInfo($tradingAccount->meta_login);
+         (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
          if ($tradingAccount->balance < $amount) {
              throw ValidationException::withMessages(['amount' => trans('public.insufficient_balance')]);
          }
 
          try {
-             $trade = (new CTraderService)->createTrade($tradingAccount->meta_login, $amount,"Withdraw From Account", ChangeTraderBalanceType::WITHDRAW);
+             $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount,"Withdraw From Account", 'balance', '');
          } catch (\Throwable $e) {
              if ($e->getMessage() == "Not found") {
                  TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
@@ -390,7 +380,7 @@ class TradingAccountController extends Controller
              'transaction_number' => RunningNumberService::getID('transaction'),
              'payment_account_id' => $paymentWallet->id,
              'to_wallet_address' => $paymentWallet->account_no,
-             'ticket' => $trade->getTicket(),
+            //  'ticket' => $trade->getTicket(),
              'amount' => $amount,
              'transaction_charges' => 0,
              'transaction_amount' => $amount,
