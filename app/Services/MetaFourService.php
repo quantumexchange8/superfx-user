@@ -33,50 +33,40 @@ class MetaFourService {
         $this->token = hash('sha256', $token2);
     }
 
-    public function getConnectionStatus()
-    {
-        try {
-            return Http::acceptJson()->timeout(10)->get($this->baseURL . "/connect_status")->json();
-        } catch (ConnectionException $exception) {
-            // Handle the connection timeout error
-            // For example, returning an empty array as a default response
-            return [];
-        }
-    }
+    // public function getConnectionStatus()
+    // {
+    //     try {
+    //         return Http::acceptJson()->timeout(10)->get($this->baseURL . "/connect_status")->json();
+    //     } catch (ConnectionException $exception) {
+    //         // Handle the connection timeout error
+    //         // For example, returning an empty array as a default response
+    //         return [];
+    //     }
+    // }
 
-    public function getUser($meta_login)
+    public function getMetaUser($meta_login)
     {
         $payload = [
             'meta_login' => $meta_login,
         ];
+        
+        $jsonPayload = json_encode($payload);
     
         $accountResponse = Http::acceptJson()
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $this->token,
-                'Content-Type' => 'application/json',
             ])
-            ->withBody(http_build_query($payload))
+            ->withBody($jsonPayload, 'application/json')
             ->get($this->demoURL . "/getuser");
 
-        Log::debug('URL: ' . $accountResponse);
-        Log::debug('payload: ' , $payload);
-        $accountResponse = $accountResponse->json();
-
-        return $accountResponse;
+        return $accountResponse->json();
     }
-
-    // public function getMetaAccount($meta_login)
-    // {
-    //     return Http::acceptJson()->get($this->baseURL . "/trade_acc/$meta_login")->json();
-    // }
 
     public function getUserInfo($meta_login): void
     {
         $data = $this->getUser($meta_login);
-        Log::debug($data);
+
         if ($data) {
-            Log::debug('1');
-            Log::debug($data);
             (new UpdateTradingUser)->execute($meta_login, $data);
             (new UpdateTradingAccount)->execute($meta_login, $data);
         }
@@ -103,25 +93,23 @@ class MetaFourService {
         return $accountResponse;
     }
 
-    // public function createDeal($meta_login, $amount, $comment, $type)
-    // {
-    //     $dealResponse = Http::acceptJson()->post($this->baseURL . "/conduct_deal", [
-    //         'login' => $meta_login,
-    //         'amount' => $amount,
-    //         'imtDeal_EnDealAction' => dealType::DEAL_BALANCE,
-    //         'comment' => $comment,
-    //         'deposit' => $type,
-    //     ]);
-    //     $dealResponse = $dealResponse->json();
-    //     Log::debug($dealResponse);
+    public function createTrade($meta_login, $amount, $comment, $type, $expire_date)
+    {
+        $dealResponse = Http::acceptJson()->post($this->demoURL . "/transaction", [
+            'meta_login' => $meta_login,
+            'type' => $type,
+            'amount' => $amount,
+            'expiration_date' => $expire_date,
+            'comment' => $comment,
+        ]);
+        $dealResponse = $dealResponse->json();
+        Log::debug($dealResponse);
 
-    //     $userData = $this->getMetaUser($meta_login);
-    //     $metaAccountData = $this->getMetaAccount($meta_login);
-    //     (new UpdateTradingAccount)->execute($meta_login, $metaAccountData);
-    //     (new UpdateTradingUser)->execute($meta_login, $userData);
-    //     return $dealResponse;
-    // }
+        $this->getUserInfo($meta_login);
 
+        return $dealResponse;
+    }
+    
     // public function disableTrade($meta_login)
     // {
     //     $disableTrade = Http::acceptJson()->patch($this->baseURL . "/disable_trade/{$meta_login}")->json();
