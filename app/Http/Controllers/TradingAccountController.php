@@ -85,14 +85,6 @@ class TradingAccountController extends Controller
 
         $user = User::find($request->user_id);
 
-        // Only create ct_user_id if it is null
-        // if ($user->ct_user_id === null) {
-        //     // Create CT ID to link ctrader account
-        //     $ctUser = (new CTraderService)->CreateCTID($user->email);
-        //     $user->ct_user_id = $ctUser['userId'];
-        //     $user->save();
-        // }
-
         // Retrieve the account type by account_group
         $accountType = AccountType::where('account_group', $request->accountType)->first();
 
@@ -147,15 +139,6 @@ class TradingAccountController extends Controller
         $user = Auth::user();
         $accountType = $request->input('accountType');
 
-        $conn = (new CTraderService)->connectionStatus();
-        if ($conn['code'] != 0) {
-            return back()
-                ->with('toast', [
-                    'title' => 'Connection Error',
-                    'type' => 'error'
-                ]);
-        }
-
         $trading_accounts = $user->tradingAccounts()
             ->whereHas('account_type', function($q) use ($accountType) {
                 $q->where('category', $accountType);
@@ -164,7 +147,7 @@ class TradingAccountController extends Controller
 
         try {
             foreach ($trading_accounts as $trading_account) {
-                (new CTraderService)->getUserInfo($trading_account->meta_login);
+                (new MetaFourService)->getUserInfo($trading_account->meta_login);
             }
         } catch (\Throwable $e) {
             Log::error($e->getMessage());

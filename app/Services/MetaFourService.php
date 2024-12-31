@@ -9,18 +9,29 @@ use App\Services\Data\UpdateTradingUser;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 use App\Models\User as UserModel;
 
 class MetaFourService {
     private string $port = "8443";
     private string $login = "10012";
     private string $password = "Test1234.";
-//    private string $baseURL = "http://192.168.0.224:5000/api";
     private string $baseURL = "https://superfin-live.currenttech.pro/api";
     private string $demoURL = "https://superfin-demo.currenttech.pro/api";
 
-    private string $token = "6f0d6f97-3042-4389-9655-9bc321f3fc1e";
+    // private static string $date = Carbon::now('Asia/Riyadh')->toDateString();
+    // private string $token2 = "SuperFin-Live^" . $date . "&SuperGlobal";
+    // private string $token = hash('sha256', $token2);
     private string $environmentName = "live";
+
+    private string $token;
+
+    public function __construct()
+    {
+        $token2 = "SuperFin-Live^" . Carbon::now('Asia/Riyadh')->toDateString() . "&SuperGlobal";
+        
+        $this->token = hash('sha256', $token2);
+    }
 
     public function getConnectionStatus()
     {
@@ -33,9 +44,25 @@ class MetaFourService {
         }
     }
 
-    public function getMetaUser($meta_login)
+    public function getUser($meta_login)
     {
-        return Http::acceptJson()->get($this->demoURL . "/getuser/$meta_login")->json();
+        $payload = [
+            'meta_login' => $meta_login,
+        ];
+    
+        $accountResponse = Http::acceptJson()
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $this->token,
+                'Content-Type' => 'application/json',
+            ])
+            ->withBody(http_build_query($payload))
+            ->get($this->demoURL . "/getuser");
+
+        Log::debug('URL: ' . $accountResponse);
+        Log::debug('payload: ' , $payload);
+        $accountResponse = $accountResponse->json();
+
+        return $accountResponse;
     }
 
     // public function getMetaAccount($meta_login)
@@ -43,22 +70,25 @@ class MetaFourService {
     //     return Http::acceptJson()->get($this->baseURL . "/trade_acc/$meta_login")->json();
     // }
 
-    // public function getUserInfo($tradingAccounts): void
-    // {
-    //     foreach ($tradingAccounts as $row) {
-    //         $userData = $this->getMetaUser($row->meta_login);
-    //         $metaAccountData = $this->getMetaAccount($row->meta_login);
-    //         Log::debug($userData, $metaAccountData);
-    //         if($userData && $metaAccountData) {
-    //             (new UpdateTradingAccount)->execute($row->meta_login, $metaAccountData);
-    //             (new UpdateTradingUser)->execute($row->meta_login, $userData);
-    //         }
-    //     }
-    // }
+    public function getUserInfo($meta_login): void
+    {
+        $data = $this->getUser($meta_login);
+        Log::debug($data);
+        if ($data) {
+            Log::debug('1');
+            Log::debug($data);
+            (new UpdateTradingUser)->execute($meta_login, $data);
+            (new UpdateTradingAccount)->execute($meta_login, $data);
+        }
+    }
 
     public function createUser(UserModel $user, $group, $leverage, $mainPassword, $investorPassword)
     {
-        $accountResponse = Http::acceptJson()->post($this->demoURL . "/createuser", [
+        $accountResponse = Http::acceptJson()
+        ->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])
+        ->post($this->demoURL . "/createuser", [
             'master_password' => $mainPassword,
             'investor_password' => $investorPassword,
             'name' => $user->name,
@@ -68,8 +98,8 @@ class MetaFourService {
         ]);
         $accountResponse = $accountResponse->json();
 
-        (new CreateTradingAccount)->execute($user, $group, $accountResponse);
-        (new CreateTradingUser)->execute($user, $group, $accountResponse);
+        (new CreateTradingAccount)->execute($user, $accountResponse, $group);
+        (new CreateTradingUser)->execute($user, $accountResponse, $group);
         return $accountResponse;
     }
 
