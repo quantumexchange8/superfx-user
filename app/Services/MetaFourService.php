@@ -44,7 +44,7 @@ class MetaFourService {
     //     }
     // }
 
-    public function getMetaUser($meta_login)
+    public function getUser($meta_login)
     {
         $payload = [
             'meta_login' => $meta_login,
@@ -95,7 +95,11 @@ class MetaFourService {
 
     public function createTrade($meta_login, $amount, $comment, $type, $expire_date)
     {
-        $dealResponse = Http::acceptJson()->post($this->demoURL . "/transaction", [
+        $dealResponse = Http::acceptJson()
+        ->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])
+        ->post($this->demoURL . "/transaction", [
             'meta_login' => $meta_login,
             'type' => $type,
             'amount' => $amount,

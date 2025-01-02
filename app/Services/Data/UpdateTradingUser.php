@@ -32,8 +32,7 @@ class UpdateTradingUser
         if (isset($data['last_login'])) { 
             $tradingUser->last_access = $data['last_login'];
         }
-        $tradingUser->last_access = $data['last_login']
-
+        
         $tradingUser->balance = $data['balance'];
         $tradingUser->credit = $data['credit'];
 

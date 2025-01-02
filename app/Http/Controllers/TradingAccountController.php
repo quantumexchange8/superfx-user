@@ -363,7 +363,7 @@ class TradingAccountController extends Controller
              'transaction_number' => RunningNumberService::getID('transaction'),
              'payment_account_id' => $paymentWallet->id,
              'to_wallet_address' => $paymentWallet->account_no,
-            //  'ticket' => $trade->getTicket(),
+             'ticket' => $trade['ticket'],
              'amount' => $amount,
              'transaction_charges' => 0,
              'transaction_amount' => $amount,
