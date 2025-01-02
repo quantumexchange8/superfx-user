@@ -257,15 +257,6 @@ const noticeVisible = ref(true);
                                 </span>
                                 <IconCircleCheckFilled v-if="selectedAccountType === account.account_group" size="20" stroke-width="1.25" color="#2970FF" />
                             </div>
-                            <span
-                                class="self-stretch text-xs transition-colors duration-300 group-hover:text-primary-500"
-                                :class="{
-                                    'text-primary-500': selectedAccountType === account.account_group,
-                                    'text-gray-500': selectedAccountType !== account.account_group
-                                }"
-                            >
-                                {{ account.descriptions }}
-                            </span>
                         </div>
                     </div>
                 </div>

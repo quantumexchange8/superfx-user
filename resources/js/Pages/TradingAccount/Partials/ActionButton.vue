@@ -1,7 +1,7 @@
 <script setup>
 import Button from "@/Components/Button.vue";
 import { SwitchHorizontal01Icon } from "@/Components/Icons/outline";
-import { IconInfoOctagonFilled } from '@tabler/icons-vue';
+import { IconInfoOctagonFilled, IconCircleCheckFilled } from '@tabler/icons-vue';
 import {computed, ref} from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import InputError from '@/Components/InputError.vue';
@@ -12,15 +12,28 @@ import Dropdown from "primevue/dropdown";
 import IconField from 'primevue/iconfield';
 import axios from 'axios';
 import InputNumber from "primevue/inputnumber";
+import {transactionFormat} from "@/Composables/index.js";
 
 const props = defineProps({
     account: Object,
 });
 
+const {formatAmount} = transactionFormat();
+
 const showDepositDialog = ref(false);
 const showTransferDialog = ref(false);
 const transferOptions = ref([]);
+const depositOptions = ref([
+    { name: 'Bank', value: 'bank' },
+    { name: 'Crypto', value: 'crypto' },
+]);
+const selectedPlatform = ref('');
 const selectedAccount = ref(0);
+
+function selectAccount(type) {
+    selectedPlatform.value = type;
+    depositForm.payment_platform = type;
+}
 
 const getOptions = async () => {
     try {
@@ -62,6 +75,8 @@ const closeDialog = (dialogName) => {
 
 const depositForm = useForm({
     meta_login: props.account.meta_login,
+    payment_platform: '',
+    amount: 0,
 });
 
 const transferForm = useForm({
@@ -120,6 +135,54 @@ const submitForm = (formType) => {
             <div class="flex flex-col justify-center items-center py-4 px-8 gap-2 self-stretch bg-gray-200">
                 <span class="text-gray-500 text-center text-xs font-medium">#{{ props.account.meta_login }} - {{ $t('public.current_account_balance') }}</span>
                 <span class="text-gray-950 text-center text-xl font-semibold">$ {{ props.account.balance }}</span>
+            </div>
+            <div class="flex flex-col items-start gap-2 self-stretch">
+                <InputLabel for="accountType" :value="$t('public.platform_placeholder')" />
+                <div class="grid grid-cols-2 items-start gap-3 self-stretch">
+                    <div
+                        v-for="(deposit, index) in depositOptions"
+                        :key="deposit.value"
+                        @click="selectAccount(deposit.value)"
+                        class="group col-span-1 items-start py-3 px-4 gap-1 self-stretch rounded-lg border shadow-input transition-colors duration-300 select-none cursor-pointer"
+                        :class="{
+                            'bg-primary-50 border-primary-500': selectedPlatform === deposit.value,
+                            'bg-white border-gray-300 hover:bg-primary-50 hover:border-primary-500': selectedPlatform !== deposit.value,
+                        }"
+                    >
+                        <div class="flex items-center gap-3 self-stretch">
+                            <span
+                                class="flex-grow text-sm font-semibold transition-colors duration-300 group-hover:text-primary-700"
+                                :class="{
+                                    'text-primary-700': selectedPlatform === deposit.value,
+                                    'text-gray-950': selectedPlatform !== deposit.value
+                                }"
+                            >
+                                {{ $t(`public.${deposit.value}`) }}
+                            </span>
+                            <IconCircleCheckFilled v-if="selectedPlatform === deposit.value" size="20" stroke-width="1.25" color="#2970FF" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col items-start gap-1 self-stretch">
+                <InputLabel for="amount" :value="$t('public.amount')" />
+                <div class="relative w-full">
+                    <InputNumber
+                        v-model="depositForm.amount"
+                        inputId="currency-us"
+                        prefix="$ "
+                        class="w-full"
+                        inputClass="py-3 px-4"
+                        :min="0"
+                        :step="100"
+                        :minFractionDigits="2"
+                        fluid
+                        autofocus
+                        :invalid="!!depositForm.errors.amount"
+                    />
+                </div>
+                <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount(10) }}</span>
+                <InputError :message="depositForm.errors.amount" />
             </div>
             <div class="flex flex-col items-center self-stretch">
                 <div class="h-2 self-stretch bg-info-500"></div>

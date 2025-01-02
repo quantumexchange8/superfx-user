@@ -492,4 +492,7 @@ return [
     "std10" => "STD10",
     "std15" => "STD15",
     "std20" => "STD20",
+    "bank" => "Bank",
+    "crypto" => "Crypto",
+    "platform_placeholder" => "Select Platform",
 ];

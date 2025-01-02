@@ -25,6 +25,7 @@ use App\Services\DropdownOptionService;
 use App\Services\ChangeTraderBalanceType;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use App\Models\PaymentGateway;
 
 class TradingAccountController extends Controller
 {
@@ -259,58 +260,6 @@ class TradingAccountController extends Controller
             });
 
         return response()->json($transactions);
-    }
-
-    public function deposit_to_account(Request $request)
-    {
-        $request->validate([
-            'meta_login' => ['required', 'exists:trading_accounts,meta_login'],
-        ]);
-
-        $user = Auth::user();
-
-        $transaction = Transaction::where('transaction_type', 'deposit')
-            ->where('to_meta_login', $request->meta_login)
-            ->where('status', 'processing')
-            ->first();
-
-        if (empty($transaction)) {
-            $transaction = Transaction::create([
-                'user_id' => $user->id,
-                'category' => 'trading_account',
-                'transaction_type' => 'deposit',
-                'to_meta_login' => $request->meta_login,
-                'transaction_number' => RunningNumberService::getID('transaction'),
-                'status' => 'processing',
-            ]);
-        }
-
-        $payoutSetting = config('payment-gateway');
-        $domain = $_SERVER['HTTP_HOST'];
-
-        if ($domain === 'user.mosanes.com') {
-            $selectedPayout = $payoutSetting['live'];
-        } else {
-            $selectedPayout = $payoutSetting['staging'];
-        }
-
-        $vCode = md5($selectedPayout['appId'] . $transaction->transaction_number . $selectedPayout['merchantId'] . $selectedPayout['ttKey']);
-
-        $params = [
-            'userName' => $user->name,
-            'userEmail' => $user->email,
-            'orderNumber' => $transaction->transaction_number,
-            'userId' => $user->id,
-            'merchantId' => $selectedPayout['merchantId'],
-            'vCode' => $vCode,
-            'locale' => app()->getLocale(),
-        ];
-
-        // Send response
-        $url = $selectedPayout['paymentUrl'] . '/payment';
-        $redirectUrl = $url . "?" . http_build_query($params);
-
-        return Inertia::location($redirectUrl);
     }
 
     public function withdrawal_from_account(Request $request)
@@ -566,47 +515,168 @@ class TradingAccountController extends Controller
         ]);
     }
 
-    //payment gateway return function
-    public function depositReturn(Request $request)
+    public function deposit_to_account(Request $request)
     {
-        return to_route('dashboard');
+        $request->validate([
+            'meta_login' => ['required', 'exists:trading_accounts,meta_login'],
+            'payment_platform' => ['required'],
+            'amount' => ['required', 'numeric', 'gte:10'],
+        ]);
+
+        $user = Auth::user();
+
+        $environment = 'local';
+
+        if (App::environment('production')) {
+            $environment = 'production';
+        }
+
+        $payment_gateway = PaymentGateway::where('platform', $request->payment_platform)
+                ->where('environment', $environment)
+                ->first();
+
+        // $wallet = Wallet::find($request->wallet_id);
+        // $payment_detail = $request->payment_detail;
+        $latest_transaction = Transaction::where('user_id', $user->id)
+            ->where('category', 'trading_account')
+            ->where('transaction_type', 'deposit')
+            ->where('status', 'processing')
+            ->latest()
+            ->first();
+
+        $amount = number_format(floatval($request->amount), 2, '.', '');
+
+        // Check if a latest transaction exists and its created_at time is within the last 30 seconds
+        if ($latest_transaction && Carbon::parse($latest_transaction->created_at)->diffInSeconds(Carbon::now()) < 30) {
+
+            $remainingSeconds = 30 - Carbon::parse($latest_transaction->created_at)->diffInSeconds(Carbon::now());
+
+            return redirect()->back()
+                ->with('title', trans('public.invalid_action'))
+                ->with('warning', trans('public.please_wait_for_seconds', ['seconds' => $remainingSeconds]));
+        }
+
+        $transaction_number = RunningNumberService::getID('transaction');
+
+        $transaction = Transaction::create([
+            'category' => 'trading_account',
+            'user_id' => $user->id,
+            'to_meta_login' => $request->meta_login,
+            'transaction_number' => $transaction_number,
+            'transaction_type' => 'deposit',
+            'amount' => $amount,
+            'transaction_charges' => 0,
+            'status' => 'processing',
+        ]);
+
+        // if ($request->hasfile('receipt')){
+        //     $transaction->addMedia($request->receipt)->toMediaCollection('receipt');
+        // }
+
+        if ($payment_gateway) {
+            $transaction->update([
+                'payment_gateway_id' => $payment_gateway->id,
+            ]);
+            $timestamp = Carbon::now()->timestamp;
+            $random = Str::random(5);
+
+            $domain = $_SERVER['HTTP_HOST'];
+            $scheme = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+            $notifyUrl = $scheme . '://' . $domain . '/' . 'deposit_callback';
+            
+            Log::debug("notify url: " . $notifyUrl);
+            // Find available payment merchant
+            $params = [];
+            $baseUrl = '';
+            switch ($payment_gateway->platform) {
+                case 'bank':
+                    $sign = md5($payment_gateway->payment_app_number . $timestamp . $random . $transaction_number . $amount . $notifyUrl);
+                    $params = [
+                        'partner_id' => $payment_gateway->payment_app_number,
+                        'timestamp' => $timestamp,
+                        'random' => $random,
+                        'partner_order_code' => $transaction_number,
+                        'amount' => $amount,
+                        'notify_url' => $notifyUrl,
+                        'sign' => $sign,
+                    ];
+                    $baseUrl = $environment == 'production' ? $payment_gateway->payment_url . '/gateway/bnb/createVA.do' : $payment_gateway->payment_url . '/gateway/pay/paymentBnBVA.do';
+                    break;
+
+                case 'crypto':
+                    $sign = md5($intAmount . $payment_gateway->payment_app_name . $transaction_number . $payment_gateway->secret_key);
+                    $params = [
+                        'partner_id' => $payment_gateway->payment_app_number,
+                        'timestamp' => $timestamp,
+                        'random' => $random,
+                        'partner_order_code' => $transaction_number,
+                        'order_currency' => 0,
+                        'order_language' => 'en_ww',
+                        'guest_id' => $user->id,
+                        'amount' => $amount,
+                        'notify_url' => $notifyUrl,
+                        'sign' => $sign,
+                    ];
+                    $baseUrl = $environment == 'production' ? $payment_gateway->payment_url . '/gateway/usdt/createERC20.do' : $payment_gateway->payment_url;
+                    break;
+            }
+
+            // Send response
+            $redirectUrl = $baseUrl . "?" . http_build_query($params);
+            Log::debug("URL : " . $redirectUrl);
+            return Inertia::location($redirectUrl);
+        }
+
+        return redirect()->back()
+            ->with('title', trans('public.success_request_deposit'))
+            ->with('success', trans('public.successfully_request_deposit'));
     }
 
     public function depositCallback(Request $request)
     {
-        $data = $request->all();
-
+        $response = $request->all();
+        Log::debug("response : " , $response);
         $result = [
-            "token" => $data['vCode'],
-            "from_wallet_address" => $data['from_wallet'],
-            "to_wallet_address" => $data['to_wallet'],
-            "txn_hash" => $data['txID'],
-            "transaction_number" => $data['transaction_number'],
-            "amount" => $data['transfer_amount'],
-            "status" => $data["status"],
-            "remarks" => 'System Approval',
+            'code' => $response['code'],
+            'msg' => $response['msg'],
+            'partner_id' =>  $response['data']['partner_id'],
+            'sign' => $response['data']['system_order_code'],
+            'partner_order_code' => $response['data']['partner_order_code'],
+            'amount' => $response['data']['amount'],
+            'request_time' => $response['data']['request_time'] ?? null,
+            'bank_code' => $response['data']['bank_account']['bank_code'] ?? null,
+            'bank_name' => $response['data']['bank_account']['bank_name'] ?? null,
+            'bank_account_no' => $response['data']['bank_account']['bank_account_no'] ?? null,
+            'bank_account_name' => $response['data']['bank_account']['bank_account_name'] ?? null,
+            'payment_id' => $response['data']['payment_id'] ?? null,
+            'payment_url' => $response['data']['payment_url'] ?? null,
+
+
+            // 'userId' => $response['userId'],
+            // 'vCode' => $response['vCode'],
+            // 'orderNumber' => $response['orderNumber'],
+            // 'transactionId' => $response['transactionId'],
+            // 'walletAddress' => $response['walletAddress'] ?? null,
+            // 'status' => $response['status'],
+            // 'sCode' => $response['sCode'],
+            // 'transactionHash' => $response['transactionHash'] ?? null,
+            // 'sourceAddress' => $response['sourceAddress'] ?? null,
+            // 'blockTime' => $response['blockTime'] ?? null,
+            // 'paidTime' => $response['paidTime'] ?? null,
+            // 'receivedAmount' => $response['receivedAmount'],
         ];
 
-        $transaction = Transaction::query()
-            ->where('transaction_number', $result['transaction_number'])
+        $transaction = Transaction::where('transaction_number', $result['partner_order_code'])
             ->first();
 
-        $payoutSetting = config('payment-gateway');
-        $domain = $_SERVER['HTTP_HOST'];
-
-        if ($domain === 'user.mosanes.com') {
-            $selectedPayout = $payoutSetting['live'];
-        } else {
-            $selectedPayout = $payoutSetting['staging'];
-        }
-
-        $dataToHash = md5($transaction->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
+        $selectedPaymentGateway = PaymentGateway::find($transaction->payment_gateway_id);
         $status = $result['status'] == 'success' ? 'successful' : 'failed';
-
-        if ($result['token'] === $dataToHash) {
+        // $dataToHash = md5($selectedPaymentGateway->payment_app_number . $timestamp . $random . $transaction_number . $amount . $notifyUrl);
+        
+        // if ($result['sign'] === $dataToHash) {
             //proceed approval
             $transaction->update([
-                'from_wallet_address' => $result['from_wallet_address'],
+                'from_wallet_address' => $result['bank_account_no'],
                 'to_wallet_address' => $result['to_wallet_address'],
                 'txn_hash' => $result['txn_hash'],
                 'amount' => $result['amount'],
@@ -617,22 +687,19 @@ class TradingAccountController extends Controller
                 'approved_at' => now()
             ]);
 
-//            Notification::route('mail', 'payment@currenttech.pro')
-//                ->notify(new DepositApprovalNotification($payment));
-
             if ($transaction->status == 'successful') {
                 if ($transaction->transaction_type == 'deposit') {
                     try {
-                        $trade = (new CTraderService)->createTrade($transaction->to_meta_login, $transaction->transaction_amount, "Deposit balance", ChangeTraderBalanceType::DEPOSIT);
+                        $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, $transaction->transaction_amount,"Deposit balance", 'balance', '');
                     } catch (\Throwable $e) {
                         if ($e->getMessage() == "Not found") {
-                            TradingUser::firstWhere('meta_login', $transaction->to)->update(['acc_status' => 'Inactive']);
+                            TradingUser::firstWhere('meta_login', $transaction->to_meta_login)->update(['acc_status' => 'Inactive']);
                         } else {
                             Log::error($e->getMessage());
                         }
                         return response()->json(['success' => false, 'message' => $e->getMessage()]);
                     }
-                    $ticket = $trade->getTicket();
+                    $ticket = $trade['ticket'];
                     $transaction->ticket = $ticket;
                     $transaction->save();
 
@@ -640,8 +707,15 @@ class TradingAccountController extends Controller
 
                 }
             }
-        }
+        // }
 
-        return response()->json(['success' => false, 'message' => 'Deposit Failed']);
     }
+    
+    //payment gateway return function
+    public function depositReturn(Request $request)
+    {
+        return to_route('dashboard');
+    }
+
+
 }
