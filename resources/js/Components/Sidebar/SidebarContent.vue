@@ -51,7 +51,7 @@ const user = usePage().props.auth.user;
         </SidebarLink>
 
         <!-- Asset Master -->
-        <SidebarLink
+        <!-- <SidebarLink
             :title="$t('public.asset_master')"
             :href="route('asset_master')"
             :active="route().current('asset_master') || route().current('asset_master.showPammInfo')"
@@ -59,7 +59,7 @@ const user = usePage().props.auth.user;
             <template #icon>
                 <IconCoinMonero :size="20" stroke-width="1.25" />
             </template>
-        </SidebarLink>
+        </SidebarLink> -->
 
         <!-- Structure -->
         <SidebarLink

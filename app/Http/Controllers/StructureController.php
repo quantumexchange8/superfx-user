@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Services\CTraderService;
+use App\Services\MetaFourService;
 use App\Services\DropdownOptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -177,7 +177,7 @@ class StructureController extends Controller
         $trading_accounts = $user->tradingAccounts;
         try {
             foreach ($trading_accounts as $trading_account) {
-                (new CTraderService)->getUserInfo($trading_account->meta_login);
+                (new MetaFourService)->getUserInfo($trading_account->meta_login);
             }
         } catch (\Throwable $e) {
             Log::error($e->getMessage());
@@ -187,7 +187,7 @@ class StructureController extends Controller
             return [
                 'id' => $trading_account->id,
                 'meta_login' => $trading_account->meta_login,
-                'account_type' => $trading_account->accountType->name,
+                'account_type' => $trading_account->account_type->name,
                 'balance' => $trading_account->balance,
                 'credit' => $trading_account->credit,
                 'equity' => $trading_account->equity,

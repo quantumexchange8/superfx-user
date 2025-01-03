@@ -16,12 +16,9 @@ class MetaFourService {
     private string $port = "8443";
     private string $login = "10012";
     private string $password = "Test1234.";
-    private string $baseURL = "https://superfin-live.currenttech.pro/api";
-    private string $demoURL = "https://superfin-demo.currenttech.pro/api";
+    private string $baseURL;
+    // private string $demoURL = "https://superfin-demo.currenttech.pro/api";
 
-    // private static string $date = Carbon::now('Asia/Riyadh')->toDateString();
-    // private string $token2 = "SuperFin-Live^" . $date . "&SuperGlobal";
-    // private string $token = hash('sha256', $token2);
     private string $environmentName = "live";
 
     private string $token;
@@ -30,19 +27,12 @@ class MetaFourService {
     {
         $token2 = "SuperFin-Live^" . Carbon::now('Asia/Riyadh')->toDateString() . "&SuperGlobal";
         
+        $this->baseURL = app()->environment('production') 
+            ? 'https://superfin-live.currenttech.pro/api' 
+            : 'https://superfin-demo.currenttech.pro/api';
+
         $this->token = hash('sha256', $token2);
     }
-
-    // public function getConnectionStatus()
-    // {
-    //     try {
-    //         return Http::acceptJson()->timeout(10)->get($this->baseURL . "/connect_status")->json();
-    //     } catch (ConnectionException $exception) {
-    //         // Handle the connection timeout error
-    //         // For example, returning an empty array as a default response
-    //         return [];
-    //     }
-    // }
 
     public function getUser($meta_login)
     {
@@ -57,7 +47,7 @@ class MetaFourService {
                 'Authorization' => 'Bearer ' . $this->token,
             ])
             ->withBody($jsonPayload, 'application/json')
-            ->get($this->demoURL . "/getuser");
+            ->get($this->baseURL . "/getuser");
 
         return $accountResponse->json();
     }
@@ -78,7 +68,7 @@ class MetaFourService {
         ->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
         ])
-        ->post($this->demoURL . "/createuser", [
+        ->post($this->baseURL . "/createuser", [
             'master_password' => $mainPassword,
             'investor_password' => $investorPassword,
             'name' => $user->name,
@@ -99,7 +89,7 @@ class MetaFourService {
         ->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
         ])
-        ->post($this->demoURL . "/transaction", [
+        ->post($this->baseURL . "/transaction", [
             'meta_login' => $meta_login,
             'type' => $type,
             'amount' => $amount,
@@ -113,60 +103,6 @@ class MetaFourService {
 
         return $dealResponse;
     }
-    
-    // public function disableTrade($meta_login)
-    // {
-    //     $disableTrade = Http::acceptJson()->patch($this->baseURL . "/disable_trade/{$meta_login}")->json();
-
-    //     $userData = $this->getMetaUser($meta_login);
-    //     $metaAccountData = $this->getMetaAccount($meta_login);
-    //     (new UpdateTradingAccount)->execute($meta_login, $metaAccountData);
-    //     (new UpdateTradingUser)->execute($meta_login, $userData);
-
-    //     return $disableTrade;
-    // }
-
-    // public function dealHistory($meta_login, $start_date, $end_date)
-    // {
-    //     return Http::acceptJson()->get($this->baseURL . "/deal_history/{$meta_login}&{$start_date}&{$end_date}")->json();
-    // }
-
-    // public function updateLeverage($meta_login, $leverage)
-    // {
-    //     $upatedResponse = Http::acceptJson()->patch($this->baseURL . "/update_leverage", [
-    //         'login' => $meta_login,
-    //         'leverage' => $leverage,
-    //     ]);
-    //     $upatedResponse = $upatedResponse->json();
-    //     $userData = $this->getMetaUser($meta_login);
-    //     $metaAccountData = $this->getMetaAccount($meta_login);
-    //     (new UpdateTradingAccount)->execute($meta_login, $metaAccountData);
-    //     (new UpdateTradingUser)->execute($meta_login, $userData);
-
-    //     return $upatedResponse;
-    // }
-
-    // public function changePassword($meta_login, $type, $password)
-    // {
-    //     $passwordResponse = Http::acceptJson()->patch($this->baseURL . "/change_password", [
-    //         'login' => $meta_login,
-    //         'type' => $type,
-    //         'password' => $password,
-    //     ]);
-    //     return $passwordResponse->json();
-    // }
-
-    // public function userTrade($meta_login)
-    // {
-    //     return Http::acceptJson()->get($this->baseURL . "/check_position/{$meta_login}")->json();
-    // }
-
-    // public function deleteAccount($meta_login)
-    // {
-    //     $deleteAccount = Http::acceptJson()->delete($this->baseURL . "/delete_tradeacc/{$meta_login}")->json();
-
-    //     return $deleteAccount;
-    // }
 
     public function deleteTrader($meta_login): void
     {
@@ -174,7 +110,7 @@ class MetaFourService {
         ->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
         ])
-        ->patch($this->demoURL . "/disableaccount", [
+        ->patch($this->baseURL . "/disableaccount", [
             'meta_login' => $meta_login,
         ]);
     }

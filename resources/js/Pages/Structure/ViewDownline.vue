@@ -311,7 +311,7 @@ const filteredDataOverviews = computed(() => {
                                         {{ $t('public.balance_shortname') }}:
                                     </div>
                                     <div class="text-gray-950 text-xs font-medium">
-                                        $ {{ formatAmount(tradingAccount.balance) }}
+                                        $ {{ formatAmount(tradingAccount.balance ?? 0) }}
                                     </div>
                                 </div>
                                 <div class="flex flex-col md:flex-row md:gap-2 justify-start items-center w-full">
@@ -319,7 +319,7 @@ const filteredDataOverviews = computed(() => {
                                         {{ $t('public.equity_shortname') }}:
                                     </div>
                                     <div class="text-gray-950 text-xs font-medium">
-                                        $ {{ formatAmount(tradingAccount.equity) }}
+                                        $ {{ formatAmount(tradingAccount.equity ?? 0) }}
                                     </div>
                                 </div>
                                 <div
@@ -330,7 +330,7 @@ const filteredDataOverviews = computed(() => {
                                         {{ $t('public.credit_shortname') }}:
                                     </div>
                                     <div class="text-gray-950 text-xs font-medium">
-                                        $ {{ formatAmount(tradingAccount.credit) }}
+                                        $ {{ formatAmount(tradingAccount.credit ?? 0) }}
                                     </div>
                                 </div>
                             </div>

@@ -101,7 +101,7 @@ watchEffect(() => {
                 </div>
                 <div class="w-full flex items-center gap-1 flex-grow">
                     <span class="w-16 text-gray-500 text-xs">{{ $t('public.equity') }}:</span>
-                    <span class="text-gray-950 text-xs font-medium">$&nbsp;{{ formatAmount(account.equity) }}</span>
+                    <span class="text-gray-950 text-xs font-medium">$&nbsp;{{ formatAmount(account.equity ?? 0) }}</span>
                 </div>
                 <div class="w-full flex items-center gap-1 flex-grow">
                     <span class="w-16 text-gray-500 text-xs">{{ $t('public.credit') }}:</span>

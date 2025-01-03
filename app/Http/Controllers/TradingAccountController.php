@@ -19,6 +19,7 @@ use App\Services\MetaFourService;
 use App\Models\AssetSubscription;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
 use App\Services\RunningNumberService;
 use App\Services\DropdownOptionService;
@@ -335,17 +336,8 @@ class TradingAccountController extends Controller
              'account_id' => 'required|exists:trading_accounts,id',
          ]);
 
-         $conn = (new CTraderService)->connectionStatus();
-         if ($conn['code'] != 0) {
-             return back()
-                 ->with('toast', [
-                     'title' => 'Connection Error',
-                     'type' => 'error'
-                 ]);
-         }
-
          $tradingAccount = TradingAccount::find($request->account_id);
-         (new CTraderService)->getUserInfo(collect($tradingAccount));
+         (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
          $tradingAccount = TradingAccount::find($request->account_id);
          $amount = $request->input('amount');
@@ -356,8 +348,8 @@ class TradingAccountController extends Controller
          }
 
          try {
-             $tradeFrom = (new CTraderService)->createTrade($tradingAccount->meta_login, $amount, "Withdraw From Account", ChangeTraderBalanceType::WITHDRAW);
-             $tradeTo = (new CTraderService)->createTrade($to_meta_login, $amount, "Deposit To Account", ChangeTraderBalanceType::DEPOSIT);
+             $tradeFrom = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Withdraw From Account", 'balance', '');
+             $tradeTo = (new MetaFourService)->createTrade($to_meta_login, $amount, "Deposit To Account", 'balance', '');
          } catch (\Throwable $e) {
              if ($e->getMessage() == "Not found") {
                  TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
@@ -367,8 +359,8 @@ class TradingAccountController extends Controller
              return response()->json(['success' => false, 'message' => $e->getMessage()]);
          }
 
-         $ticketFrom = $tradeFrom->getTicket();
-         $ticketTo = $tradeTo->getTicket();
+         $ticketFrom = $tradeFrom['ticket'];
+         $ticketTo = $tradeTo['ticket'];
          Transaction::create([
              'user_id' => Auth::id(),
              'category' => 'trading_account',
@@ -627,7 +619,24 @@ class TradingAccountController extends Controller
             // Send response
             $redirectUrl = $baseUrl . "?" . http_build_query($params);
             Log::debug("URL : " . $redirectUrl);
-            return Inertia::location($redirectUrl);
+            // return Inertia::location($redirectUrl);
+
+            $response = Http::get($redirectUrl);
+
+            $responseData = $response->json();
+
+            if (isset($responseData['data']['payment_url'])) {
+                $paymentUrl = $responseData['data']['payment_url'];
+                Log::debug("Payment URL: " . $paymentUrl);
+
+                // Redirect to the payment URL
+                return Inertia::location($paymentUrl);
+            } else {
+                Log::error("Payment URL not found in response.", $responseData);
+
+                // Handle the error (e.g., redirect to an error page or return a response)
+                return redirect()->route('dashboard')->with('error', 'Payment URL not found.');
+            }
             // return response()->json(['redirect_url' => $redirectUrl]);
         }
 
@@ -641,19 +650,28 @@ class TradingAccountController extends Controller
         $response = $request->all();
         Log::debug("response : " , $response);
         $result = [
-            'code' => $response['code'],
-            'msg' => $response['msg'],
-            'partner_id' =>  $response['data']['partner_id'],
-            'sign' => $response['data']['system_order_code'],
-            'partner_order_code' => $response['data']['partner_order_code'],
-            'amount' => $response['data']['amount'],
-            'request_time' => $response['data']['request_time'] ?? null,
-            'bank_code' => $response['data']['bank_account']['bank_code'] ?? null,
-            'bank_name' => $response['data']['bank_account']['bank_name'] ?? null,
-            'bank_account_no' => $response['data']['bank_account']['bank_account_no'] ?? null,
-            'bank_account_name' => $response['data']['bank_account']['bank_account_name'] ?? null,
-            'payment_id' => $response['data']['payment_id'] ?? null,
-            'payment_url' => $response['data']['payment_url'] ?? null,
+            'partner_id' =>  $response['partner_id'],
+            'system_order_code' => $response['system_order_code'],
+            'partner_order_code' => $response['partner_order_code'],
+            'guest_id' => $response['guest_id'],
+            'amount' => $response['amount'],
+            'amount_cny' => $response['amount_cny'],
+            'otc_usdt_cny' => $response['otc_usdt_cny'],
+            'request_time' => $response['request_time'] ?? null,
+            'extra_data' => $response['extra_data'] ?? null,
+            'txid' => $response['payment']['tx_id'] ?? null,
+            'paid_amount' => $response['payment']['paid_amount'] ?? null,
+            'fees' => $response['payment']['fees'] ?? null,
+            'payment_time' => $response['payment']['payment_time'] ?? null,
+            'callback_time' => $response['payment']['callback_time'] ?? null,
+            'erc20address' => $response['payment']['erc20address'] ?? null,
+            'trc20address' => $response['payment']['trc20address'] ?? null,
+            'status' => $response['payment']['status'] ?? null,
+            // 'bank_code' => $response['data']['bank_account']['bank_code'] ?? null,
+            // 'bank_name' => $response['data']['bank_account']['bank_name'] ?? null,
+            // 'bank_account_no' => $response['data']['bank_account']['bank_account_no'] ?? null,
+            // 'bank_account_name' => $response['data']['bank_account']['bank_account_name'] ?? null,
+            // 'payment_id' => $response['data']['payment_id'] ?? null,
 
 
             // 'userId' => $response['userId'],
@@ -680,14 +698,14 @@ class TradingAccountController extends Controller
         // if ($result['sign'] === $dataToHash) {
             //proceed approval
             $transaction->update([
-                'from_wallet_address' => $result['bank_account_no'],
-                'to_wallet_address' => $result['to_wallet_address'],
-                'txn_hash' => $result['txn_hash'],
+                'from_wallet_address' => $result['erc20address'],
+                'to_wallet_address' => $result['to_wallet_address'] ?? null,
+                'txn_hash' => $result['txid'],
                 'amount' => $result['amount'],
                 'transaction_charges' => 0,
                 'transaction_amount' => $result['amount'],
                 'status' => $status,
-                'remarks' => $result['remarks'],
+                'remarks' => $result['remarks'] ?? null,
                 'approved_at' => now()
             ]);
 
