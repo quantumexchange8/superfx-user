@@ -28,7 +28,7 @@ class StructureController extends Controller
 
         if ($request->filled('search')) {
             $search = '%' . $request->input('search') . '%';
-            $parent = User::whereIn('role', ['agent', 'member'])
+            $parent = User::whereIn('role', ['ib', 'member'])
                 ->where('id_number', 'LIKE', $search)
                 ->orWhere('email', 'LIKE', $search)
                 ->first();
@@ -38,7 +38,7 @@ class StructureController extends Controller
         }
 
         $parent = User::with(['directChildren:id,name,id_number,upline_id,role,hierarchyList'])
-            ->whereIn('role', ['agent', 'member'])
+            ->whereIn('role', ['ib', 'member'])
             ->select('id', 'name', 'id_number', 'upline_id', 'role', 'hierarchyList')
             ->find($parent_id);
 
@@ -70,7 +70,7 @@ class StructureController extends Controller
                 'profile_photo' => $user->getFirstMediaUrl('profile_photo'),
                 'upper_upline_id' => $upper_upline->id ?? null,
                 'level' => $user->id === Auth::id() ? 0 : $this->calculateLevel($user->hierarchyList),
-                'total_agent_count' => $this->getChildrenCount('agent', $user->id),
+                'total_agent_count' => $this->getChildrenCount('ib', $user->id),
                 'total_member_count' => $this->getChildrenCount('member', $user->id),
             ]
         );
@@ -212,7 +212,7 @@ class StructureController extends Controller
             'depositAmount' => floatval($deposit_amount),
             'withdrawalAmount' => floatval($withdrawal_amount),
             'memberAmount' => $user->directChildren()->where('role', 'member')->count(),
-            'agentAmount' => $user->directChildren()->where('role', 'agent')->count(),
+            'agentAmount' => $user->directChildren()->where('role', 'ib')->count(),
         ]);
     }
 }

@@ -101,7 +101,7 @@ watchEffect(() => {
                     <div
                         class="grid gap-5 w-full"
                         :class="{
-                        'grid-cols-2': user.role === 'agent',
+                        'grid-cols-2': user.role === 'ib',
                         'grid-cols-2 xl:grid-cols-4': user.role === 'member'
                     }"
                     >
@@ -123,7 +123,7 @@ watchEffect(() => {
                 </div>
 
                 <div
-                    v-if="user.role === 'agent'"
+                    v-if="user.role === 'ib'"
                     class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-5 items-center self-stretch w-full"
                 >
                     <!-- rebate earn -->
@@ -136,9 +136,9 @@ watchEffect(() => {
                                 <path opacity="0.2" d="M607.874 363.397C390.559 303.674 -34.5139 165.082 3.70844 88.4965C51.4864 -7.23541 306.019 95.1543 317.71 101.043M317.71 101.043C329.401 106.932 544.041 201.381 628.094 209.587L632.482 292.784C455.107 238.075 100.928 112.502 103.212 47.8793C104.487 11.8008 123.985 -8.13416 173.887 -5.95469M317.71 101.043C180.498 45.2856 164.656 6.47896 173.887 -5.95469M173.887 -5.95469C213.368 -4.23034 256.971 4.62692 287.138 12.9569L173.887 -5.95469Z" stroke="#FCFCFD" stroke-width="2"/>
                             </svg>
                         </div>
-                        <div class="py-5 px-10 flex flex-col justify-between items-center self-stretch">
+                        <div class="py-5 px-10 bg-logo flex flex-col justify-between items-center self-stretch">
                             <div class="flex items-center justify-end w-full">
-                                <ApplicationLogo class="w-8 h-8 fill-white" />
+                                <ApplicationLogo class="w-8 h-8 bg-white" />
                             </div>
                             <div class="flex flex-col gap-3 items-start self-stretch">
                                 <span class="text-sm text-gray-200 font-medium">{{ $t('public.available_rebate_balance') }}</span>

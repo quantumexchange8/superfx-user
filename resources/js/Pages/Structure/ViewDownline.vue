@@ -76,7 +76,7 @@ const dataOverviews = computed(() => [
         total: rebateAmount.value,
         decimal: 2,
         label: trans('public.rebate_earned')+" ($)",
-        type: 'agent',
+        type: 'ib',
     },
     {
         icon: MemberIcon,
@@ -90,7 +90,7 @@ const dataOverviews = computed(() => [
         total: agentAmount.value,
         decimal: 0,
         label: trans('public.referred_agent'),
-        type: 'agent',
+        type: 'ib',
     },
 ]);
 
@@ -257,7 +257,7 @@ const filteredDataOverviews = computed(() => {
             <div
                 class="p-4 md:p-8 grid gap-5 md:gap-3 w-full rounded-2xl bg-white shadow-dropdown"
                 :class="[
-                    {'grid-cols-2 md:grid-cols-5': user.role === 'agent'},
+                    {'grid-cols-2 md:grid-cols-5': user.role === 'ib'},
                     {'grid-cols-2 md:grid-cols-3': user.role === 'member'},
                 ]"
             >

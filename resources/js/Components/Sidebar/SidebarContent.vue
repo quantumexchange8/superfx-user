@@ -85,7 +85,7 @@ const user = usePage().props.auth.user;
 
         <!-- Report -->
        <SidebarLink
-           v-if="user.role === 'agent'"
+           v-if="user.role === 'ib'"
            :title="$t('public.report')"
            :href="route('report')"
            :active="route().current('report')"
@@ -111,7 +111,7 @@ const user = usePage().props.auth.user;
             :title="$t('public.billboard')"
             :href="route('billboard')"
             :active="route().current('billboard')"
-            v-if="user.role === 'agent'"
+            v-if="user.role === 'ib'"
         >
             <template #icon>
                 <IconAward :size="20" stroke-width="1.25" />

@@ -167,6 +167,17 @@ class MetaFourService {
 
     //     return $deleteAccount;
     // }
+
+    public function deleteTrader($meta_login): void
+    {
+        Http::acceptJson()
+        ->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])
+        ->patch($this->demoURL . "/disableaccount", [
+            'meta_login' => $meta_login,
+        ]);
+    }
 }
 
 class dealAction

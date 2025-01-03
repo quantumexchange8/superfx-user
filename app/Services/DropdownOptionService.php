@@ -118,7 +118,7 @@ class DropdownOptionService
     {
         $has_group = GroupHasUser::pluck('user_id');
 
-        $users = User::where('role', 'agent')
+        $users = User::where('role', 'ib')
             ->whereNotIn('id', $has_group)
             ->select('id', 'name')
             ->get()

@@ -43,7 +43,7 @@ return new class extends Migration {
             $table->string('status')->nullable();
             $table->string('comment')->nullable();
             $table->unsignedInteger('color')->nullable();
-            $table->integer('agent')->nullable();
+            $table->integer('ib')->nullable();
             $table->decimal('balance', 11, 2)->nullable();
             $table->decimal('credit', 11, 2)->nullable();
             $table->decimal('interest_rate', 11, 2)->nullable();

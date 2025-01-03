@@ -194,7 +194,7 @@ getAvailableAccounts();
 
             <div class="relative flex flex-col items-center gap-5 w-full h-full">
                 <!-- Banner Image -->
-                <a href="https://home.superforex.com/" target="blank" class="w-full h-full">
+                <a href="https://home.superforexs.com/" target="blank" class="w-full h-full">
                 <img src="/img/banner-pamm.svg" alt="" class="w-full h-full hover:cursor-pointer">
                 
                 <!-- Logo and Text Block -->
@@ -218,7 +218,7 @@ getAvailableAccounts();
                     </div>
                 </div>
                     <div class="absolute bottom-[9%] left-[6%] font-semibold text-white text-[4px] md:text-[9px] xl:text-[12px] 3xl:text-[18px]">
-                        www.superforex.com
+                        www.superforexs.com
                     </div>
                 </a>
             </div>

@@ -89,7 +89,7 @@ const user = usePage().props.auth.user;
             </div>
 
             <TabView
-                v-if="user.role === 'agent'"
+                v-if="user.role === 'ib'"
                 class="flex flex-col gap-5 self-stretch"
             >
                 <TabPanel v-for="(tab, index) in tabs" :key="index" :header="tab.title">

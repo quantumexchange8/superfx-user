@@ -578,11 +578,12 @@ class TradingAccountController extends Controller
                 'payment_gateway_id' => $payment_gateway->id,
             ]);
             $timestamp = Carbon::now()->timestamp;
-            $random = Str::random(5);
+            $random = Str::random(14);
 
             $domain = $_SERVER['HTTP_HOST'];
             $scheme = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
             $notifyUrl = $scheme . '://' . $domain . '/' . 'deposit_callback';
+            $returnUrl = $scheme . '://' . $domain . '/' . 'deposit_return';
             $guest_id = md5(sprintf('M%06d', $user->id));
             
             Log::debug("notify url: " . $notifyUrl);
@@ -605,7 +606,7 @@ class TradingAccountController extends Controller
                     break;
 
                 case 'crypto':
-                    $sign = md5($payment_gateway->payment_app_number . $timestamp . $transaction_number . $random . $transaction_number . 0 . 'en_ww' . $guest_id . $amount . $notifyUrl);
+                    $sign = md5($payment_gateway->payment_app_number . ':' . $timestamp . ':' . $random . ':' . $transaction_number . ':' . 0 . ':' . 'en_ww' . ':' . $guest_id . ':' . $amount . ':' . $notifyUrl . ':' . $returnUrl . '::' . '48NvC2Bd0yZZKRY74v9Rh51');
                     $params = [
                         'partner_id' => $payment_gateway->payment_app_number,
                         'timestamp' => $timestamp,
@@ -616,6 +617,7 @@ class TradingAccountController extends Controller
                         'guest_id' => $guest_id,
                         'amount' => $amount,
                         'notify_url' => $notifyUrl,
+                        'return_url' => $returnUrl, // not required
                         'sign' => $sign,
                     ];
                     $baseUrl = $environment == 'production' ? $payment_gateway->payment_url . '/gateway/usdt/createERC20.do' : $payment_gateway->payment_url . '/gateway/usdt/createERC20.do';
@@ -626,6 +628,7 @@ class TradingAccountController extends Controller
             $redirectUrl = $baseUrl . "?" . http_build_query($params);
             Log::debug("URL : " . $redirectUrl);
             return Inertia::location($redirectUrl);
+            // return response()->json(['redirect_url' => $redirectUrl]);
         }
 
         return redirect()->back()

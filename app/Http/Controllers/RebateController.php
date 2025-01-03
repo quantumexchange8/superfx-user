@@ -32,7 +32,7 @@ class RebateController extends Controller
         $type_id = $request->type_id;
 
         //level 1 children
-        $lv1_agents = User::find(Auth::id())->directChildren()->where('role', 'agent')
+        $lv1_agents = User::find(Auth::id())->directChildren()->where('role', 'ib')
             ->get()->map(function($agent) {
                 return [
                     'id' => $agent->id,
@@ -56,7 +56,7 @@ class RebateController extends Controller
 
         // children of first level 1 agent
         $children_ids = User::find($lv1_agents[0]['id'])->getChildrenIds();
-        $agents = User::whereIn('id', $children_ids)->where('role', 'agent')
+        $agents = User::whereIn('id', $children_ids)->where('role', 'ib')
             ->get()->map(function ($user) {
                 return [
                     'id' => $user->id,
@@ -118,7 +118,7 @@ class RebateController extends Controller
             $lv1_data = [];
 
             //level 1 children
-            $lv1_agents = User::find(Auth::id())->directChildren()->where('role', 'agent')->get()
+            $lv1_agents = User::find(Auth::id())->directChildren()->where('role', 'ib')->get()
                 ->map(function($agent) {
                     return [
                         'id' => $agent->id,
@@ -144,7 +144,7 @@ class RebateController extends Controller
             // children of first level 1 agent
             $children_ids = User::find($lv1_agents[0]['id'])->getChildrenIds();
         // dd($children_ids);
-            $agents = User::whereIn('id', $children_ids)->where('role', 'agent')
+            $agents = User::whereIn('id', $children_ids)->where('role', 'ib')
                 ->get()->map(function ($user) {
                     return [
                         'id' => $user->id,
@@ -181,7 +181,7 @@ class RebateController extends Controller
                 ->map(function($upline) use ($type_id) {
                     $rebate = $this->getRebateAllocate($upline->id, $type_id);
 
-                    $same_level_agents = User::where(['hierarchyList' => $upline->hierarchyList, 'role' => 'agent'])->get()
+                    $same_level_agents = User::where(['hierarchyList' => $upline->hierarchyList, 'role' => 'ib'])->get()
                         ->map(function($same_level_agent) {
                             return [
                                 'id' => $same_level_agent->id,
@@ -206,7 +206,7 @@ class RebateController extends Controller
             // children of selected agent
             $children_ids = User::where('id', $selected_agent_id)->first()->getChildrenIds();
             if ($children_ids) {
-                $agents = User::whereIn('id', $children_ids)->where('role', 'agent')
+                $agents = User::whereIn('id', $children_ids)->where('role', 'ib')
                 ->get()->map(function ($user) {
                     return [
                         'id' => $user->id,

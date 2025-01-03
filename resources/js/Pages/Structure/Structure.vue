@@ -40,7 +40,7 @@ const handleNoData = () => {
     <AuthenticatedLayout :title="$t('public.structure')">
         <div v-if="!showEmpty">
             <TabView
-                v-if="user.role === 'agent'"
+                v-if="user.role === 'ib'"
                 v-model:activeIndex="activeIndex"
                 class="flex flex-col gap-5 self-stretch"
             >

@@ -113,7 +113,7 @@ class RegisteredUserController extends Controller
 
                 $userData['upline_id'] = $upline_id;
                 $userData['hierarchyList'] = $hierarchyList;
-                $userData['role'] = $upline_id == $default_agent_id ? 'agent' : 'member';
+                $userData['role'] = $upline_id == $default_agent_id ? 'ib' : 'member';
             }
         } else {
             $default_upline = User::find(3);
@@ -129,7 +129,7 @@ class RegisteredUserController extends Controller
 
         $user->setReferralId();
 
-        $id_no = ($user->role == 'agent' ? 'AID' : 'MID') . Str::padLeft($user->id - 2, 5, "0");
+        $id_no = ($user->role == 'ib' ? 'AID' : 'MID') . Str::padLeft($user->id - 2, 5, "0");
         $user->id_number = $id_no;
         $user->save();
 

@@ -188,7 +188,7 @@ const removeKycVerification = () => {
                 <Link href="/" class="w-full flex items-center py-[18px]">
                     <div class="flex items-center self-stretch gap-2">
                         <div class="px-2">
-                            <ApplicationLogo aria-hidden="true" class="w-7 h-7 " />
+                            <ApplicationLogo aria-hidden="true" class="w-10 h-7" />
                         </div>
                         <div
                             class="text-lg font-bold text-gray-800 w-full"

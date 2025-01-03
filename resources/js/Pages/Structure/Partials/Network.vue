@@ -133,7 +133,7 @@ const clearSearch = () => {
                     <div
                         class="rounded-xl pt-3 flex flex-col items-center w-full max-w-[168px] xl:max-w-[148px] shadow-toast border border-gray-25 sm:basis-1/5 xl:basis-1/6"
                         :class="{
-                            'bg-gradient-to-r from-warning-500 to-[#FDEF5B]': upline.role === 'agent',
+                            'bg-gradient-to-r from-warning-500 to-[#FDEF5B]': upline.role === 'ib',
                             'bg-gradient-to-r from-primary-700 to-[#0BA5EC]': upline.role === 'member',
                         }"
                     >
@@ -172,7 +172,7 @@ const clearSearch = () => {
                     <div
                         class="rounded-xl pt-3 flex flex-col items-center w-full max-w-[168px] xl:max-w-[148px] shadow-toast border border-gray-25 sm:basis-1/5 xl:basis-1/6"
                         :class="{
-                                    'bg-gradient-to-r from-warning-500 to-[#FDEF5B]': upline.role === 'agent',
+                                    'bg-gradient-to-r from-warning-500 to-[#FDEF5B]': upline.role === 'ib',
                                     'bg-gradient-to-r from-primary-700 to-[#0BA5EC]': upline.role === 'member',
                                 }"
                     >
@@ -227,7 +227,7 @@ const clearSearch = () => {
                     <div
                         class="rounded-xl pt-3 flex flex-col items-center w-full max-w-[168px] xl:max-w-[148px] shadow-toast border border-gray-25 sm:basis-1/5 xl:basis-1/6"
                         :class="{
-                            'bg-gradient-to-r from-warning-500 to-[#FDEF5B]': parent && parent.role === 'agent',
+                            'bg-gradient-to-r from-warning-500 to-[#FDEF5B]': parent && parent.role === 'ib',
                             'bg-gradient-to-r from-primary-700 to-[#0BA5EC]': parent && parent.role === 'member',
                         }"
                     >
@@ -275,7 +275,7 @@ const clearSearch = () => {
                     <div
                         class="rounded-xl pt-3 flex flex-col items-center w-full max-w-[168px] xl:max-w-[148px] shadow-toast border border-gray-25 sm:basis-1/5 xl:basis-1/6"
                         :class="{
-                                    'bg-gradient-to-r from-warning-500 to-[#FDEF5B]': parent.role === 'agent',
+                                    'bg-gradient-to-r from-warning-500 to-[#FDEF5B]': parent.role === 'ib',
                                     'bg-gradient-to-r from-primary-700 to-[#0BA5EC]': parent.role === 'member',
                                 }"
                     >
@@ -330,7 +330,7 @@ const clearSearch = () => {
                     <div
                         class="rounded-xl pt-3 flex flex-col items-center w-full max-w-[168px] xl:max-w-[148px] shadow-toast border border-gray-25 select-none cursor-pointer sm:basis-1/5 xl:basis-1/6"
                         :class="{
-                            'bg-gradient-to-r from-warning-500 to-[#FDEF5B]': parent && parent.role === 'agent',
+                            'bg-gradient-to-r from-warning-500 to-[#FDEF5B]': parent && parent.role === 'ib',
                             'bg-gradient-to-r from-primary-700 to-[#0BA5EC]': parent && parent.role === 'member',
                         }"
                     >
@@ -371,7 +371,7 @@ const clearSearch = () => {
                         :key="downline.id"
                         class="rounded-xl pt-3 flex flex-col items-center xl:max-w-[148px] shadow-toast border border-gray-25 select-none cursor-pointer sm:basis-1/5 xl:basis-1/6"
                         :class="{
-                            'agent-bg hover:border-warning-500': downline.role === 'agent',
+                            'agent-bg hover:border-warning-500': downline.role === 'ib',
                             'member-bg hover:border-primary-500': downline.role === 'member',
                         }"
                         @click="selectDownline(downline.id)"
