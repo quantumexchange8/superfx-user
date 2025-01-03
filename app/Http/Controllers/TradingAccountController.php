@@ -527,7 +527,7 @@ class TradingAccountController extends Controller
 
         $environment = 'local';
 
-        if (App::environment('production') || App::environment('staging')) {
+        if (App::environment('production')) {
             $environment = 'production';
         }
 

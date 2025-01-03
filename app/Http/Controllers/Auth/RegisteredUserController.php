@@ -88,7 +88,7 @@ class RegisteredUserController extends Controller
 
         $dial_code = $request->dial_code;
         $country = Country::find($dial_code['id']);
-        $default_agent_id = User::where('id_number', 'AID00000')->first()->id;
+        $default_agent_id = User::where('id_number', 'IB00000')->first()->id;
 
         $userData = [
             'name' => $request->name,
@@ -129,7 +129,7 @@ class RegisteredUserController extends Controller
 
         $user->setReferralId();
 
-        $id_no = ($user->role == 'ib' ? 'AID' : 'MID') . Str::padLeft($user->id - 2, 5, "0");
+        $id_no = ($user->role == 'ib' ? 'IB' : 'MB') . Str::padLeft($user->id - 2, 5, "0");
         $user->id_number = $id_no;
         $user->save();
 
@@ -138,11 +138,11 @@ class RegisteredUserController extends Controller
         }
 
         // create ct id to link ctrader account
-        if (App::environment('production') || App::environment('staging')) {
-            $ctUser = (new CTraderService)->CreateCTID($user->email);
-            $user->ct_user_id = $ctUser['userId'];
-            $user->save();
-        }
+//        if (App::environment('production') || App::environment('staging')) {
+//            $ctUser = (new CTraderService)->CreateCTID($user->email);
+//            $user->ct_user_id = $ctUser['userId'];
+//            $user->save();
+//        }
 
         // if ($request->hasFile('kyc_verification')) {
         //     $user->clearMediaCollection('kyc_verification');
