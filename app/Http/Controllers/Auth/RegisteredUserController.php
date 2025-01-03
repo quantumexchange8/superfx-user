@@ -138,7 +138,7 @@ class RegisteredUserController extends Controller
         }
 
         // create ct id to link ctrader account
-        if (App::environment('production')) {
+        if (App::environment('production') || App::environment('staging')) {
             $ctUser = (new CTraderService)->CreateCTID($user->email);
             $user->ct_user_id = $ctUser['userId'];
             $user->save();

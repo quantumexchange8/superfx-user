@@ -527,7 +527,7 @@ class TradingAccountController extends Controller
 
         $environment = 'local';
 
-        if (App::environment('production')) {
+        if (App::environment('production') || App::environment('staging')) {
             $environment = 'production';
         }
 
@@ -585,7 +585,7 @@ class TradingAccountController extends Controller
             $notifyUrl = $scheme . '://' . $domain . '/' . 'deposit_callback';
             $returnUrl = $scheme . '://' . $domain . '/' . 'deposit_return';
             $guest_id = md5(sprintf('M%06d', $user->id));
-            
+
             Log::debug("notify url: " . $notifyUrl);
             // Find available payment merchant
             $params = [];
@@ -676,7 +676,7 @@ class TradingAccountController extends Controller
         $selectedPaymentGateway = PaymentGateway::find($transaction->payment_gateway_id);
         $status = $result['status'] == 'success' ? 'successful' : 'failed';
         // $dataToHash = md5($selectedPaymentGateway->payment_app_number . $timestamp . $random . $transaction_number . $amount . $notifyUrl);
-        
+
         // if ($result['sign'] === $dataToHash) {
             //proceed approval
             $transaction->update([
@@ -714,7 +714,7 @@ class TradingAccountController extends Controller
         // }
 
     }
-    
+
     //payment gateway return function
     public function depositReturn(Request $request)
     {

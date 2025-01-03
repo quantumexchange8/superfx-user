@@ -38,7 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 case 408:
                     return Inertia::render('Errors/408');
                 case 500:
-                    if (app()->environment('production')) {
+                    if (app()->environment('production') || app()->environment('staging')) {
                         return Inertia::render('Errors/500');
                     }
                     return $response;
