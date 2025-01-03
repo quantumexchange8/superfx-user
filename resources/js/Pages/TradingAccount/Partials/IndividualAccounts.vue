@@ -97,7 +97,7 @@ watchEffect(() => {
             <div class="grid grid-cols-2 gap-2 self-stretch">
                 <div class="w-full flex items-center gap-1 flex-grow">
                     <span class="w-16 text-gray-500 text-xs">{{ $t('public.balance') }}:</span>
-                    <span class="text-gray-950 text-xs font-medium">$&nbsp;{{ formatAmount(account.balance) }}</span>
+                    <span class="text-gray-950 text-xs font-medium">$&nbsp;{{ formatAmount(account.balance ?? 0) }}</span>
                 </div>
                 <div class="w-full flex items-center gap-1 flex-grow">
                     <span class="w-16 text-gray-500 text-xs">{{ $t('public.equity') }}:</span>
@@ -105,7 +105,7 @@ watchEffect(() => {
                 </div>
                 <div class="w-full flex items-center gap-1 flex-grow">
                     <span class="w-16 text-gray-500 text-xs">{{ $t('public.credit') }}:</span>
-                    <span class="text-gray-950 text-xs font-medium">$&nbsp;{{ formatAmount(account.credit) }}</span>
+                    <span class="text-gray-950 text-xs font-medium">$&nbsp;{{ formatAmount(account.credit ?? 0) }}</span>
                 </div>
                 <div class="w-full flex items-center gap-1 flex-grow">
                     <span class="w-16 text-gray-500 text-xs">{{ $t('public.leverage') }}:</span>

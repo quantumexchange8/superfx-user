@@ -31,7 +31,6 @@ import {
                             <span class="self-stretch text-gray-700 text-sm md:text-base">{{ $t('public.download_center_header_message') }}</span>
                         </div>
                     </div>
-                    <!-- <img src="/img/mobile.png"  alt="" class="relative w-[300px] h-full flex flex-col justify-end items-center md:h-[510px]"> -->
                 </div>
                 <div class="flex flex-col items-center py-24 gap-10 self-stretch md:px-10">
                     <div class="flex flex-col items-center gap-2 self-stretch">
@@ -44,13 +43,13 @@ import {
                                 <IconDeviceDesktop size="24" stroke-width="1.25" />
                             </div>
                             <div class="flex flex-col items-start gap-1 self-stretch">
-                                <span class="self-stretch text-gray-25 text-xs">{{ $t('public.desktop') }}</span>
+                                <span class="self-stretch text-gray-25 text-xs">MetaTrader4</span>
                                 <span class="self-stretch text-white text-xl font-semibold">{{ $t('public.pc') }}</span>
                             </div>
                             <a href="https://download.mql5.com/cdn/web/superfin.corp/mt4/superfin4setup.exe" class="w-full">
                                 <Button type="button" size="sm" pill variant="primary-text" class="bg-white">
                                         <Download02Icon class="w-4 h-4 text-black" />
-                                        <span class="text-black text-center text-sm font-medium">{{ $t('public.web_trader') }}</span>
+                                        <span class="text-black text-center text-sm font-medium">{{ $t('public.download') }}</span>
                                 </Button>
                             </a>
                         </div>

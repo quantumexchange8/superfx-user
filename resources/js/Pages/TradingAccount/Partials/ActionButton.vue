@@ -24,7 +24,7 @@ const showDepositDialog = ref(false);
 const showTransferDialog = ref(false);
 const transferOptions = ref([]);
 const depositOptions = ref([
-    { name: 'Bank', value: 'bank' },
+    // { name: 'Bank', value: 'bank' },
     { name: 'Crypto', value: 'crypto' },
 ]);
 const selectedPlatform = ref('');
@@ -58,6 +58,7 @@ const filteredTransferOptions = computed(() => {
 const openDialog = (dialogRef) => {
     if (dialogRef === 'deposit') {
         showDepositDialog.value = true;
+        depositForm.value = 'ERC20';
     } else if (dialogRef === 'transfer') {
         showTransferDialog.value = true;
     }
@@ -76,6 +77,7 @@ const closeDialog = (dialogName) => {
 const depositForm = useForm({
     meta_login: props.account.meta_login,
     payment_platform: '',
+    cryptoType: '',
     amount: 0,
 });
 
@@ -96,7 +98,11 @@ const toggleFullAmount = () => {
 const submitForm = (formType) => {
     if (formType === 'deposit') {
         depositForm.post(route('account.deposit_to_account'), {
-            onSuccess: () => closeDialog('deposit'),
+            onSuccess: () => {
+                closeDialog('deposit');
+                depositForm.reset();
+                depositForm.value = 'ERC20';
+            }
         });
     } else if (formType === 'transfer') {
         transferForm.to_meta_login = selectedAccount.value.name;
@@ -105,6 +111,15 @@ const submitForm = (formType) => {
         });
     }
 }
+
+const selectedCryptoType = ref('ERC20');
+
+function selectCrypto(type) {
+    selectedCryptoType.value = type;
+    depositForm.cryptoType = type;
+    console.log(type)
+}
+
 </script>
 
 <template>
@@ -134,7 +149,7 @@ const submitForm = (formType) => {
         <div class="flex flex-col items-center gap-8 self-stretch">
             <div class="flex flex-col justify-center items-center py-4 px-8 gap-2 self-stretch bg-gray-200">
                 <span class="text-gray-500 text-center text-xs font-medium">#{{ props.account.meta_login }} - {{ $t('public.current_account_balance') }}</span>
-                <span class="text-gray-950 text-center text-xl font-semibold">$ {{ props.account.balance }}</span>
+                <span class="text-gray-950 text-center text-xl font-semibold">$ {{ props.account.balance ?? 0 }}</span>
             </div>
             <div class="flex flex-col items-start gap-2 self-stretch">
                 <InputLabel for="accountType" :value="$t('public.platform_placeholder')" />
@@ -161,6 +176,51 @@ const submitForm = (formType) => {
                             </span>
                             <IconCircleCheckFilled v-if="selectedPlatform === deposit.value" size="20" stroke-width="1.25" color="#2970FF" />
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div v-if="selectedPlatform==='crypto'" class="grid grid-cols-2 items-start gap-1 self-stretch">
+                <InputLabel for="crypto_type" :value="$t('public.method')" class="col-span-2"/>
+                <div
+                    @click="selectCrypto('ERC20')"
+                    class="group col-span-1 items-start py-3 px-4 gap-1 self-stretch rounded-lg border shadow-input transition-colors duration-300 select-none cursor-pointer"
+                    :class="{
+                        'bg-primary-50 border-primary-500': selectedCryptoType === 'ERC20',
+                        'bg-white border-gray-300 hover:bg-primary-50 hover:border-primary-500': selectedCryptoType !== 'ERC20',
+                    }"
+                >
+                    <div class="flex items-center gap-3 self-stretch">
+                        <span
+                            class="flex-grow text-sm font-semibold transition-colors duration-300 group-hover:text-primary-700"
+                            :class="{
+                                'text-primary-700': selectedCryptoType === 'ERC20',
+                                'text-gray-950': selectedCryptoType !== 'ERC20'
+                            }"
+                        >
+                            ERC20
+                        </span>
+                        <IconCircleCheckFilled v-if="selectedCryptoType === 'ERC20'" size="20" stroke-width="1.25" color="#2970FF" />
+                    </div>
+                </div>
+                <div
+                    @click="selectCrypto('TRC20')"
+                    class="group col-span-1 items-start py-3 px-4 gap-1 self-stretch rounded-lg border shadow-input transition-colors duration-300 select-none cursor-pointer"
+                    :class="{
+                        'bg-primary-50 border-primary-500': selectedCryptoType === 'TRC20',
+                        'bg-white border-gray-300 hover:bg-primary-50 hover:border-primary-500': selectedCryptoType !== 'TRC20',
+                    }"
+                >
+                    <div class="flex items-center gap-3 self-stretch">
+                        <span
+                            class="flex-grow text-sm font-semibold transition-colors duration-300 group-hover:text-primary-700"
+                            :class="{
+                                'text-primary-700': selectedCryptoType === 'TRC20',
+                                'text-gray-950': selectedCryptoType !== 'TRC20'
+                            }"
+                        >
+                            TRC20
+                        </span>
+                        <IconCircleCheckFilled v-if="selectedCryptoType === 'TRC20'" size="20" stroke-width="1.25" color="#2970FF" />
                     </div>
                 </div>
             </div>

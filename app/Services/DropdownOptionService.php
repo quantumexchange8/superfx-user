@@ -87,7 +87,7 @@ class DropdownOptionService
         $trading_accounts = $user->tradingAccounts;
         try {
             foreach ($trading_accounts as $trading_account) {
-                (new CTraderService)->getUserInfo($trading_account->meta_login);
+                (new MetaFourService)->getUserInfo($trading_account->meta_login);
             }
         } catch (\Throwable $e) {
             Log::error($e->getMessage());

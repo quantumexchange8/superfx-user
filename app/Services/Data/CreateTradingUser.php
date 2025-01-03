@@ -25,6 +25,7 @@ class CreateTradingUser
         $tradingUser->meta_group = $accountType->name;
         $tradingUser->account_type_id = $accountType->id;
         $tradingUser->leverage = $data['leverage'];
+        $tradingUser->category = 'live';
         DB::transaction(function () use ($tradingUser) {
             $tradingUser->save();
         });

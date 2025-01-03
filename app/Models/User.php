@@ -54,7 +54,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function setReferralId(): void
     {
         $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        $randomString = 'MOS';
+        $randomString = 'SFXx';
 
         $length = 10 - strlen($randomString);
 

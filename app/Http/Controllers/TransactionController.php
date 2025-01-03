@@ -9,7 +9,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\ChangeTraderBalanceType;
-use App\Services\CTraderService;
+use App\Services\MetaFourService;
 use App\Services\RunningNumberService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -102,24 +102,15 @@ class TransactionController extends Controller
         $amount = $request->amount;
         $wallet = Wallet::find($request->wallet_id);
 
-        $conn = (new CTraderService)->connectionStatus();
-        if ($conn['code'] != 0) {
-            return back()
-                ->with('toast', [
-                    'title' => 'Connection Error',
-                    'type' => 'error'
-                ]);
-        }
-
         $tradingAccount = TradingAccount::where('meta_login', $request->meta_login)->first();
-        (new CTraderService)->getUserInfo($tradingAccount->meta_login);
+        (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
         if ($wallet->balance < $amount) {
             throw ValidationException::withMessages(['amount' => trans('public.insufficient_balance')]);
         }
 
         try {
-            $trade = (new CTraderService)->createTrade($tradingAccount->meta_login, $amount, "Rebate to account", ChangeTraderBalanceType::DEPOSIT);
+            $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, $amount, "Rebate to account", ChangeTraderBalanceType::DEPOSIT);
         } catch (\Throwable $e) {
             if ($e->getMessage() == "Not found") {
                 TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);

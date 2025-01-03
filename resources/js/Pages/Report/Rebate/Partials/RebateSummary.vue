@@ -56,7 +56,7 @@ watch(() => props.totalRebate, (newRebate) => {
         <div class="flex flex-col justify-center items-center self-stretch">
             <!-- Loop through rebateSummary -->
             <div v-for="(item, index) in rebateSummary" :key="index" class="flex items-center py-3 gap-4 self-stretch md:gap-5">
-                <img :src="`/img/rebate/3d-${item.symbol_group}.svg`"  alt=""  class="w-9 h-9 flex-shrink-0 md:w-10 md:h-10">
+                <!-- <img :src="`/img/rebate/3d-${item.symbol_group}.svg`"  alt=""  class="w-9 h-9 flex-shrink-0 md:w-10 md:h-10"> -->
                 <!-- sm -->
                 <div class="w-full flex flex-col items-start md:hidden">
                     <span class="self-stretch truncate text-gray-950 text-sm font-semibold">

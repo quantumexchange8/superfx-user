@@ -496,4 +496,8 @@ return [
     "crypto" => "Crypto",
     "platform_placeholder" => "Select Platform",
     'ib' => "IB",
+    "indexes" => "Indexes",
+    "metals" => "Metals",
+    "shares" => "Shares",
+    "method" => "Method",
 ];

@@ -34,11 +34,12 @@ const calculatePercentages = (rebates, totalRebate) => {
 
 // Base colors
 const baseColors = [
-    '#004EEB',
-    '#2970FF',
-    '#528BFF',
-    '#84ADFF',
-    '#D1E0FF',
+    '#004E62',
+    '#297052',
+    '#528B5F',
+    '#84AD72',
+    '#D1E08C',
+    '#D1E0A2',
 ];
 
 // Function to darken color

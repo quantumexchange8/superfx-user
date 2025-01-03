@@ -9,7 +9,7 @@ use App\Models\AssetSubscription;
 use App\Models\Group;
 use App\Models\Term;
 use App\Models\TradingAccount;
-use App\Services\CTraderService;
+use App\Services\MetaFourService;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Http\Request;
@@ -314,7 +314,7 @@ class AssetMasterController extends Controller
 
         try {
             foreach ($manage_accounts as $trading_account) {
-                (new CTraderService)->getUserInfo($trading_account->meta_login);
+                (new MetaFourService)->getUserInfo($trading_account->meta_login);
             }
         } catch (\Throwable $e) {
             Log::error($e->getMessage());
@@ -430,7 +430,7 @@ class AssetMasterController extends Controller
         $validator->validate();
 
         try {
-            (new CTraderService)->getUserInfo($request->meta_login);
+            (new MetaFourService)->getUserInfo($request->meta_login);
         } catch (\Throwable $e) {
             Log::error($e->getMessage());
         }

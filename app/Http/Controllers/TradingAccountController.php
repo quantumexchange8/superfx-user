@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 use App\Models\PaymentAccount;
 use App\Models\TradingAccount;
 use Illuminate\Support\Carbon;
-use App\Services\CTraderService;
 use App\Services\MetaFourService;
 use App\Models\AssetSubscription;
 use Illuminate\Support\Facades\App;
@@ -111,7 +110,7 @@ class TradingAccountController extends Controller
         // if (App::environment('production')) {
         //     $mainPassword = Str::random(8);
         //     $investorPassword = Str::random(8);
-        //     (new CTraderService)->createUser($user,  $mainPassword, $investorPassword, $accountType->account_group, $request->leverage, $accountType->id, null, null, '');
+        //     (new MetaFourService)->createUser($user,  $mainPassword, $investorPassword, $accountType->account_group, $request->leverage, $accountType->id, null, null, '');
         // }
 
         return back()->with('toast', [
@@ -407,14 +406,6 @@ class TradingAccountController extends Controller
             'account_id' => 'required|exists:trading_accounts,id',
         ]);
 
-        // Check connection status
-        $conn = (new CTraderService)->connectionStatus();
-        if ($conn['code'] != 0) {
-            return back()->with('toast', [
-                'title' => 'Connection Error',
-                'type' => 'error'
-            ]);
-        }
 
         // Retrieve the TradingAccount by its ID
         $tradingAccount = TradingAccount::findOrFail($request->account_id);
@@ -436,8 +427,8 @@ class TradingAccountController extends Controller
         }
 
         try {
-            // Get latest user info from CTraderService and update the TradingAccount
-            (new CTraderService)->getUserInfo($tradingAccount);
+            // Get latest user info from MetaFourService and update the TradingAccount
+            (new MetaFourService)->getUserInfo($tradingAccount);
 
             // Retrieve the updated TradingAccount to get the latest balance
             $tradingAccount = TradingAccount::findOrFail($request->account_id);
@@ -483,7 +474,7 @@ class TradingAccountController extends Controller
             ->first();
 
         try {
-            (new CTraderService)->deleteTrader($account->meta_login);
+            (new MetaFourService)->deleteTrader($account->meta_login);
 
             $account->delete();
             $trading_user->delete();
@@ -611,7 +602,8 @@ class TradingAccountController extends Controller
                         'return_url' => $returnUrl, // not required
                         'sign' => $sign,
                     ];
-                    $baseUrl = $payment_gateway->payment_url . '/gateway/usdt/createERC20.do';
+
+                    $baseUrl = $request->cryptoType == 'ERC20' ? $payment_gateway->payment_url . '/gateway/usdt/createERC20.do' : $payment_gateway->payment_url . '/gateway/usdt/createTRC20.do';
                     break;
             }
 

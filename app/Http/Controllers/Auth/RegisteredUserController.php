@@ -11,7 +11,7 @@ use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\Request;
-use App\Services\CTraderService;
+use App\Services\MetaFourService;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
@@ -136,13 +136,6 @@ class RegisteredUserController extends Controller
         if ($check_referral_code && $check_referral_code->groupHasUser) {
             $user->assignedGroup($check_referral_code->groupHasUser->group_id);
         }
-
-        // create ct id to link ctrader account
-//        if (App::environment('production') || App::environment('staging')) {
-//            $ctUser = (new CTraderService)->CreateCTID($user->email);
-//            $user->ct_user_id = $ctUser['userId'];
-//            $user->save();
-//        }
 
         // if ($request->hasFile('kyc_verification')) {
         //     $user->clearMediaCollection('kyc_verification');

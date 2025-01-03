@@ -16,7 +16,7 @@ class MetaFourService {
     private string $port = "8443";
     private string $login = "10012";
     private string $password = "Test1234.";
-    private string $baseURL;
+    private string $baseURL = "https://superfin-live.currenttech.pro/api";
     // private string $demoURL = "https://superfin-demo.currenttech.pro/api";
 
     private string $environmentName = "live";
@@ -27,9 +27,9 @@ class MetaFourService {
     {
         $token2 = "SuperFin-Live^" . Carbon::now('Asia/Riyadh')->toDateString() . "&SuperGlobal";
         
-        $this->baseURL = app()->environment('production') 
-            ? 'https://superfin-live.currenttech.pro/api' 
-            : 'https://superfin-demo.currenttech.pro/api';
+        // $this->baseURL = app()->environment('production') 
+        //     ? 'https://superfin-live.currenttech.pro/api' 
+        //     : 'https://superfin-demo.currenttech.pro/api';
 
         $this->token = hash('sha256', $token2);
     }
