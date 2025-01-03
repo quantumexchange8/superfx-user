@@ -573,9 +573,8 @@ class TradingAccountController extends Controller
             $random = Str::random(14);
 
             $domain = $_SERVER['HTTP_HOST'];
-            $scheme = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-            $notifyUrl = $scheme . '://' . $domain . '/' . 'deposit_callback';
-            $returnUrl = $scheme . '://' . $domain . '/' . 'deposit_return';
+            $notifyUrl = "https://$domain/deposit_callback";
+            $returnUrl = "https://$domain/deposit_return";
             $guest_id = md5(sprintf('M%06d', $user->id));
 
             Log::debug("notify url: " . $notifyUrl);
@@ -612,7 +611,7 @@ class TradingAccountController extends Controller
                         'return_url' => $returnUrl, // not required
                         'sign' => $sign,
                     ];
-                    $baseUrl = $environment == 'production' ? $payment_gateway->payment_url . '/gateway/usdt/createERC20.do' : $payment_gateway->payment_url . '/gateway/usdt/createERC20.do';
+                    $baseUrl = $payment_gateway->payment_url . '/gateway/usdt/createERC20.do';
                     break;
             }
 
