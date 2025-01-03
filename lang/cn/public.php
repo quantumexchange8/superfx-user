@@ -221,7 +221,7 @@ return [
     "toast_revoke_account_success" => "已成功取消绑定资管大师!",
     "toast_delete_account_success" => "帐户已删除!",
     "toast_delete_demo_account_success" => "模拟帐户已删除!",
-    "trading_account_agreement_welcome_text" => "Welcome to Mosanes! Before you open a trading account with us, please carefully review and acknowledge the following terms and conditions. These points ensure that you understand our policies, your responsibilities, and the nature of the services we provide. Your agreement is necessary for the safety and transparency of your trading experience with Mosanes. Thank you for choosing Mosanes as your trusted trading partner.",
+    "trading_account_agreement_welcome_text" => "Welcome to SuperForex! Before you open a trading account with us, please carefully review and acknowledge the following terms and conditions. These points ensure that you understand our policies, your responsibilities, and the nature of the services we provide. Your agreement is necessary for the safety and transparency of your trading experience with SuperForex. Thank you for choosing SuperForex as your trusted trading partner.",
     "empty_live_acccount_title" => "未找到交易帐户",
     "empty_live_acccount_message" => "看起来您还没有任何交易帐户. 创建一个个人交易帐户以开始进行交易吧!",
     "empty_managed_acccount_title" => "未找到优投管理帐户",

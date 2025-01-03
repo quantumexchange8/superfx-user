@@ -194,7 +194,7 @@ getAvailableAccounts();
 
             <div class="relative flex flex-col items-center gap-5 w-full h-full">
                 <!-- Banner Image -->
-                <a href="https://home.mosanes.com/" target="blank" class="w-full h-full">
+                <a href="https://home.superforex.com/" target="blank" class="w-full h-full">
                 <img src="/img/banner-pamm.svg" alt="" class="w-full h-full hover:cursor-pointer">
                 
                 <!-- Logo and Text Block -->
@@ -202,7 +202,7 @@ getAvailableAccounts();
                     <div class="flex gap-1 md:gap-3 items-center">
                         <ApplicationLogo aria-hidden="true" class="size-[3%] fill-white" />
                         <div class="text-[6px] md:text-base 3xl:text-xl font-bold text-white mt-0.5 md:mt-0">
-                            Mosanes.
+                            SuperForex.
                         </div>
                     </div>
                 </div>
@@ -218,7 +218,7 @@ getAvailableAccounts();
                     </div>
                 </div>
                     <div class="absolute bottom-[9%] left-[6%] font-semibold text-white text-[4px] md:text-[9px] xl:text-[12px] 3xl:text-[18px]">
-                        www.mosanes.com
+                        www.superforex.com
                     </div>
                 </a>
             </div>

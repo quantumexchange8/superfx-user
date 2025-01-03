@@ -10,13 +10,13 @@ import { IconX } from '@tabler/icons-vue';
         <Link :href="route('dashboard')" class="w-full flex items-center">
             <div class="flex items-center self-stretch gap-2">
                 <div class="px-2">
-                    <ApplicationLogo aria-hidden="true" class="w-7 h-7 fill-logo" />
+                    <ApplicationLogo aria-hidden="true" class="w-7 h-7" />
                 </div>
                 <div
                     v-show="sidebarState.isOpen || sidebarState.isHovered"
                     class="text-lg font-bold text-gray-800 w-full"
                 >
-                    Mosanes.
+                    SuperForex.
                 </div>
             </div>
         </Link>

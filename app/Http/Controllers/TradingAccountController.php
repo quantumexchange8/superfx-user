@@ -583,6 +583,7 @@ class TradingAccountController extends Controller
             $domain = $_SERVER['HTTP_HOST'];
             $scheme = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
             $notifyUrl = $scheme . '://' . $domain . '/' . 'deposit_callback';
+            $guest_id = md5(sprintf('M%06d', $user->id));
             
             Log::debug("notify url: " . $notifyUrl);
             // Find available payment merchant
@@ -604,7 +605,7 @@ class TradingAccountController extends Controller
                     break;
 
                 case 'crypto':
-                    $sign = md5($intAmount . $payment_gateway->payment_app_name . $transaction_number . $payment_gateway->secret_key);
+                    $sign = md5($payment_gateway->payment_app_number . $timestamp . $transaction_number . $random . $transaction_number . 0 . 'en_ww' . $guest_id . $amount . $notifyUrl);
                     $params = [
                         'partner_id' => $payment_gateway->payment_app_number,
                         'timestamp' => $timestamp,
@@ -612,12 +613,12 @@ class TradingAccountController extends Controller
                         'partner_order_code' => $transaction_number,
                         'order_currency' => 0,
                         'order_language' => 'en_ww',
-                        'guest_id' => $user->id,
+                        'guest_id' => $guest_id,
                         'amount' => $amount,
                         'notify_url' => $notifyUrl,
                         'sign' => $sign,
                     ];
-                    $baseUrl = $environment == 'production' ? $payment_gateway->payment_url . '/gateway/usdt/createERC20.do' : $payment_gateway->payment_url;
+                    $baseUrl = $environment == 'production' ? $payment_gateway->payment_url . '/gateway/usdt/createERC20.do' : $payment_gateway->payment_url . '/gateway/usdt/createERC20.do';
                     break;
             }
 

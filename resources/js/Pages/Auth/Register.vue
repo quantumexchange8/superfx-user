@@ -19,6 +19,7 @@ import Password from 'primevue/password';
 import {KycFemale, KycMale} from "@/Components/Icons/solid.jsx";
 import OverlayPanel from 'primevue/overlaypanel';
 import {loadLanguageAsync} from "laravel-vue-i18n";
+import dayjs from "dayjs";
 
 const props = defineProps({
     referral_code: String
@@ -187,12 +188,12 @@ const removeKycVerification = () => {
                 <Link href="/" class="w-full flex items-center py-[18px]">
                     <div class="flex items-center self-stretch gap-2">
                         <div class="px-2">
-                            <ApplicationLogo aria-hidden="true" class="w-7 h-7 fill-logo" />
+                            <ApplicationLogo aria-hidden="true" class="w-7 h-7 " />
                         </div>
                         <div
                             class="text-lg font-bold text-gray-800 w-full"
                         >
-                            Mosanes.
+                            SuperForex.
                         </div>
                     </div>
                 </Link>
@@ -460,7 +461,7 @@ const removeKycVerification = () => {
                             </div>
                         </form>
                     </div>
-                    <div class="text-center text-gray-500 text-xs mt-auto">© 2024 mosanes. All rights reserved.</div>
+                    <div class="text-center text-gray-500 text-xs mt-auto">© {{ dayjs().year() }} SuperForex. All rights reserved.</div>
                 </div>
             </div>
         </div>
