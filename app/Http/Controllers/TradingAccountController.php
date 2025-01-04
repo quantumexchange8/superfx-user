@@ -566,7 +566,7 @@ class TradingAccountController extends Controller
             $params = [
                 'partner_id' => $payment_gateway->payment_app_number,
                 'timestamp' => Carbon::now()->timestamp,
-                'random' => Str::random(20),
+                'random' => Str::random(14),
                 'partner_order_code' => $transaction->transaction_number,
                 'order_currency' => 0,
                 'order_language' => 'en_ww',
@@ -586,6 +586,7 @@ class TradingAccountController extends Controller
                 $params['guest_id'],
                 $params['amount'],
                 $params['notify_url'],
+                $payment_gateway->payment_app_key
             ];
 
             $hashedCode = md5(implode(':', $data));
