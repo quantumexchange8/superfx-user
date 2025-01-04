@@ -107,16 +107,16 @@ const user = usePage().props.auth.user;
 <!--        </SidebarLink>-->
 
         <!-- Billboard -->
-        <SidebarLink
-            :title="$t('public.billboard')"
-            :href="route('billboard')"
-            :active="route().current('billboard')"
-            v-if="user.role === 'ib'"
-        >
-            <template #icon>
-                <IconAward :size="20" stroke-width="1.25" />
-            </template>
-        </SidebarLink>
+<!--        <SidebarLink-->
+<!--            :title="$t('public.billboard')"-->
+<!--            :href="route('billboard')"-->
+<!--            :active="route().current('billboard')"-->
+<!--            v-if="user.role === 'ib'"-->
+<!--        >-->
+<!--            <template #icon>-->
+<!--                <IconAward :size="20" stroke-width="1.25" />-->
+<!--            </template>-->
+<!--        </SidebarLink>-->
 
         <!-- Download Center -->
        <SidebarLink

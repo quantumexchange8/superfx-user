@@ -672,7 +672,7 @@ class TradingAccountController extends Controller
             'txn_hash' => $result['txid'],
             'amount' => $result['amount'],
             'transaction_charges' => $result['fees'],
-            'transaction_amount' => $result['amount'],
+            'transaction_amount' => $result['amount'] - $result['fees'],
             'status' => $status,
             'approved_at' => now()
         ]);
