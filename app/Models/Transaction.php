@@ -21,6 +21,7 @@ class Transaction extends Model
         'ticket',
         'transaction_number',
         'payment_account_id',
+        'payment_gateway_id',
         'from_wallet_address',
         'to_wallet_address',
         'txn_hash',
@@ -71,5 +72,10 @@ class Transaction extends Model
     public function payment_account(): BelongsTo
     {
         return $this->belongsTo(PaymentAccount::class, 'payment_account_id', 'id');
+    }
+
+    public function payment_gateway(): BelongsTo
+    {
+        return $this->belongsTo(PaymentGateway::class, 'payment_gateway_id', 'id');
     }
 }

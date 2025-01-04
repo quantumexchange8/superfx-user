@@ -553,6 +553,7 @@ class TradingAccountController extends Controller
             'transaction_type' => 'deposit',
             'amount' => $amount,
             'transaction_charges' => 0,
+            'comment' => $request->cryptoType,
             'status' => 'processing',
         ]);
 
@@ -619,7 +620,11 @@ class TradingAccountController extends Controller
                 Log::error("Payment URL not found in response.", $responseData);
 
                 // Handle the error (e.g., redirect to an error page or return a response)
-                return redirect()->route('dashboard')->with('error', 'Payment URL not found.');
+                return back()->with('toast', [
+                    'title' => trans('Error'),
+                    'message' => $responseData['msg'],
+                    'type' => 'error',
+                ]);
             }
         }
 
@@ -628,7 +633,7 @@ class TradingAccountController extends Controller
             ->with('success', trans('public.successfully_request_deposit'));
     }
 
-    public function depositCallback(Request $request)
+    public function depositCallback(Request $request): void
     {
         $response = $request->all();
         Log::debug("Callback Response: " , $response);
@@ -643,7 +648,7 @@ class TradingAccountController extends Controller
             'otc_usdt_cny' => $response['otc_usdt_cny'],
             'request_time' => $response['request_time'] ?? null,
             'extra_data' => $response['extra_data'] ?? null,
-            'txid' => $response['payment']['tx_id'] ?? null,
+            'txid' => $response['payment']['txid'] ?? null,
             'paid_amount' => $response['payment']['paid_amount'] ?? null,
             'fees' => $response['payment']['fees'] ?? null,
             'payment_time' => $response['payment']['payment_time'] ?? null,
@@ -651,70 +656,44 @@ class TradingAccountController extends Controller
             'erc20address' => $response['payment']['erc20address'] ?? null,
             'trc20address' => $response['payment']['trc20address'] ?? null,
             'status' => $response['payment']['status'] ?? null,
-            // 'bank_code' => $response['data']['bank_account']['bank_code'] ?? null,
-            // 'bank_name' => $response['data']['bank_account']['bank_name'] ?? null,
-            // 'bank_account_no' => $response['data']['bank_account']['bank_account_no'] ?? null,
-            // 'bank_account_name' => $response['data']['bank_account']['bank_account_name'] ?? null,
-            // 'payment_id' => $response['data']['payment_id'] ?? null,
-
-
-            // 'userId' => $response['userId'],
-            // 'vCode' => $response['vCode'],
-            // 'orderNumber' => $response['orderNumber'],
-            // 'transactionId' => $response['transactionId'],
-            // 'walletAddress' => $response['walletAddress'] ?? null,
-            // 'status' => $response['status'],
-            // 'sCode' => $response['sCode'],
-            // 'transactionHash' => $response['transactionHash'] ?? null,
-            // 'sourceAddress' => $response['sourceAddress'] ?? null,
-            // 'blockTime' => $response['blockTime'] ?? null,
-            // 'paidTime' => $response['paidTime'] ?? null,
-            // 'receivedAmount' => $response['receivedAmount'],
+            'sign' => $response['sign'] ?? null,
         ];
 
         $transaction = Transaction::where('transaction_number', $result['partner_order_code'])
+            ->whereHas('payment_gateway', function ($query) use ($result) {
+                $query->where('id', $result['partner_id']);
+            })
             ->first();
 
-        $selectedPaymentGateway = PaymentGateway::find($transaction->payment_gateway_id);
         $status = $result['status'] == 'success' ? 'successful' : 'failed';
-        // $dataToHash = md5($selectedPaymentGateway->payment_app_number . $timestamp . $random . $transaction_number . $amount . $notifyUrl);
+        $to_wallet_address = $result['erc20address'] ?? $result['trc20address'];
+        $transaction->update([
+            'to_wallet_address' => $to_wallet_address,
+            'txn_hash' => $result['txid'],
+            'amount' => $result['amount'],
+            'transaction_charges' => $result['fees'],
+            'transaction_amount' => $result['amount'],
+            'status' => $status,
+            'approved_at' => now()
+        ]);
 
-        // if ($result['sign'] === $dataToHash) {
-            //proceed approval
-            $transaction->update([
-                'from_wallet_address' => $result['erc20address'],
-                'to_wallet_address' => $result['to_wallet_address'] ?? null,
-                'txn_hash' => $result['txid'],
-                'amount' => $result['amount'],
-                'transaction_charges' => 0,
-                'transaction_amount' => $result['amount'],
-                'status' => $status,
-                'remarks' => $result['remarks'] ?? null,
-                'approved_at' => now()
-            ]);
-
-            if ($transaction->status == 'successful') {
-                if ($transaction->transaction_type == 'deposit') {
-                    try {
-                        $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, $transaction->transaction_amount,"Deposit balance", 'balance', '');
-                    } catch (\Throwable $e) {
-                        if ($e->getMessage() == "Not found") {
-                            TradingUser::firstWhere('meta_login', $transaction->to_meta_login)->update(['acc_status' => 'Inactive']);
-                        } else {
-                            Log::error($e->getMessage());
-                        }
-                        return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        if ($transaction->status == 'successful') {
+            if ($transaction->transaction_type == 'deposit') {
+                $trade = null;
+                try {
+                    $trade = (new MetaFourService)->createTrade($transaction->to_meta_login, $transaction->transaction_amount,"Deposit", 'balance', '');
+                } catch (\Throwable $e) {
+                    if ($e->getMessage() == "Not found") {
+                        TradingUser::firstWhere('meta_login', $transaction->to_meta_login)->update(['acc_status' => 'Inactive']);
+                    } else {
+                        Log::error($e->getMessage());
                     }
-                    $ticket = $trade['ticket'];
-                    $transaction->ticket = $ticket;
-                    $transaction->save();
-
-                    return response()->json(['success' => true, 'message' => 'Deposit Success']);
-
                 }
+                $ticket = $trade['ticket'];
+                $transaction->ticket = $ticket;
+                $transaction->save();
             }
-        // }
-
+        }
     }
 
     //payment gateway return function
