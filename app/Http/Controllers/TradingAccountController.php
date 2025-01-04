@@ -664,7 +664,7 @@ class TradingAccountController extends Controller
 
         $transaction = Transaction::where('transaction_number', $result['partner_order_code'])
             ->whereHas('payment_gateway', function ($query) use ($result) {
-                $query->where('id', $result['partner_id']);
+                $query->where('payment_app_number', $result['partner_id']);
             })
             ->first();
 
