@@ -83,19 +83,28 @@ class MetaFourService {
         return $accountResponse;
     }
 
+    /**
+     * @throws ConnectionException
+     */
     public function createTrade($meta_login, $amount, $comment, $type, $expire_date)
     {
-        $dealResponse = Http::acceptJson()
-        ->withHeaders([
-            'Authorization' => 'Bearer ' . $this->token,
-        ])
-        ->post($this->baseURL . "/transaction", [
+        $payload = [
             'meta_login' => $meta_login,
             'type' => $type,
             'amount' => $amount,
             'expiration_date' => $expire_date,
             'comment' => $comment,
-        ]);
+        ];
+
+        $jsonPayload = json_encode($payload);
+
+        $dealResponse = Http::acceptJson()
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $this->token,
+            ])
+            ->withBody($jsonPayload, 'application/json')
+            ->post($this->baseURL . "/transaction");
+
         $dealResponse = $dealResponse->json();
         Log::debug($dealResponse);
 
