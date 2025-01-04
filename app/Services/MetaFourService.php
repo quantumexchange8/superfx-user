@@ -26,9 +26,9 @@ class MetaFourService {
     public function __construct()
     {
         $token2 = "SuperFin-Live^" . Carbon::now('Asia/Riyadh')->toDateString() . "&SuperGlobal";
-        
-        // $this->baseURL = app()->environment('production') 
-        //     ? 'https://superfin-live.currenttech.pro/api' 
+
+        // $this->baseURL = app()->environment('production')
+        //     ? 'https://superfin-live.currenttech.pro/api'
         //     : 'https://superfin-demo.currenttech.pro/api';
 
         $this->token = hash('sha256', $token2);
@@ -39,9 +39,9 @@ class MetaFourService {
         $payload = [
             'meta_login' => $meta_login,
         ];
-        
+
         $jsonPayload = json_encode($payload);
-    
+
         $accountResponse = Http::acceptJson()
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $this->token,
@@ -56,7 +56,7 @@ class MetaFourService {
     {
         $data = $this->getUser($meta_login);
 
-        if ($data) {
+        if ($data && $data['status'] == 'success') {
             (new UpdateTradingUser)->execute($meta_login, $data);
             (new UpdateTradingAccount)->execute($meta_login, $data);
         }

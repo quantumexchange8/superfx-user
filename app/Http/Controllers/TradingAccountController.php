@@ -144,6 +144,7 @@ class TradingAccountController extends Controller
             ->whereHas('account_type', function($q) use ($accountType) {
                 $q->where('category', $accountType);
             })
+            ->latest()
             ->get();
 
         try {
@@ -161,6 +162,7 @@ class TradingAccountController extends Controller
                     $query->where('category', $accountType);
                 });
             })
+            ->latest()
             ->get()
             ->map(function ($account) {
 
@@ -500,11 +502,17 @@ class TradingAccountController extends Controller
 
     public function deposit_to_account(Request $request)
     {
-        $request->validate([
+        Validator::make($request->all(), [
             'meta_login' => ['required', 'exists:trading_accounts,meta_login'],
             'payment_platform' => ['required'],
+            'cryptoType' => ['required'],
             'amount' => ['required', 'numeric', 'gte:10'],
-        ]);
+        ])->setAttributeNames([
+            'meta_login' => trans('public.account'),
+            'payment_platform' => trans('public.platform'),
+            'cryptoType' => trans('public.method'),
+            'amount' => trans('public.amount'),
+        ])->validate();
 
         $user = Auth::user();
 
@@ -518,8 +526,6 @@ class TradingAccountController extends Controller
                 ->where('environment', $environment)
                 ->first();
 
-        // $wallet = Wallet::find($request->wallet_id);
-        // $payment_detail = $request->payment_detail;
         $latest_transaction = Transaction::where('user_id', $user->id)
             ->where('category', 'trading_account')
             ->where('transaction_type', 'deposit')
@@ -529,7 +535,7 @@ class TradingAccountController extends Controller
 
         $amount = number_format(floatval($request->amount), 2, '.', '');
 
-        // Check if a latest transaction exists and its created_at time is within the last 30 seconds
+        // Check if the latest transaction exists and its created_at time is within the last 30 seconds
         if ($latest_transaction && Carbon::parse($latest_transaction->created_at)->diffInSeconds(Carbon::now()) < 30) {
 
             $remainingSeconds = 30 - Carbon::parse($latest_transaction->created_at)->diffInSeconds(Carbon::now());
@@ -539,78 +545,65 @@ class TradingAccountController extends Controller
                 ->with('warning', trans('public.please_wait_for_seconds', ['seconds' => $remainingSeconds]));
         }
 
-        $transaction_number = RunningNumberService::getID('transaction');
-
         $transaction = Transaction::create([
             'category' => 'trading_account',
             'user_id' => $user->id,
             'to_meta_login' => $request->meta_login,
-            'transaction_number' => $transaction_number,
+            'transaction_number' => RunningNumberService::getID('transaction'),
             'transaction_type' => 'deposit',
             'amount' => $amount,
             'transaction_charges' => 0,
             'status' => 'processing',
         ]);
 
-        // if ($request->hasfile('receipt')){
-        //     $transaction->addMedia($request->receipt)->toMediaCollection('receipt');
-        // }
-
         if ($payment_gateway) {
             $transaction->update([
                 'payment_gateway_id' => $payment_gateway->id,
             ]);
-            $timestamp = Carbon::now()->timestamp;
-            $random = Str::random(14);
 
-            $domain = $_SERVER['HTTP_HOST'];
-            $notifyUrl = "https://$domain/deposit_callback";
-            $returnUrl = "https://$domain/deposit_return";
-            $guest_id = md5(sprintf('M%06d', $user->id));
-
-            Log::debug("notify url: " . $notifyUrl);
             // Find available payment merchant
-            $params = [];
+            $params = [
+                'partner_id' => $payment_gateway->payment_app_number,
+                'timestamp' => Carbon::now()->timestamp,
+                'random' => Str::random(20),
+                'partner_order_code' => $transaction->transaction_number,
+                'order_currency' => 0,
+                'order_language' => 'en_ww',
+                'guest_id' => md5('SuperFX' . $user->id),
+                'amount' => $amount,
+                'notify_url' => route('depositCallback'),
+                'return_url' => route('depositReturn'),
+            ];
+
+            $data = [
+                $params['partner_id'],
+                $params['timestamp'],
+                $params['random'],
+                $params['partner_order_code'],
+                $params['order_currency'],
+                $params['order_language'],
+                $params['guest_id'],
+                $params['amount'],
+                $params['notify_url'],
+            ];
+
+            $hashedCode = md5(implode(':', $data));
+            $params['sign'] = $hashedCode;
+
             $baseUrl = '';
             switch ($payment_gateway->platform) {
                 case 'bank':
-                    $sign = md5($payment_gateway->payment_app_number . $timestamp . $random . $transaction_number . $amount . $notifyUrl);
-                    $params = [
-                        'partner_id' => $payment_gateway->payment_app_number,
-                        'timestamp' => $timestamp,
-                        'random' => $random,
-                        'partner_order_code' => $transaction_number,
-                        'amount' => $amount,
-                        'notify_url' => $notifyUrl,
-                        'sign' => $sign,
-                    ];
                     $baseUrl = $environment == 'production' ? $payment_gateway->payment_url . '/gateway/bnb/createVA.do' : $payment_gateway->payment_url . '/gateway/pay/paymentBnBVA.do';
                     break;
 
                 case 'crypto':
-                    $sign = md5($payment_gateway->payment_app_number . ':' . $timestamp . ':' . $random . ':' . $transaction_number . ':' . 0 . ':' . 'en_ww' . ':' . $guest_id . ':' . $amount . ':' . $notifyUrl . ':' . $returnUrl . '::' . '48NvC2Bd0yZZKRY74v9Rh51');
-                    $params = [
-                        'partner_id' => $payment_gateway->payment_app_number,
-                        'timestamp' => $timestamp,
-                        'random' => $random,
-                        'partner_order_code' => $transaction_number,
-                        'order_currency' => 0,
-                        'order_language' => 'en_ww',
-                        'guest_id' => $guest_id,
-                        'amount' => $amount,
-                        'notify_url' => $notifyUrl,
-                        'return_url' => $returnUrl, // not required
-                        'sign' => $sign,
-                    ];
-
                     $baseUrl = $request->cryptoType == 'ERC20' ? $payment_gateway->payment_url . '/gateway/usdt/createERC20.do' : $payment_gateway->payment_url . '/gateway/usdt/createTRC20.do';
                     break;
             }
 
             // Send response
             $redirectUrl = $baseUrl . "?" . http_build_query($params);
-            Log::debug("URL : " . $redirectUrl);
-            // return Inertia::location($redirectUrl);
+            Log::debug("POST URL : " . $redirectUrl);
 
             $response = Http::get($redirectUrl);
 
@@ -628,7 +621,6 @@ class TradingAccountController extends Controller
                 // Handle the error (e.g., redirect to an error page or return a response)
                 return redirect()->route('dashboard')->with('error', 'Payment URL not found.');
             }
-            // return response()->json(['redirect_url' => $redirectUrl]);
         }
 
         return redirect()->back()
@@ -639,7 +631,8 @@ class TradingAccountController extends Controller
     public function depositCallback(Request $request)
     {
         $response = $request->all();
-        Log::debug("response : " , $response);
+        Log::debug("Callback Response: " , $response);
+
         $result = [
             'partner_id' =>  $response['partner_id'],
             'system_order_code' => $response['system_order_code'],

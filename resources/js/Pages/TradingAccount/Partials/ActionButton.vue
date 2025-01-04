@@ -32,7 +32,6 @@ const selectedAccount = ref(0);
 
 function selectAccount(type) {
     selectedPlatform.value = type;
-    depositForm.payment_platform = type;
 }
 
 const getOptions = async () => {
@@ -97,6 +96,8 @@ const toggleFullAmount = () => {
 
 const submitForm = (formType) => {
     if (formType === 'deposit') {
+        depositForm.payment_platform = selectedPlatform.value;
+        depositForm.cryptoType = selectedCryptoType.value;
         depositForm.post(route('account.deposit_to_account'), {
             onSuccess: () => {
                 closeDialog('deposit');
@@ -116,8 +117,6 @@ const selectedCryptoType = ref('ERC20');
 
 function selectCrypto(type) {
     selectedCryptoType.value = type;
-    depositForm.cryptoType = type;
-    console.log(type)
 }
 
 </script>
@@ -178,6 +177,7 @@ function selectCrypto(type) {
                         </div>
                     </div>
                 </div>
+                <InputError :message="depositForm.errors.payment_platform" />
             </div>
             <div v-if="selectedPlatform==='crypto'" class="grid grid-cols-2 items-start gap-1 self-stretch">
                 <InputLabel for="crypto_type" :value="$t('public.method')" class="col-span-2"/>
@@ -223,6 +223,7 @@ function selectCrypto(type) {
                         <IconCircleCheckFilled v-if="selectedCryptoType === 'TRC20'" size="20" stroke-width="1.25" color="#2970FF" />
                     </div>
                 </div>
+                <InputError :message="depositForm.errors.cryptoType" />
             </div>
             <div class="flex flex-col items-start gap-1 self-stretch">
                 <InputLabel for="amount" :value="$t('public.amount')" />
