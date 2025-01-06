@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CreateAccountMail;
 use App\Models\Term;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use App\Models\AccountType;
 use App\Models\AssetRevoke;
@@ -84,7 +86,7 @@ class TradingAccountController extends Controller
             'leverage' => 'required|integer|min:1',
         ]);
 
-        $user = User::find($request->user_id);
+        $user = User::with('country')->find($request->user_id);
 
         // Retrieve the account type by account_group
         $accountType = AccountType::where('account_group', $request->accountType)->first();
@@ -105,13 +107,9 @@ class TradingAccountController extends Controller
 
         $mainPassword = Str::random(8);
         $investorPassword = Str::random(8);
-        (new MetaFourService)->createUser($user, $accountType->account_group, $request->leverage, $mainPassword, $investorPassword);
+        $data = (new MetaFourService)->createUser($user, $accountType->account_group, $request->leverage, $mainPassword, $investorPassword);
 
-        // if (App::environment('production')) {
-        //     $mainPassword = Str::random(8);
-        //     $investorPassword = Str::random(8);
-        //     (new MetaFourService)->createUser($user,  $mainPassword, $investorPassword, $accountType->account_group, $request->leverage, $accountType->id, null, null, '');
-        // }
+        Mail::to($user->email)->send(new CreateAccountMail($user, $mainPassword, $investorPassword, $data['meta_login'], 'SuperFin-Live'));
 
         return back()->with('toast', [
             'title' => trans("public.toast_open_live_account_success"),
@@ -572,8 +570,8 @@ class TradingAccountController extends Controller
                 'order_language' => 'en_ww',
                 'guest_id' => md5('SuperFX' . $user->id),
                 'amount' => $amount,
-                'notify_url' => route('depositCallback') . '/',
-                'return_url' => route('depositReturn') . '/',
+                'notify_url' => route('depositCallback'),
+                'return_url' => route('depositReturn'),
             ];
 
             $data = [

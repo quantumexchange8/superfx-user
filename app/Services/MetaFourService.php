@@ -62,6 +62,9 @@ class MetaFourService {
         }
     }
 
+    /**
+     * @throws ConnectionException
+     */
     public function createUser(UserModel $user, $group, $leverage, $mainPassword, $investorPassword)
     {
         $accountResponse = Http::acceptJson()
