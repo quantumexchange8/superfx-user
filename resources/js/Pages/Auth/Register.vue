@@ -10,16 +10,21 @@ import {
     IconScanEye,
     IconWorld,
     IconCheck,
-    IconX
+    IconX,
+    IconPhotoPlus,
+    IconUpload
 } from "@tabler/icons-vue"
 import {computed, h, ref} from "vue";
 import InputText from "primevue/inputtext";
 import Dropdown from "primevue/dropdown";
 import Password from 'primevue/password';
-import {KycFemale, KycMale} from "@/Components/Icons/solid.jsx";
 import OverlayPanel from 'primevue/overlaypanel';
 import {loadLanguageAsync} from "laravel-vue-i18n";
 import dayjs from "dayjs";
+import FileUpload from "primevue/fileupload";
+import { usePrimeVue } from 'primevue/config';
+import PrimeButton from "primevue/button";
+import Image from "primevue/image";
 
 const props = defineProps({
     referral_code: String
@@ -39,6 +44,14 @@ const formSteps = ref([
         title: 'choose_a_password',
         caption_1: 'register_step_2_desc',
         caption_2: 'register_step_2_desc_2',
+        state: 'inactive',
+        selected: false
+    },
+    {
+        step: 3,
+        title: 'kyc_guideline',
+        caption_1: 'register_step_3_desc',
+        caption_2: 'register_step_3_desc_2',
         state: 'inactive',
         selected: false
     },
@@ -82,7 +95,7 @@ const handleContinue = () => {
     // Validate the current step
     form.post(route('register.validateStep'), {
         onSuccess: () => {
-            if (selectedStep.value.step < 2) {
+            if (selectedStep.value.step < 3) {
                 // Move to the next step
                 selectStep(selectedStep.value.step + 1);
             } else {
@@ -101,6 +114,7 @@ const handleBack = () => {
 };
 
 const handleSubmit = () => {
+    form.kyc_verification = files.value;
     form.post(route('register'), {
         onFinish: () => form.reset('password', 'password_confirmation'),
     });
@@ -155,30 +169,32 @@ const changeLanguage = async (langVal) => {
     }
 };
 
-const selectedKycVerification = ref(null);
-const selectedKycVerificationName = ref(null);
-const handleKycVerification = (event) => {
-    const kycVerificationInput = event.target;
-    const file = kycVerificationInput.files[0];
+const files = ref([]);
+const $primevue = usePrimeVue();
 
-    if (file) {
-        // Display the selected image
-        const reader = new FileReader();
-        reader.onload = () => {
-            selectedKycVerification.value = reader.result;
-        };
-        reader.readAsDataURL(file);
-        selectedKycVerificationName.value = file.name;
-        form.kyc_verification = event.target.files[0];
-    } else {
-        selectedKycVerification.value = null;
+const onRemoveTemplatingFile = (removeFileCallback, index) => {
+    removeFileCallback(index);
+};
+
+const onSelectedFiles = (event) => {
+    files.value = event.files;
+};
+
+const formatSize = (bytes) => {
+    const k = 1024;
+    const dm = 3;
+    const sizes = $primevue.config.locale.fileSizeTypes;
+
+    if (bytes === 0) {
+        return `0 ${sizes[0]}`;
     }
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const formattedSize = parseFloat((bytes / Math.pow(k, i)).toFixed(dm));
+
+    return `${formattedSize} ${sizes[i]}`;
 };
 
-const removeKycVerification = () => {
-    selectedKycVerification.value = null;
-    form.kyc_verification = '';
-};
 </script>
 
 <template>
@@ -372,65 +388,93 @@ const removeKycVerification = () => {
                             </template>
 
                             <!-- kyc verification -->
-                            <!-- <template v-if="selectedStep.step === 3">
+                            <template v-if="selectedStep.step === 3">
                                 <div class="flex flex-col items-center gap-5 self-stretch pb-6">
-                                    <div class="flex items-center gap-5 self-stretch">
-                                        <div class="flex justify-center bg-primary-600 w-full pt-2.5">
-                                            <KycFemale />
-                                        </div>
-                                        <div class="flex justify-center bg-logo w-full pt-2.5">
-                                            <KycMale />
-                                        </div>
-                                    </div>
-
-                                    <div class="flex flex-col items-center self-stretch">
-                                        <div class="text-gray-950 font-semibold text-sm self-stretch">
-                                            {{ $t('public.upload_here') }}
-                                        </div>
-                                        <div class="flex flex-col gap-3 items-start self-stretch">
-                                            <span class="text-xs text-gray-500">{{ $t('public.kyc_caption') }}</span>
-                                            <div class="flex flex-col gap-3">
-                                                <input
-                                                    ref="kycVerificationInput"
-                                                    id="kyc_verification"
-                                                    type="file"
-                                                    class="hidden"
-                                                    accept="image/*"
-                                                    @change="handleKycVerification"
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="primary-tonal"
-                                                    @click="$refs.kycVerificationInput.click()"
-                                                >
-                                                    {{ $t('public.browse') }}
-                                                </Button>
-                                                <InputError :message="form.errors.kyc_verification" />
-                                            </div>
-                                            <div
-                                                v-if="selectedKycVerification"
-                                                class="relative w-full py-3 pl-4 flex justify-between rounded-xl bg-gray-50"
-                                            >
-                                                <div class="inline-flex items-center gap-3">
-                                                    <img :src="selectedKycVerification" alt="Selected Image" class="max-w-full h-9 object-contain rounded" />
-                                                    <div class="text-sm text-gray-950">
-                                                        {{ selectedKycVerificationName }}
+                                    <div
+                                        class="flex flex-col gap-3 md:gap-5 w-full border p-3 rounded-md bg-white"
+                                    >
+                                        <FileUpload
+                                            name="demo[]"
+                                            multiple
+                                            accept="image/*"
+                                            @select="onSelectedFiles"
+                                        >
+                                            <template #header="{ chooseCallback, clearCallback, files }">
+                                                <div class="flex flex-wrap justify-between items-center flex-1 gap-4 m-1">
+                                                    <div class="flex gap-2">
+                                                        <PrimeButton
+                                                            type="button"
+                                                            severity="secondary"
+                                                            size="small"
+                                                            @click="chooseCallback()"
+                                                            rounded
+                                                            outlined
+                                                            class="!p-2"
+                                                        >
+                                                            <IconPhotoPlus size="16" stroke-width="1.5" />
+                                                        </PrimeButton>
+                                                        <PrimeButton
+                                                            type="button"
+                                                            severity="danger"
+                                                            size="small"
+                                                            @click="clearCallback()"
+                                                            rounded
+                                                            outlined
+                                                            class="!p-2"
+                                                            :disabled="!files || files.length === 0"
+                                                        >
+                                                            <IconX size="16" stroke-width="1.5" />
+                                                        </PrimeButton>
                                                     </div>
                                                 </div>
-                                                <Button
-                                                    type="button"
-                                                    variant="gray-text"
-                                                    @click="removeKycVerification"
-                                                    pill
-                                                    iconOnly
-                                                >
-                                                    <IconX class="text-gray-700 w-5 h-5" />
-                                                </Button>
-                                            </div>
-                                        </div>
+                                            </template>
+                                            <template #content="{ files, removeFileCallback }">
+                                                <div class="flex flex-col gap-3">
+                                                    <div v-if="files.length > 0">
+                                                        <div class="flex overflow-x-auto items-center gap-4">
+                                                            <div
+                                                                v-for="(file, index) of files" :key="file.name + file.type + file.size"
+                                                                class="p-5 rounded-border w-full max-w-64 flex flex-col border border-surface items-center gap-4 relative"
+                                                            >
+                                                                <div class="absolute top-2 right-2">
+                                                                    <PrimeButton
+                                                                        type="button"
+                                                                        severity="danger"
+                                                                        size="small"
+                                                                        @click="onRemoveTemplatingFile(removeFileCallback, index)"
+                                                                        rounded
+                                                                        text
+                                                                        class="!p-2"
+                                                                        :disabled="!files || files.length === 0"
+                                                                    >
+                                                                        <IconX size="16" stroke-width="1.5" />
+                                                                    </PrimeButton>
+                                                                </div>
+                                                                <div class="max-h-10 mt-5">
+                                                                    <Image role="presentation" :alt="file.name" :src="file.objectURL" preview imageClass="w-48 object-contain h-10" />
+                                                                </div>
+                                                                <div class="flex flex-col gap-1 items-center self-stretch w-52">
+                                                                    <span class="font-semibold text-center text-xs truncate w-full max-w-52">{{ file.name }}</span>
+                                                                    <div class="text-xxs">{{ formatSize(file.size) }}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                            <template #empty>
+                                                <div class="flex items-center justify-center flex-col gap-3 mt-3">
+                                                    <div class="flex items-center justify-center p-3 text-surface-400 dark:text-surface-600 rounded-full border border-surface-400 dark:border-surface-600">
+                                                        <IconUpload size="24" stroke-width="1.5" />
+                                                    </div>
+                                                    <p class="text-sm">{{ $t('public.drag_and_drop_file') }}</p>
+                                                    <InputError :message="form.errors.kyc_verification" />
+                                                </div>
+                                            </template>
+                                        </FileUpload>
                                     </div>
                                 </div>
-                            </template> -->
+                            </template>
 
                             <Button
                                 variant="primary-flat"

@@ -81,12 +81,12 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        // $validator = Validator::make($request->all(), [
-        //     'kyc_verification' => ['required', 'file', 'max:10000'],
-        // ])->setAttributeNames([
-        //     'kyc_verification' => trans('public.kyc_verification')
-        // ]);
-        // $validator->validate();
+        $validator = Validator::make($request->all(), [
+            'kyc_verification' => ['required', 'max:10000'],
+        ])->setAttributeNames([
+            'kyc_verification' => trans('public.kyc_verification')
+        ]);
+        $validator->validate();
 
         $dial_code = $request->dial_code;
         $country = Country::find($dial_code['id']);
@@ -101,7 +101,7 @@ class RegisteredUserController extends Controller
             'country_id' => $country->id,
             'nationality' => $country->nationality,
             'password' => Hash::make($request->password),
-            'kyc_approval' => 'verified',
+            'kyc_approval' => 'pending',
         ];
 
         $check_referral_code = null;
@@ -134,6 +134,12 @@ class RegisteredUserController extends Controller
         $id_no = ($user->role == 'ib' ? 'IB' : 'MB') . Str::padLeft($user->id - 2, 5, "0");
         $user->id_number = $id_no;
         $user->save();
+
+        if ($request->hasFile('kyc_verification')) {
+            foreach ($request->file('kyc_verification') as $image) {
+                $user->addMedia($image)->toMediaCollection('kyc_verification');
+            }
+        }
 
         if ($check_referral_code && $check_referral_code->groupHasUser) {
             $user->assignedGroup($check_referral_code->groupHasUser->group_id);
