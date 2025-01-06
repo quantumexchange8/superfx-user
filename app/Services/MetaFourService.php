@@ -67,19 +67,23 @@ class MetaFourService {
      */
     public function createUser(UserModel $user, $group, $leverage, $mainPassword, $investorPassword)
     {
-        $accountResponse = Http::acceptJson()
-        ->withHeaders([
-            'Authorization' => 'Bearer ' . $this->token,
-        ])
-        ->post($this->baseURL . "/createuser", [
+        $payload = [
             'master_password' => $mainPassword,
             'investor_password' => $investorPassword,
             'name' => $user->name,
             'group' => $group,
             'leverage' => $leverage,
             'email' => $user->email,
-        ]);
-        $accountResponse = $accountResponse->json();
+        ];
+
+        $jsonPayload = json_encode($payload);
+
+        $accountResponse = Http::acceptJson()
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $this->token,
+            ])
+            ->withBody($jsonPayload, 'application/json')
+            ->post($this->baseURL . "/createuser");
 
         (new CreateTradingAccount)->execute($user, $accountResponse, $group);
         (new CreateTradingUser)->execute($user, $accountResponse, $group);
