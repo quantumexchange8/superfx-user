@@ -634,9 +634,12 @@ class TradingAccountController extends Controller
             ->with('success', trans('public.successfully_request_deposit'));
     }
 
-    public function depositCallback(Request $request): void
+    public function depositCallback(Request $request)
     {
-        $response = $request->all();
+        $rawBody = $request->getContent();
+
+        $response = json_decode($rawBody, true);
+
         Log::debug("Callback Response: " , $response);
 
         $result = [
@@ -695,6 +698,10 @@ class TradingAccountController extends Controller
                 $transaction->save();
             }
         }
+
+        return response()->json([
+            'status' => 'success',
+        ]);
     }
 
     //payment gateway return function
@@ -702,6 +709,4 @@ class TradingAccountController extends Controller
     {
         return to_route('dashboard');
     }
-
-
 }
