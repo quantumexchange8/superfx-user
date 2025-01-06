@@ -118,7 +118,7 @@ class RegisteredUserController extends Controller
                 $userData['role'] = $upline_id == $default_agent_id ? 'ib' : 'member';
             }
         } else {
-            $default_upline = User::find(2);
+            $default_upline = User::find(16);
             $default_upline_id = $default_upline->id;
             $newHierarchyList = empty($default_upline->hierarchyList) ? "-" . $default_upline_id . "-" : $default_upline->hierarchyList . $default_upline_id . "-";
 
