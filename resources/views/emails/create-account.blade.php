@@ -322,7 +322,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#101112;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><strong>1. <a href="https://my.superforexs.com/auth/jwt/sign-in/" rel="noopener" style="text-decoration: underline; color: #00e288;" target="_blank">Login</a> to your account.</strong></p>
+                                                    <p style="margin: 0;"><strong>1. <a href="https://my.superforexs.com/login" rel="noopener" style="text-decoration: underline; color: #00e288;" target="_blank">Login</a> to your account.</strong></p>
                                                 </div>
                                             </td>
                                         </tr>
