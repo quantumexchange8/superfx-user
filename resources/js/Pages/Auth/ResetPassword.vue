@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import Password from 'primevue/password';
 import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -37,7 +38,7 @@ const submit = () => {
 
         <form @submit.prevent="submit">
             <div>
-                <InputLabel for="email" value="Email" />
+                <InputLabel for="email" :value="$t('public.email')" />
 
                 <TextInput
                     id="email"
@@ -53,14 +54,14 @@ const submit = () => {
             </div>
 
             <div class="mt-4">
-                <InputLabel for="password" value="Password" />
+                <InputLabel for="password" :value="$t('public.password')" />
 
-                <TextInput
-                    id="password"
-                    type="password"
+                <Password
+                    :invalid="!!form.errors.password"
                     class="mt-1 block w-full"
+                    toggleMask
+                    :feedback="false"
                     v-model="form.password"
-                    required
                     autocomplete="new-password"
                 />
 
@@ -68,14 +69,14 @@ const submit = () => {
             </div>
 
             <div class="mt-4">
-                <InputLabel for="password_confirmation" value="Confirm Password" />
+                <InputLabel for="password_confirmation" :value="$t('public.confirm_password')" />
 
-                <TextInput
-                    id="password_confirmation"
-                    type="password"
+                <Password
+                    :invalid="!!form.errors.password_confirmation"
                     class="mt-1 block w-full"
+                    toggleMask
+                    :feedback="false"
                     v-model="form.password_confirmation"
-                    required
                     autocomplete="new-password"
                 />
 
@@ -84,7 +85,7 @@ const submit = () => {
 
             <div class="flex items-center justify-end mt-4">
                 <PrimaryButton :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Reset Password
+                    {{ $t('public.reset_password') }}
                 </PrimaryButton>
             </div>
         </form>

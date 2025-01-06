@@ -10,7 +10,7 @@ import {useForm} from "@inertiajs/vue3";
 import InputError from "@/Components/InputError.vue";
 import InputNumber from "primevue/inputnumber";
 import {IconHeartFilled, IconHeart} from '@tabler/icons-vue';
-import TermsAndCondition from "@/Components/TermsAndCondition.vue";
+// import TermsAndCondition from "@/Components/TermsAndCondition.vue";
 
 const props = defineProps({
     master: Object,
@@ -241,14 +241,14 @@ const addToFavourites = async (masterId) => {
                                 {{ $t('public.warning_3_1') }} <a href="https://ctrader.com/eula/" target="_blank" class="text-primary font-medium no-underline hover:text-primary-600">{{ $t('public.warning_3_2') }}</a>{{ $t('public.warning_3_3') }}
                             </li>
                         </ul>
-                        <div>
+                        <!-- <div>
                             {{ $t('public.warning_4_1') }}
                             <TermsAndCondition
                                 :termsLabel="$t('public.warning_4_2')"
                                 :terms="terms"
                             />
                             {{ $t('public.warning_4_3') }}
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>

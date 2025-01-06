@@ -7,7 +7,7 @@ import InputError from "@/Components/InputError.vue";
 import Dropdown from "primevue/dropdown";
 import {ref, watch} from "vue";
 import {transactionFormat} from "@/Composables/index.js";
-import TermsAndCondition from "@/Components/TermsAndCondition.vue";
+// import TermsAndCondition from "@/Components/TermsAndCondition.vue";
 
 const props = defineProps({
     wallet: Object,
@@ -118,12 +118,12 @@ const closeDialog = () => {
                     <span class="self-stretch text-gray-500 text-xs">{{ walletOptions.length ? form.wallet_address : $t('public.loading_caption')}}</span>
                 </div>
             </div>
-            <div class="text-left w-full text-gray-500 text-xs">{{ $t('public.agreement_text') }}
+            <!-- <div class="text-left w-full text-gray-500 text-xs">{{ $t('public.agreement_text') }}
                 <TermsAndCondition
                     :termsLabel="$t('public.warning_4_3')"
                     :terms="terms"
                 />
-            </div>
+            </div> -->
         </div>
         <div class="flex justify-end items-center pt-5 gap-4 self-stretch sm:pt-7">
             <Button

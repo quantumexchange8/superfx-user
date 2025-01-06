@@ -16,7 +16,7 @@ import IconField from 'primevue/iconfield';
 import Dropdown from "primevue/dropdown";
 import {IconCircleCheckFilled, IconInfoOctagonFilled, IconX} from '@tabler/icons-vue';
 import { trans, wTrans } from "laravel-vue-i18n";
-import TermsAndCondition from "@/Components/TermsAndCondition.vue";
+// import TermsAndCondition from "@/Components/TermsAndCondition.vue";
 
 const props = defineProps({
     terms: Object
@@ -281,14 +281,14 @@ const noticeVisible = ref(true);
                     </Dropdown>
                 </div>
             </div>
-            <div class="self-stretch">
+            <!-- <div class="self-stretch">
                 <div class="text-gray-500 text-xs">{{ $t('public.agreement_text') }}
                     <TermsAndCondition
                         :termsLabel="$t('public.trading_account_agreement')"
                         :terms="terms"
                     />.
                 </div>
-            </div>
+            </div> -->
         </div>
         <div class="flex justify-end items-center pt-5 gap-4 self-stretch md:pt-7">
             <Button variant="primary-flat" type="button" :class="{ 'opacity-25': liveAccountForm.processing }" :disabled="liveAccountForm.processing" @click.prevent="openLiveAccount">{{ $t('public.open_live_account') }}</Button>
@@ -334,14 +334,14 @@ const noticeVisible = ref(true);
                     </Dropdown>
                 </div>
             </div>
-            <div class="self-stretch">
+            <!-- <div class="self-stretch">
                 <div class="text-gray-500 text-xs">{{ $t('public.agreement_text') }}
                     <TermsAndCondition
                         :termsLabel="$t('public.trading_account_agreement')"
                         :terms="terms"
                     />.
                 </div>
-            </div>
+            </div> -->
         </div>
         <div class="flex justify-end items-center pt-5 gap-4 self-stretch md:pt-7">
             <Button variant="primary-flat" type="button" :class="{ 'opacity-25': demoAccountForm.processing }" :disabled="demoAccountForm.processing" @click.prevent="openDemoAccount">{{ $t('public.open_demo_account') }}</Button>

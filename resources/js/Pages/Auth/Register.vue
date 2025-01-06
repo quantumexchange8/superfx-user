@@ -77,17 +77,22 @@ const handleContinue = () => {
         form.phone_number = selectedCountry.value.phone_code + form.phone;
     }
 
-    if (selectedStep.value.step < 2) {
-        form.step = selectedStep.value.step;
-        form.post(route('register.validateStep'), {
-            onSuccess: () => {
+    form.step = selectedStep.value.step;
+
+    // Validate the current step
+    form.post(route('register.validateStep'), {
+        onSuccess: () => {
+            if (selectedStep.value.step < 2) {
+                // Move to the next step
                 selectStep(selectedStep.value.step + 1);
+            } else {
+                // If validation is successful on step 2, submit the form
+                handleSubmit();
             }
-        });
-    } else {
-        handleSubmit();
-    }
+        },
+    });
 };
+
 
 const handleBack = () => {
     if (selectedStep.value.step > 1) {
@@ -135,7 +140,9 @@ const toggle = (event) => {
 const currentLocale = ref(usePage().props.locale);
 const locales = [
     {'label': 'English', 'value': 'en'},
-    {'label': '中文', 'value': 'tw'},
+    {'label': '简体中文', 'value': 'cn'},
+    {'label': '繁體中文', 'value': 'tw'},
+    {'label': 'tiếng Việt', 'value': 'vn'},
 ];
 
 const changeLanguage = async (langVal) => {

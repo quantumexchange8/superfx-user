@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Models\Country;
 use App\Models\User;
+use App\Models\Wallet;
+use App\Models\RebateAllocation;
 use App\Services\DropdownOptionService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -116,9 +118,9 @@ class RegisteredUserController extends Controller
                 $userData['role'] = $upline_id == $default_agent_id ? 'ib' : 'member';
             }
         } else {
-            $default_upline = User::find(3);
+            $default_upline = User::find(2);
             $default_upline_id = $default_upline->id;
-            $newHierarchyList = $default_upline->hierarchyList . $default_upline_id . "-";
+            $newHierarchyList = empty($default_upline->hierarchyList) ? "-" . $default_upline_id . "-" : $default_upline->hierarchyList . $default_upline_id . "-";
 
             $userData['upline_id'] = $default_upline_id;
             $userData['hierarchyList'] = $newHierarchyList;
@@ -135,6 +137,26 @@ class RegisteredUserController extends Controller
 
         if ($check_referral_code && $check_referral_code->groupHasUser) {
             $user->assignedGroup($check_referral_code->groupHasUser->group_id);
+        }
+
+        if ($user->role == 'ib') {
+            Wallet::create([
+                'user_id' => $user->id,
+                'type' => 'rebate_wallet',
+                'address' => str_replace('IB', 'RB', $user->id_number),
+                'balance' => 0
+            ]);
+
+            $uplineRebates = RebateAllocation::where('user_id', $user->upline_id)->get();
+
+            foreach ($uplineRebates as $uplineRebate) {
+                RebateAllocation::create([
+                    'user_id' => $user->id,
+                    'account_type_id' => $uplineRebate->account_type_id,
+                    'symbol_group_id' => $uplineRebate->symbol_group_id,
+                    'amount' => 0,
+                ]);
+            }
         }
 
         // if ($request->hasFile('kyc_verification')) {
