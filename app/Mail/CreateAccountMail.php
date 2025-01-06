@@ -7,11 +7,12 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
 class CreateAccountMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use InteractsWithQueue, Queueable, SerializesModels;
 
     private $user;
     private $mainPassword;
@@ -26,6 +27,9 @@ class CreateAccountMail extends Mailable implements ShouldQueue
         $this->investorPassword = $investorPassword;
         $this->meta_login = $meta_login;
         $this->server = $server;
+
+        // queue
+        $this->queue = 'create_account_email';
     }
 
     public function build(): CreateAccountMail
