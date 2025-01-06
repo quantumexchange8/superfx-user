@@ -570,7 +570,8 @@ class TradingAccountController extends Controller
                 'order_language' => 'en_ww',
                 'guest_id' => md5('SuperFX' . $user->id),
                 'amount' => $amount,
-                'notify_url' => route('depositCallback'),
+                'notify_url' => url('depositCallback.php'),
+//                'notify_url' => route('depositCallback'),
                 'return_url' => route('depositReturn'),
             ];
 
