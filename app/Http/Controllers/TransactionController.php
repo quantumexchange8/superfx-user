@@ -29,8 +29,8 @@ class TransactionController extends Controller
 
     public function getTotal()
     {
-        $total_deposit = Auth::user()->transactions->where('transaction_type', 'deposit')->sum('transaction_amount');
-        $total_withdrawal = Auth::user()->transactions->where('transaction_type', 'withdrawal')->sum('transaction_amount');
+        $total_deposit = Auth::user()->transactions->where('transaction_type', 'deposit')->where('status', 'successful')->sum('transaction_amount');
+        $total_withdrawal = Auth::user()->transactions->where('transaction_type', 'withdrawal')->where('status', 'successful')->sum('transaction_amount');
 
         return response()->json([
             'totalDeposit' => $total_deposit,
