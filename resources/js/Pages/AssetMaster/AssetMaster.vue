@@ -202,7 +202,7 @@ getAvailableAccounts();
                     <div class="flex gap-1 md:gap-3 items-center">
                         <ApplicationLogo aria-hidden="true" class="size-[3%] fill-white" />
                         <div class="text-[6px] md:text-base 3xl:text-xl font-bold text-white mt-0.5 md:mt-0">
-                            SuperForex.
+                            SuperForex
                         </div>
                     </div>
                 </div>

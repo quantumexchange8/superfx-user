@@ -35,9 +35,21 @@ const form = useForm({
 })
 
 watch(transferOptions, (newAccount) => {
-    transferAmount.value = newAccount[0].value
-    form.meta_login = newAccount[0].name
-})
+    if (Array.isArray(newAccount) && newAccount.length > 0) {
+        transferAmount.value = newAccount[0].value;
+    } else {
+        transferAmount.value = 0; 
+    }
+});
+
+watch(transferAmount, (newValue) => {
+    const selectedOption = transferOptions.value.find(option => option.value === newValue);
+    if (selectedOption) {
+        form.meta_login = selectedOption.name;
+    } else {
+        form.meta_login = '';
+    }
+});
 
 const toggleFullAmount = () => {
     if (form.amount) {

@@ -205,7 +205,6 @@ class TradingAccountController extends Controller
         $type = $request->query('type');
 
         $query = Transaction::query()
-            ->whereIn('transaction_type', ['deposit', 'withdrawal', 'transfer_to_account', 'account_to_account', 'profit', 'loss', 'performance_fee'])
             ->where('status', 'successful');
 
         if ($meta_login) {
@@ -255,7 +254,8 @@ class TradingAccountController extends Controller
                     'comment' => $transaction->comment,
                     'remarks' => $transaction->remarks,
                     'created_at' => $transaction->created_at,
-                    'wallet_name' => $transaction->payment_account->payment_account_name ?? '-'
+                    'wallet_name' => $transaction->payment_account->payment_account_name ?? '-',
+                    'wallet_type' => $transaction->from_wallet->type ?? '-',
                 ];
             });
 
@@ -266,7 +266,7 @@ class TradingAccountController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'account_id' => ['required', 'exists:trading_accounts,id'],
-            'amount' => ['required', 'numeric', 'gt:30'],
+            'amount' => ['required', 'numeric', 'gte:30'],
             'wallet_address' => ['required']
         ])->setAttributeNames([
             'account_id' => trans('public.account'),
@@ -388,6 +388,17 @@ class TradingAccountController extends Controller
         ]);
 
         $account = TradingAccount::find($request->account_id);
+        
+        try {
+            (new MetaFourService)->updateLeverage($account->meta_login, $request->leverage);
+        } catch (\Throwable $e) {
+            Log::error($e->getMessage());
+            return back()
+                ->with('toast', [
+                    'title' => 'Update leverage error',
+                    'type' => 'error'
+                ]);
+        }
 
         // Check if the account exists
         if ($account) {

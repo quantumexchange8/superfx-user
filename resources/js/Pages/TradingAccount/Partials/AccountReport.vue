@@ -189,7 +189,7 @@ function copyToClipboard(text) {
             <template #body="slotProps">
                 <div v-if="['transfer_to_account', 'account_to_account'].includes(slotProps.data.transaction_type)">
                     <div v-if="account.meta_login === slotProps.data.to_meta_login">
-                        {{ $t('public.from') }} {{ slotProps.data.from_meta_login }}
+                        {{ $t('public.from') }} {{ slotProps.data.from_meta_login ?? $t(`public.${slotProps.data.wallet_type}`) }}
                     </div>
                     <div v-else>
                         {{ $t('public.to') }} {{ slotProps.data.to_meta_login }}
@@ -269,7 +269,7 @@ function copyToClipboard(text) {
                 <div class="flex-grow text-gray-950 text-sm font-medium">
                     <div v-if="['transfer_to_account', 'account_to_account'].includes(data.transaction_type)">
                         <div v-if="account.meta_login === data.to_meta_login">
-                            {{ $t('public.from') }} {{ data.from_meta_login }}
+                            {{ $t('public.from') }} {{ data.from_meta_login ?? $t(`public.${data.wallet_type}`) }}
                         </div>
                         <div v-else>
                             {{ $t('public.to') }} {{ data.to_meta_login }}

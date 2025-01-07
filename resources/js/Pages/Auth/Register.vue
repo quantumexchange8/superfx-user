@@ -216,7 +216,7 @@ const formatSize = (bytes) => {
                         <div
                             class="text-lg font-bold text-gray-800 w-full"
                         >
-                            SuperForex.
+                            SuperForex
                         </div>
                     </div>
                 </Link>

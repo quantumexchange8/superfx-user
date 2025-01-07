@@ -122,7 +122,7 @@ export default {
                     900: '#7A271A',
                     950: '#55160C',
                 },
-                logo: '#2B398C',
+                logo: '#1E8C32',
                 indigo: '#424EF0',
                 turquoise: '#41EAD4',
                 green: '#06D001',

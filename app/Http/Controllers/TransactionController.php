@@ -90,7 +90,7 @@ class TransactionController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'wallet_id' => ['required', 'exists:wallets,id'],
-            'amount' => ['required', 'numeric', 'gt:30'],
+            'amount' => ['required', 'numeric', 'gte:30'],
             'meta_login' => ['required']
         ])->setAttributeNames([
             'wallet_id' => trans('public.wallet'),
@@ -108,9 +108,9 @@ class TransactionController extends Controller
         if ($wallet->balance < $amount) {
             throw ValidationException::withMessages(['amount' => trans('public.insufficient_balance')]);
         }
-
+        Log::debug($tradingAccount->meta_login);
         try {
-            $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, $amount, "Rebate to account", ChangeTraderBalanceType::DEPOSIT);
+            $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, $amount, "Rebate to account", 'balance', '');
         } catch (\Throwable $e) {
             if ($e->getMessage() == "Not found") {
                 TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
@@ -131,7 +131,7 @@ class TransactionController extends Controller
             'from_wallet_id' => $wallet->id,
             'to_meta_login' => $tradingAccount->meta_login,
             'transaction_number' => RunningNumberService::getID('transaction'),
-            'ticket' => $trade->getTicket(),
+            'ticket' => $trade['ticket'],
             'amount' => $amount,
             'transaction_charges' => 0,
             'transaction_amount' => $amount,
@@ -152,7 +152,7 @@ class TransactionController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'wallet_id' => ['required', 'exists:wallets,id'],
-            'amount' => ['required', 'numeric', 'gt:30'],
+            'amount' => ['required', 'numeric', 'gte:30'],
             'wallet_address' => ['required']
         ])->setAttributeNames([
             'wallet_id' => trans('public.wallet'),
@@ -246,6 +246,15 @@ class TransactionController extends Controller
         $user = Auth::user();
 
         if ($user->rebate_amount > 0) {
+            if ($user->role == 'ib' && !$user->rebate_wallet()->exists()) {
+                Log::debug("Rebate Wallet did not exist for User ID : " . $user->id);
+                Wallet::create([
+                    'user_id' => $user->id,
+                    'type' => 'rebate_wallet',
+                    'address' => str_replace('IB', 'RB', $user->id_number),
+                    'balance' => 0
+                ]);
+            }
             $rebate_wallet = $user->rebate_wallet;
 
             Transaction::create([

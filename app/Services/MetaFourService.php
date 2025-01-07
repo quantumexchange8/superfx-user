@@ -120,15 +120,36 @@ class MetaFourService {
         return $dealResponse;
     }
 
-    public function deleteTrader($meta_login): void
+    // public function deleteTrader($meta_login): void
+    // {
+    //     Http::acceptJson()
+    //     ->withHeaders([
+    //         'Authorization' => 'Bearer ' . $this->token,
+    //     ])
+    //     ->patch($this->baseURL . "/disableaccount", [
+    //         'meta_login' => $meta_login,
+    //     ]);
+    // }
+
+    public function updateLeverage($meta_login, $leverage): void
     {
+        $payload = [
+            'meta_login' => $meta_login,
+            'leverage' => $leverage,
+        ];
+
+        $jsonPayload = json_encode($payload);
+
         Http::acceptJson()
         ->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
         ])
-        ->patch($this->baseURL . "/disableaccount", [
+        ->patch($this->baseURL . "/updateleverage", [
             'meta_login' => $meta_login,
+            'leverage' => $leverage,
         ]);
+
+        $this->getUserInfo($meta_login);
     }
 }
 

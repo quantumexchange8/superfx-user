@@ -5,6 +5,9 @@ import Button from "@/Components/Button.vue"
 import InputError from "@/Components/InputError.vue";
 import Dropdown from "primevue/dropdown";
 import {ref, watch} from "vue";
+import {transactionFormat} from "@/Composables/index.js";
+
+const { formatAmount } = transactionFormat();
 
 const props = defineProps({
     account: Object,
@@ -34,7 +37,7 @@ const form = useForm({
 })
 
 const submitForm = () => {
-    form.post(route('account.withdrawal_from_account'), {
+    form.post(route('account.change_leverage'), {
         onSuccess: () => {
             closeDialog();
         }
@@ -52,7 +55,7 @@ const closeDialog = () => {
             <div class="flex flex-col items-center gap-5 self-stretch">
                 <div class="flex flex-col justify-center items-center py-4 px-8 gap-2 self-stretch bg-gray-200">
                     <span class="w-full text-gray-500 text-center text-xs font-medium">#{{ account.meta_login }} - {{ $t('public.current_account_balance') }}</span>
-                    <span class="w-full text-gray-950 text-center text-xl font-semibold">$ {{ account.balance }}</span>
+                    <span class="w-full text-gray-950 text-center text-xl font-semibold">$ {{ formatAmount(account.balance ?? 0) }}</span>
                 </div>
 
                 <!-- input fields -->

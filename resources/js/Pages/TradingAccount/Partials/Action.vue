@@ -56,7 +56,6 @@ const items = ref([
                 });
             }
         },
-        account_type: 'standard_account'
     },
     {
         label: 'revoke_pamm',
@@ -84,6 +83,7 @@ const items = ref([
         command: () => {
             requireAccountConfirmation('live');
         },
+        account_type: 'temp_account',
     },
 ]);
 
