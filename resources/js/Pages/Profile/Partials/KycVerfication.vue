@@ -5,7 +5,8 @@ import Dialog from "primevue/dialog";
 import {
     IconX,
     IconPhotoPlus,
-    IconUpload
+    IconUpload,
+    IconQuestionMark
 } from "@tabler/icons-vue"
 import InputError from '@/Components/InputError.vue';
 import {useForm, usePage} from "@inertiajs/vue3";
@@ -14,10 +15,13 @@ import FileUpload from "primevue/fileupload";
 import { usePrimeVue } from 'primevue/config';
 import PrimeButton from "primevue/button";
 import Image from "primevue/image";
+import Tag from 'primevue/tag';
 
 const visible = ref(false);
 const dialogType = ref('');
 const kycVerification = ref();
+const kyc_status = ref('');
+const files = ref();
 const isLoading = ref(false);
 
 const getKycVerification = async () => {
@@ -25,6 +29,8 @@ const getKycVerification = async () => {
     try {
         const response = await axios.get('/profile/getKycVerification');
         kycVerification.value = response.data.kycVerification;
+        files.value = response.data.kycVerification;
+        kyc_status.value = response.data.kyc_status;
     } catch (error) {
         console.error('Error getting kyc:', error);
     } finally {
@@ -48,7 +54,6 @@ const form = useForm({
     kyc_verification: '',
 });
 
-const files = ref([]);
 const $primevue = usePrimeVue();
 
 const onRemoveTemplatingFile = (removeFileCallback, index) => {
@@ -88,16 +93,37 @@ watchEffect(() => {
         getKycVerification();
     }
 });
+
+const getSeverity = (status) => {
+    switch (status) {
+        case 'pending':
+            return 'warning';
+
+        case 'rejected':
+            return 'danger';
+
+        case 'approved':
+            return 'primary';
+    }
+}
 </script>
 
 <template>
     <div class="p-4 md:py-6 md:px-8 flex flex-col gap-5 md:gap-2 md:justify-between items-end self-stretch rounded-2xl shadow-toast w-full">
         <div class="flex flex-col gap-1 items-start justify-center w-full">
-            <span class="text-gray-950 font-bold">{{ $t('public.kyc_verification') }}</span>
+            <span class="flex flex-row gap-2 text-gray-950 font-bold items-center">{{ $t('public.kyc_verification') }}
+                <Tag
+                    v-if="kyc_status !== 'unverified'"
+                    class="right-[120px] -top-1 md:-top-7 md:right-20 max-h-6"
+                    :severity="getSeverity(kyc_status)"
+                    :value="$t(`public.${kyc_status}`)"
+                />
+                <IconQuestionMark v-else size="16" stroke-width="2" class="bg-gray-500 text-white rounded-full"/>
+            </span>
             <span class="text-gray-500 text-xs">{{ $t('public.kyc_verification_caption') }}</span>
         </div>
 
-        <div class="flex flex-col gap-2 md:gap-3 items-center self-stretch">
+        <div class="flex flex-col overflow-y-auto md:max-h-[160px] gap-2 items-center self-stretch">
             <div
                 v-for="(verification, index) in kycVerification"
                 :key="verification.id"
@@ -111,7 +137,7 @@ watchEffect(() => {
                 <img
                     v-else
                     :src="verification.original_url ? verification.original_url : '/img/member/kyc_sample_illustration.png'"
-                    class="w-14"
+                    class="w-14 max-h-10"
                     alt="kyc_verification"
                 />
                 <div class="truncate text-gray-950 font-medium w-full">
@@ -124,7 +150,6 @@ watchEffect(() => {
             <Button
                 type="button"
                 variant="primary-flat"
-                :disabled="!!$page.props.auth.user.kyc_approved_at"
                 @click="openDialog('submit_kyc')"
             >
                 {{ $t('public.submit_again') }}

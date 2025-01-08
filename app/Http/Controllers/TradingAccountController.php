@@ -512,15 +512,16 @@ class TradingAccountController extends Controller
 
     public function deposit_to_account(Request $request)
     {
+        //change cryptoType validation as bank wont work
         Validator::make($request->all(), [
             'meta_login' => ['required', 'exists:trading_accounts,meta_login'],
             'payment_platform' => ['required'],
-            'cryptoType' => ['required'],
+            // 'cryptoType' => ['required'],
             'amount' => ['required', 'numeric', 'gte:10'],
         ])->setAttributeNames([
             'meta_login' => trans('public.account'),
             'payment_platform' => trans('public.platform'),
-            'cryptoType' => trans('public.method'),
+            // 'cryptoType' => trans('public.method'),
             'amount' => trans('public.amount'),
         ])->validate();
 
@@ -555,6 +556,14 @@ class TradingAccountController extends Controller
                 ->with('warning', trans('public.please_wait_for_seconds', ['seconds' => $remainingSeconds]));
         }
 
+        $conversion_rate = null;
+        $conversion_amount = null;
+
+        if ($request->payment_platform == 'bank'){
+            $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', 'VND')->deposit_rate;
+            $conversion_amount = $amount * $conversion_rate;
+        }
+
         $transaction = Transaction::create([
             'category' => 'trading_account',
             'user_id' => $user->id,
@@ -562,6 +571,8 @@ class TradingAccountController extends Controller
             'transaction_number' => RunningNumberService::getID('transaction'),
             'transaction_type' => 'deposit',
             'amount' => $amount,
+            'conversion_rate' => $conversion_rate ?? null,
+            'conversion_amount' => $conversion_amount ?? null,
             'transaction_charges' => 0,
             'comment' => $request->cryptoType,
             'status' => 'processing',
@@ -586,7 +597,7 @@ class TradingAccountController extends Controller
                         'timestamp' => Carbon::now()->timestamp,
                         'random' => Str::random(14),
                         'partner_order_code' => $transaction->transaction_number,
-                        'amount' => $amount * $conversion_rate->deposit_rate,
+                        'amount' => $conversion_amount,
                         'notify_url' => route('depositCallback'),
                         'return_url' => route('depositReturn'),
                     ];
@@ -692,7 +703,6 @@ class TradingAccountController extends Controller
             // })
             // ->first();
 
-        // $conversion_rate = [];
         $result = [];
         if ($transaction['payment_gateway']['platform'] == 'crypto') {
             //crypto
@@ -725,14 +735,12 @@ class TradingAccountController extends Controller
                 'system_order_code' => $response['system_order_code'],
                 'partner_order_code' => $response['partner_order_code'],
                 'channel_code' => $response['channel_code'],
-                'vnd_rate' => $conversion_rate->deposit_rate,
-                'vnd_amount' => $response['amount'],
-                'usd_amount' => round($response['amount'] / $conversion_rate, 2),
+                'amount' => $response['amount'],
                 'request_time' => $response['request_time'] ?? null,
                 'extra_data' => $response['extra_data'] ?? null,
                 'txid' => $response['payment']['payment_id'] ?? null,
                 'paid_amount' => $response['payment']['paid_amount'] ?? null,
-                'bank_fees' => round($response['payment']['fees'] / $conversion_rate->deposit_rate, 2) ?? null, // remember to convert back from vnd to usd
+                'fees' => $response['payment']['fees'] ?? null, // remember to convert back from vnd to usd
                 'payment_time' => $response['payment']['payment_time'] ?? null,
                 'bank_code' => $response['payment']['bank_code'] ?? null,
                 'bank_account_no' => $response['payment']['bank_account_no'] ?? null,
@@ -745,17 +753,18 @@ class TradingAccountController extends Controller
 
         $status = $result['status'] == 'success' ? 'successful' : 'failed';
         $to_wallet_address = $result['erc20address'] ?? $result['trc20address'];
-        $real_amount = $result['amount'] ?? $result['usd_amount'];
-        $real_fee = $result['fees'] ?? $result['bank_fees'];
+
+        $fees = $result['amount'] - $result['fees'];
+
+        if($transaction['payment_gateway']['platform'] == 'bank') {
+            $fees = $fees / $transaction->conversion_rate;
+        }
 
         $transaction->update([
             'to_wallet_address' => $to_wallet_address ?? $result['bank_account_no'],
             'txn_hash' => $result['txid'],
-            'conversion_rate' => $result['vnd_rate'] ?? null,
-            'amount' => $real_amount,
-            'conversion_amount' => $result['vnd_amount'] ?? null,
-            'transaction_charges' => $real_fee,
-            'transaction_amount' => $real_amount - $real_fee,
+            'transaction_charges' => $fees,
+            'transaction_amount' => $transaction->amount - $fees,
             'status' => $status,
             'approved_at' => now()
         ]);

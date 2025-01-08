@@ -502,4 +502,5 @@ return [
 "method" => "Método",
 "forgot_password_desc" => "Quên mật khẩu? Không sao. Chỉ cần cho chúng tôi biết địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn một liên kết đặt lại mật khẩu qua email, giúp bạn chọn một mật khẩu mới.",
 "drag_and_drop_file" => "Kéo và thả tệp",
+"pending" => "Đang chờ",
 ];

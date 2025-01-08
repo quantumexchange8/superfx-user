@@ -210,6 +210,7 @@ class ProfileController extends Controller
     public function getKycVerification()
     {
         return response()->json([
+            'kyc_status' => Auth::user()->kyc_status,
             'kycVerification' => Auth::user()->getMedia('kyc_verification'),
         ]);
     }
