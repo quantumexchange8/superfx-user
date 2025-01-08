@@ -248,7 +248,7 @@ const openDialog = (rowData) => {
                                         {{ slotProps.data.name }}
                                     </div>
                                     <div class="text-gray-500 text-xs">
-                                        {{ `${slotProps.data.meta_login}&nbsp;|&nbsp;${slotProps.data.volume}&nbsp;Ł` }}
+                                        {{ `${slotProps.data.meta_login}&nbsp;|&nbsp;${formatAmount(slotProps.data.volume)}&nbsp;Ł` }}
                                     </div>
                                 </div>
                             </div>
@@ -290,7 +290,7 @@ const openDialog = (rowData) => {
             </div>
             <div class="min-w-[100px] flex gap-1 flex-grow items-center self-stretch">
                 <span class="self-stretch text-gray-500 text-xs font-medium w-[88px] md:w-[140px]">{{ $t('public.total_trade_volume') }}</span>
-                <span class="self-stretch text-gray-950 text-sm font-medium flex-grow">{{ data.volume }}&nbsp;Ł</span>
+                <span class="self-stretch text-gray-950 text-sm font-medium flex-grow">{{ formatAmount(data.volume) }}&nbsp;Ł</span>
             </div>
         </div>
 
@@ -364,7 +364,11 @@ const openDialog = (rowData) => {
 
                 <!-- Summary Columns -->
                 <Column sortable field="execute_at" header="Date" />
-                <Column field="volume" :header="`${$t('public.total_volume')}&nbsp;(Ł)`" class="text-left hidden md:table-cell"/>
+                <Column field="volume" :header="`${$t('public.total_volume')}&nbsp;(Ł)`" class="text-left hidden md:table-cell">
+                    <template #body="slotProps">
+                        {{ formatAmount(slotProps.data.volume) }}
+                    </template>
+                </Column>
                 <Column field="rebate" :header="`${$t('public.total_rebate')}&nbsp;($)`" class="text-left hidden md:table-cell"/>
                 <Column field="rebate" :header="`${$t('public.total_rebate')}&nbsp;($)`"  class="text-right md:hidden">
                     <template #body="slotProps">
@@ -375,8 +379,8 @@ const openDialog = (rowData) => {
                 <!-- Row Expansion Content -->
                 <template #expansion="slotProps">
                 <!-- Display only details for each summary entry -->
-                    <DataTable 
-                        :value="slotProps.data.details" 
+                    <DataTable
+                        :value="slotProps.data.details"
                         class="pl-9 md:pl-20"
                         unstyled
                         :pt="{

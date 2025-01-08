@@ -110,6 +110,7 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('/getRebateSummary', [ReportController::class, 'getRebateSummary'])->name('report.getRebateSummary');
         Route::get('/getRebateListing', [ReportController::class, 'getRebateListing'])->name('report.getRebateListing');
         Route::get('/getGroupTransaction', [ReportController::class, 'getGroupTransaction'])->name('report.getGroupTransaction');
+        Route::get('/getRebateHistory', [ReportController::class, 'getRebateHistory'])->name('report.getRebateHistory');
     });
 
     /**

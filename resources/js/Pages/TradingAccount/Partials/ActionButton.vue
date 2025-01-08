@@ -24,7 +24,7 @@ const showDepositDialog = ref(false);
 const showTransferDialog = ref(false);
 const transferOptions = ref([]);
 const depositOptions = ref([
-    { name: 'Bank', value: 'bank' },
+    // { name: 'Bank', value: 'bank' },
     { name: 'Crypto', value: 'crypto' },
 ]);
 const selectedPlatform = ref('');

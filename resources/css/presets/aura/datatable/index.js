@@ -228,7 +228,7 @@ export default {
                 'min-w-[12.5rem]',
 
                 // Color
-                'bg-surface-0 dark:bg-surface-900',
+                'bg-white dark:bg-surface-900',
                 'text-surface-800 dark:text-white/80',
                 'dark:border-surface-700'
             ]
@@ -248,7 +248,7 @@ export default {
                     'rounded-md',
 
                     // Color and Background
-                    'bg-surface-0 dark:bg-surface-900',
+                    'bg-white dark:bg-surface-900',
                     'border border-surface-300 dark:border-surface-700',
                     'text-surface-800 dark:text-white/80',
                     'placeholder:text-surface-400 dark:placeholder:text-surface-500',
@@ -289,7 +289,7 @@ export default {
 
                 // Color
                 { 'text-surface-700 dark:text-white/80': !context?.highlighted },
-                { 'bg-surface-0 dark:bg-surface-900 text-surface-700 dark:text-white/80': !context?.highlighted },
+                { 'bg-white dark:bg-surface-900 text-surface-700 dark:text-white/80': !context?.highlighted },
                 { 'bg-primary-highlight text-primary-highlight-inverse': context?.highlighted },
 
                 //States
@@ -314,7 +314,7 @@ export default {
 
                 // Color
                 'text-surface-700 dark:text-white/80',
-                'bg-surface-0 dark:bg-surface-700'
+                'bg-white dark:bg-surface-700'
             ]
         },
         filteroperatordropdown: {
@@ -329,7 +329,7 @@ export default {
                     'rounded-md',
 
                     // Color and Background
-                    'bg-surface-0 dark:bg-surface-950',
+                    'bg-white dark:bg-surface-950',
                     'border border-surface-300 dark:border-surface-700',
 
                     // Transitions
@@ -403,7 +403,7 @@ export default {
             panel: {
                 class: [
                     // Colors
-                    'bg-surface-0 dark:bg-surface-900',
+                    'bg-white dark:bg-surface-900',
                     'text-surface-700 dark:text-white/80',
 
                     // Shape
@@ -651,7 +651,7 @@ export default {
                 'border-0 rounded-full',
 
                 // Color
-                'text-surface-500 dark:text-white/70',
+                'text-surface-500',
                 'bg-transparent',
                 'focus-visible:outline-none focus-visible:outline-offset-0',
                 'focus-visible:ring-1 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400',
@@ -810,7 +810,7 @@ export default {
                     'transition duration-200 ease-in-out',
 
                     // Colors
-                    { 'bg-surface-0 dark:bg-surface-950': !props.disabled },
+                    { 'bg-white dark:bg-surface-950': !props.disabled },
 
                     {
                         'text-surface-700 dark:text-white/80': props.value !== props.modelValue && props.value !== undefined,
@@ -866,7 +866,7 @@ export default {
 
                     // Conditions
                     {
-                        'bg-surface-0 dark:bg-surface-900 backface-hidden invisible scale-[0.1]': !props.modelValue,
+                        'bg-white dark:bg-surface-900 backface-hidden invisible scale-[0.1]': !props.modelValue,
                         'bg-primary transform visible translate-z-0 scale-[1.1]': props.modelValue
                     },
 
@@ -911,7 +911,7 @@ export default {
                     // Colors
                     {
                         'border-surface-300 dark:border-surface-700': !context.checked && !props.invalid,
-                        'bg-surface-0 dark:bg-surface-950': !context.checked && !props.invalid && !props.disabled,
+                        'bg-white dark:bg-surface-950': !context.checked && !props.invalid && !props.disabled,
                         'border-primary bg-primary': context.checked
                     },
 
@@ -1012,7 +1012,7 @@ export default {
                     // Colors
                     {
                         'border-surface-300 dark:border-surface-700': !context.checked && !props.invalid,
-                        'bg-surface-0 dark:bg-surface-950': !context.checked && !props.invalid && !props.disabled,
+                        'bg-white dark:bg-surface-950': !context.checked && !props.invalid && !props.disabled,
                         'border-primary bg-primary': context.checked
                     },
 
@@ -1091,8 +1091,8 @@ export default {
             'text-gray-950',
             { 'bg-primary-highlight text-primary-highlight-inverse': context.selected },
             { 'bg-white': !context.selected },
-            { 'font-bold bg-surface-0 dark:bg-surface-900 z-20': props.frozenRow },
-            { 'odd:bg-surface-0 odd:text-surface-600 dark:odd:bg-surface-900 even:bg-surface-50 even:text-surface-600 dark:even:bg-surface-800/50': context.stripedRows },
+            { 'font-bold bg-white dark:bg-surface-900 z-20': props.frozenRow },
+            { 'odd:bg-white odd:text-surface-600 dark:odd:bg-surface-900 even:bg-surface-50 even:text-surface-600 dark:even:bg-surface-800/50': context.stripedRows },
 
             // State
             { 'focus:outline-none focus:outline-offset-0 focus:ring-1 focus:ring-transparent': context.selectable },
@@ -1106,10 +1106,10 @@ export default {
         ]
     }),
     rowexpansion: {
-        class: 'bg-surface-0 dark:bg-surface-900 text-surface-600 dark:text-white/80'
+        class: 'bg-white text-surface-600'
     },
     rowgroupheader: {
-        class: ['sticky z-20', 'bg-surface-0 text-surface-600 dark:text-white/70', 'dark:bg-surface-900']
+        class: ['sticky z-20', 'bg-white text-surface-600 dark:text-white/70', 'dark:bg-surface-900']
     },
     rowgroupfooter: {
         class: ['sticky z-20', 'bg-white text-gray-950']

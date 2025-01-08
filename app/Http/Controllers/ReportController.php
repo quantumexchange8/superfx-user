@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\TradeRebateHistory;
 use Inertia\Inertia;
 use App\Models\SymbolGroup;
 use App\Models\Transaction;
@@ -273,5 +274,59 @@ class ReportController extends Controller
             'groupTotalWithdrawal' => $group_total_withdrawal,
             'groupTotalNetBalance' => $group_total_deposit - $group_total_withdrawal,
         ]);
+    }
+
+    public function getRebateHistory(Request $request)
+    {
+        if ($request->has('lazyEvent')) {
+            $data = json_decode($request->only(['lazyEvent'])['lazyEvent'], true);
+
+            $query = TradeRebateHistory::with([
+                'downline',
+                'of_account_type'
+            ])
+                ->where('upline_user_id', Auth::id());
+
+            if ($data['filters']['global']['value']) {
+                $query->whereHas('downline', function ($query) use ($data) {
+                    $query->where( function($q) use ($data) {
+                        $keyword = $data['filters']['global']['value'];
+
+                        $q->where('name', 'like', '%' . $keyword . '%')
+                            ->orWhere('email', 'like', '%' . $keyword . '%');
+                    });
+                });
+            }
+
+            if (!empty($data['filters']['start_date']['value']) && !empty($data['filters']['end_date']['value'])) {
+                $start_date = Carbon::parse($data['filters']['start_date']['value'])->addDay()->startOfDay();
+                $end_date = Carbon::parse($data['filters']['end_date']['value'])->addDay()->endOfDay();
+
+                $query->whereBetween('created_at', [$start_date, $end_date]);
+            }
+
+            if ($data['sortField'] && $data['sortOrder']) {
+                $order = $data['sortOrder'] == 1 ? 'asc' : 'desc';
+                $query->orderBy($data['sortField'], $order);
+            } else {
+                $query->latest();
+            }
+
+            // Export logic
+//            if ($request->has('exportStatus') && $request->exportStatus) {
+//                return Excel::download(new MemberListingExport($query), now() . '-member-report.xlsx');
+//            }
+            $totalRebateAmount = (clone $query)->sum('revenue');
+
+            $histories = $query->paginate($data['rows']);
+
+            return response()->json([
+                'success' => true,
+                'data' => $histories,
+                'totalRebateAmount' => $totalRebateAmount,
+            ]);
+        }
+
+        return response()->json(['success' => false, 'data' => []]);
     }
 }

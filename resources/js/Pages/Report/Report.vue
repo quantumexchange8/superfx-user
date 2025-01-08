@@ -8,12 +8,14 @@ import RebateReport from '@/Pages/Report/Rebate/RebateReport.vue';
 import GroupTransaction from '@/Pages/Report/GroupTransaction/GroupTransaction.vue';
 import { usePage, useForm } from "@inertiajs/vue3";
 import { trans, wTrans } from "laravel-vue-i18n";
+import RebateHistory from "@/Pages/Report/RebateHistory/RebateHistory.vue";
 
 // Initialize the form with user data
 const user = usePage().props.auth.user;
 
 const tabs = ref([
-    { title: wTrans('public.rebate'), component: h(RebateReport), type: 'rebate' },
+    { title: wTrans('public.rebate'), component: h(RebateHistory), type: 'rebate' },
+    { title: wTrans('public.summary'), component: h(RebateReport), type: 'summary' },
     { title: wTrans('public.group_transaction'), component: h(GroupTransaction), type: 'group_transaction' },
 ]);
 
