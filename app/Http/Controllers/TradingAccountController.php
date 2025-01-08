@@ -28,6 +28,7 @@ use App\Services\ChangeTraderBalanceType;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use App\Models\PaymentGateway;
+use App\Models\CurrencyConversionRate;
 
 class TradingAccountController extends Controller
 {
@@ -571,45 +572,77 @@ class TradingAccountController extends Controller
                 'payment_gateway_id' => $payment_gateway->id,
             ]);
 
-            // Find available payment merchant
-            $params = [
-                'partner_id' => $payment_gateway->payment_app_number,
-                'timestamp' => Carbon::now()->timestamp,
-                'random' => Str::random(14),
-                'partner_order_code' => $transaction->transaction_number,
-                'order_currency' => 0,
-                'order_language' => 'en_ww',
-                'guest_id' => md5('SuperFX' . $user->id),
-                'amount' => $amount,
-                'notify_url' => route('depositCallback'),
-                'return_url' => route('depositReturn'),
-            ];
-
-            $data = [
-                $params['partner_id'],
-                $params['timestamp'],
-                $params['random'],
-                $params['partner_order_code'],
-                $params['order_currency'],
-                $params['order_language'],
-                $params['guest_id'],
-                $params['amount'],
-                $params['notify_url'],
-                $params['return_url'],
-                '',
-                $payment_gateway->payment_app_key
-            ];
-
-            $hashedCode = md5(implode(':', $data));
-            $params['sign'] = $hashedCode;
+            // $domain = $_SERVER['HTTP_HOST'];
+            // $notifyUrl = "https://$domain/deposit_callback";
+            // $returnUrl = "https://$domain/deposit_return";
 
             $baseUrl = '';
+            $params = [];
             switch ($payment_gateway->platform) {
                 case 'bank':
-                    $baseUrl = $environment == 'production' ? $payment_gateway->payment_url . '/gateway/bnb/createVA.do' : $payment_gateway->payment_url . '/gateway/pay/paymentBnBVA.do';
+                    $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', 'VND');
+                    $params = [
+                        'partner_id' => $payment_gateway->payment_app_number,
+                        'timestamp' => Carbon::now()->timestamp,
+                        'random' => Str::random(14),
+                        'partner_order_code' => $transaction->transaction_number,
+                        'amount' => $amount * $conversion_rate->deposit_rate,
+                        'notify_url' => route('depositCallback'),
+                        'return_url' => route('depositReturn'),
+                    ];
+
+                    $data = [
+                        $params['partner_id'],
+                        $params['timestamp'],
+                        $params['random'],
+                        $params['partner_order_code'],
+                        $params['amount'],
+                        '', //bank
+                        '', //bank
+                        $params['notify_url'],
+                        $params['return_url'],
+                        '',
+                        $payment_gateway->payment_app_key
+                    ];
+
+                    $hashedCode = md5(implode(':', $data));
+                    $params['sign'] = $hashedCode;
+
+                    $baseUrl = $environment == 'production' ? $payment_gateway->payment_url . '/gateway/bnb/createVA.do' : $payment_gateway->payment_url . '/gateway/bnb/createVA.do';
                     break;
 
                 case 'crypto':
+                    $params = [
+                        'partner_id' => $payment_gateway->payment_app_number,
+                        'timestamp' => Carbon::now()->timestamp,
+                        'random' => Str::random(14),
+                        'partner_order_code' => $transaction->transaction_number,
+                        'order_currency' => 0,
+                        'order_language' => 'en_ww',
+                        'guest_id' => md5('SuperFX' . $user->id),
+                        'amount' => $amount,
+                        'notify_url' => route('depositCallback'),
+                        'return_url' => route('depositReturn'),
+                    ];
+
+                    $data = [
+                        $params['partner_id'],
+                        $params['timestamp'],
+                        $params['random'],
+                        $params['partner_order_code'],
+                        $params['order_currency'], //crypto
+                        $params['order_language'], //crypto
+                        $params['guest_id'], //crypto
+                        $params['amount'],
+                        $params['notify_url'],
+                        $params['return_url'],
+                        '',
+                        $payment_gateway->payment_app_key
+                    ];
+
+                    $hashedCode = md5(implode(':', $data));
+                    $params['sign'] = $hashedCode;
+
                     $baseUrl = $request->cryptoType == 'ERC20' ? $payment_gateway->payment_url . '/gateway/usdt/createERC20.do' : $payment_gateway->payment_url . '/gateway/usdt/createTRC20.do';
                     break;
             }
@@ -653,41 +686,76 @@ class TradingAccountController extends Controller
 
         Log::debug("Callback Response: " , $response);
 
-        $result = [
-            'partner_id' =>  $response['partner_id'],
-            'system_order_code' => $response['system_order_code'],
-            'partner_order_code' => $response['partner_order_code'],
-            'guest_id' => $response['guest_id'],
-            'amount' => $response['amount'],
-            'amount_cny' => $response['amount_cny'],
-            'otc_usdt_cny' => $response['otc_usdt_cny'],
-            'request_time' => $response['request_time'] ?? null,
-            'extra_data' => $response['extra_data'] ?? null,
-            'txid' => $response['payment']['txid'] ?? null,
-            'paid_amount' => $response['payment']['paid_amount'] ?? null,
-            'fees' => $response['payment']['fees'] ?? null,
-            'payment_time' => $response['payment']['payment_time'] ?? null,
-            'callback_time' => $response['payment']['callback_time'] ?? null,
-            'erc20address' => $response['payment']['erc20address'] ?? null,
-            'trc20address' => $response['payment']['trc20address'] ?? null,
-            'status' => $response['payment']['status'] ?? null,
-            'sign' => $response['sign'] ?? null,
-        ];
+        $transaction = Transaction::where('transaction_number', $response['partner_order_code'])->first();
+            // ->whereHas('payment_gateway', function ($query) use ($result) {
+            //     $query->where('payment_app_number', $result['partner_id']);
+            // })
+            // ->first();
 
-        $transaction = Transaction::where('transaction_number', $result['partner_order_code'])
-            ->whereHas('payment_gateway', function ($query) use ($result) {
-                $query->where('payment_app_number', $result['partner_id']);
-            })
-            ->first();
+        // $conversion_rate = [];
+        $result = [];
+        if ($transaction['payment_gateway']['platform'] == 'crypto') {
+            //crypto
+            $result = [
+                'partner_id' =>  $response['partner_id'],
+                'system_order_code' => $response['system_order_code'],
+                'partner_order_code' => $response['partner_order_code'],
+                'guest_id' => $response['guest_id'],
+                'amount' => $response['amount'],
+                'amount_cny' => $response['amount_cny'],
+                'otc_usdt_cny' => $response['otc_usdt_cny'],
+                'request_time' => $response['request_time'] ?? null,
+                'extra_data' => $response['extra_data'] ?? null,
+                'txid' => $response['payment']['txid'] ?? null,
+                'paid_amount' => $response['payment']['paid_amount'] ?? null,
+                'fees' => $response['payment']['fees'] ?? null,
+                'payment_time' => $response['payment']['payment_time'] ?? null,
+                'callback_time' => $response['payment']['callback_time'] ?? null,
+                'erc20address' => $response['payment']['erc20address'] ?? null,
+                'trc20address' => $response['payment']['trc20address'] ?? null,
+                'status' => $response['payment']['status'] ?? null,
+                'sign' => $response['sign'] ?? null,
+            ];
+        }
+        else {
+            //bank
+            $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', 'VND');
+            $result = [
+                'partner_id' =>  $response['partner_id'],
+                'system_order_code' => $response['system_order_code'],
+                'partner_order_code' => $response['partner_order_code'],
+                'channel_code' => $response['channel_code'],
+                'vnd_rate' => $conversion_rate->deposit_rate,
+                'vnd_amount' => $response['amount'],
+                'usd_amount' => round($response['amount'] / $conversion_rate, 2),
+                'request_time' => $response['request_time'] ?? null,
+                'extra_data' => $response['extra_data'] ?? null,
+                'txid' => $response['payment']['payment_id'] ?? null,
+                'paid_amount' => $response['payment']['paid_amount'] ?? null,
+                'bank_fees' => round($response['payment']['fees'] / $conversion_rate->deposit_rate, 2) ?? null, // remember to convert back from vnd to usd
+                'payment_time' => $response['payment']['payment_time'] ?? null,
+                'bank_code' => $response['payment']['bank_code'] ?? null,
+                'bank_account_no' => $response['payment']['bank_account_no'] ?? null,
+                'bank_account_name' => $response['payment']['bank_account_name'] ?? null,
+                'callback_time' => $response['payment']['callback_time'] ?? null,
+                'status' => $response['payment']['status'] ?? null,
+                'sign' => $response['sign'] ?? null,
+            ];
+        }
 
         $status = $result['status'] == 'success' ? 'successful' : 'failed';
         $to_wallet_address = $result['erc20address'] ?? $result['trc20address'];
+        $real_amount = $result['amount'] ?? $result['usd_amount'];
+        $real_fee = $result['fees'] ?? $result['bank_fees'];
+
         $transaction->update([
-            'to_wallet_address' => $to_wallet_address,
+            'to_wallet_address' => $to_wallet_address ?? $result['bank_account_no'],
             'txn_hash' => $result['txid'],
-            'amount' => $result['amount'],
-            'transaction_charges' => $result['fees'],
-            'transaction_amount' => $result['amount'] - $result['fees'],
+            'conversion_rate' => $result['vnd_rate'] ?? null,
+            'amount' => $real_amount,
+            'conversion_amount' => $result['vnd_amount'] ?? null,
+            'transaction_charges' => $real_fee,
+            'transaction_amount' => $real_amount - $real_fee,
             'status' => $status,
             'approved_at' => now()
         ]);
