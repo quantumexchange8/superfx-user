@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use App\Models\PaymentGateway;
 use App\Models\CurrencyConversionRate;
+use function Symfony\Component\Translation\t;
 
 class TradingAccountController extends Controller
 {
@@ -389,7 +390,7 @@ class TradingAccountController extends Controller
         ]);
 
         $account = TradingAccount::find($request->account_id);
-        
+
         try {
             (new MetaFourService)->updateLeverage($account->meta_login, $request->leverage);
         } catch (\Throwable $e) {
@@ -574,13 +575,13 @@ class TradingAccountController extends Controller
             'conversion_rate' => $conversion_rate ?? null,
             'conversion_amount' => $conversion_amount ?? null,
             'transaction_charges' => 0,
-            'comment' => $request->cryptoType,
             'status' => 'processing',
         ]);
 
         if ($payment_gateway) {
             $transaction->update([
                 'payment_gateway_id' => $payment_gateway->id,
+                'comment' => $payment_gateway->platform == 'crypto' ? $request->cryptoType : null,
             ]);
 
             // $domain = $_SERVER['HTTP_HOST'];
@@ -745,29 +746,28 @@ class TradingAccountController extends Controller
                 'bank_account_no' => $response['payment']['bank_account_no'] ?? null,
                 'bank_account_name' => $response['payment']['bank_account_name'] ?? null,
                 'callback_time' => $response['payment']['callback_time'] ?? null,
-                'status' => $response['payment']['status'] ?? null,
+                'status' => $response['payment']['status'] == 2 ? 'success' : 'fail',
                 'sign' => $response['sign'] ?? null,
             ];
         }
 
         $status = $result['status'] == 'success' ? 'successful' : 'failed';
-        $to_wallet_address = null;
-
-        $fees = $result['amount'] - $result['fees'];
 
         if($transaction->payment_gateway->platform === 'crypto') {
+            $fees = $result['amount'] - $result['fees'];
             $to_wallet_address = $result['erc20address'] ?? $result['trc20address'];
         }
         else{
             $to_wallet_address = $result['bank_account_no'];
-            $fees = round($fees / $transaction->conversion_rate, 2);
+            $fees = round($result['fees'] / $transaction->conversion_rate, 2);
         }
+        $final_amount = $transaction->amount - $fees;
 
         $transaction->update([
             'to_wallet_address' => $to_wallet_address ?? null,
             'txn_hash' => $result['txid'],
             'transaction_charges' => $fees,
-            'transaction_amount' => $transaction->amount - $fees,
+            'transaction_amount' => $final_amount,
             'status' => $status,
             'approved_at' => now()
         ]);
