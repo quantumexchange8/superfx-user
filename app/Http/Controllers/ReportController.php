@@ -315,6 +315,10 @@ class ReportController extends Controller
                 $query->whereBetween('closed_time', [$start_close_date, $end_close_date]);
             }
 
+            if (!empty($data['filters']['t_type']['value'])) {
+                $query->where('t_type', $data['filters']['t_type']['value']);
+            }
+
             if ($data['sortField'] && $data['sortOrder']) {
                 $order = $data['sortOrder'] == 1 ? 'asc' : 'desc';
                 $query->orderBy($data['sortField'], $order);

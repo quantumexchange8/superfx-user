@@ -515,4 +515,5 @@ return [
     "buy" => "Buy",
     "sell" => "Sell",
     "completed" => "Completed",
+    "filter_type" => "Filter by Type",
 ];

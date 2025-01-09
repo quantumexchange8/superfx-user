@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref, watch} from "vue";
+import {onMounted, ref, watch, watchEffect} from "vue";
 import {transactionFormat} from "@/Composables/index.js";
 import { FilterMatchMode } from 'primevue/api';
 import debounce from "lodash/debounce.js";
@@ -19,6 +19,8 @@ import DefaultProfilePhoto from "@/Components/DefaultProfilePhoto.vue";
 import ColumnGroup from "primevue/columngroup";
 import Row from "primevue/row";
 import OverlayPanel from 'primevue/overlaypanel';
+import StatusBadge from '@/Components/StatusBadge.vue';
+import RadioButton from 'primevue/radiobutton';
 
 const isLoading = ref(false);
 const dt = ref(null);
@@ -36,6 +38,7 @@ const filters = ref({
     start_close_date: { value: null, matchMode: FilterMatchMode.EQUALS },
     end_close_date: { value: null, matchMode: FilterMatchMode.EQUALS },
     account_type_id: { value: null, matchMode: FilterMatchMode.EQUALS },
+    t_type: { value: null, matchMode: FilterMatchMode.EQUALS },
 });
 
 const lazyParams = ref({});
@@ -54,7 +57,6 @@ const loadLazyData = (event) => {
                 include: [],
                 lazyEvent: JSON.stringify(lazyParams.value)
             };
-            console.log(params)
             const url = route('report.getRebateHistory', params);
             const response = await fetch(url);
             const results = await response.json();
@@ -84,6 +86,7 @@ const onFilter = (event) => {
 };
 
 const op = ref();
+const filterCount = ref(0);
 const toggle = (event) => {
     op.value.toggle(event);
 }
@@ -165,6 +168,31 @@ watch(selectedCloseDate, (newDateRange) => {
         console.warn('Invalid date range format:', newDateRange);
     }
 })
+
+const clearFilter = () => {
+    filters.value = {
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        start_date: { value: minDate.value, matchMode: FilterMatchMode.EQUALS },
+        end_date: { value: maxDate.value, matchMode: FilterMatchMode.EQUALS },
+        start_close_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+        end_close_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+        account_type_id: { value: null, matchMode: FilterMatchMode.EQUALS },
+        t_type: { value: null, matchMode: FilterMatchMode.EQUALS },
+    };
+};
+
+watch(filters, debounce(() => {
+    // Count active filters, excluding null, undefined, empty strings, and empty arrays
+    filterCount.value = Object.values(filters.value).filter(filter => {
+        if (Array.isArray(filter)) {
+            return filter.length > 0;  // Check if the array is not empty
+        }
+        return filter !== null && filter !== '';  // Check if the value is not null or an empty string
+    }).length;
+
+    loadLazyData(); // Call function to fetch the data
+}, 500), { deep: true });
+
 </script>
 
 <template>
@@ -293,7 +321,7 @@ watch(selectedCloseDate, (newDateRange) => {
                         field="open_time"
                         sortable
                         :header="`${$t('public.open_time')}`"
-                        class="hidden md:table-cell"
+                        class="hidden md:table-cell min-w-32"
                     >
                         <template #body="slotProps">
                             {{ slotProps.data.open_time }}
@@ -303,7 +331,7 @@ watch(selectedCloseDate, (newDateRange) => {
                         field="closed_time"
                         sortable
                         :header="`${$t('public.closed_time')}`"
-                        class="hidden md:table-cell"
+                        class="hidden md:table-cell min-w-32"
                     >
                         <template #body="slotProps">
                             {{ slotProps.data.closed_time }}
@@ -311,7 +339,8 @@ watch(selectedCloseDate, (newDateRange) => {
                     </Column>
                     <Column
                         field="trade_open_price"
-                        :header="`${$t('public.open_price')}`"
+                        sortable
+                        :header="`${$t('public.open_price')}&nbsp;($)`"
                         class="hidden md:table-cell"
                     >
                         <template #body="slotProps">
@@ -320,7 +349,8 @@ watch(selectedCloseDate, (newDateRange) => {
                     </Column>
                     <Column
                         field="trade_close_price"
-                        :header="`${$t('public.close_price')}`"
+                        sortable
+                        :header="`${$t('public.close_price')}&nbsp;($)`"
                         class="hidden md:table-cell"
                     >
                         <template #body="slotProps">
@@ -359,7 +389,8 @@ watch(selectedCloseDate, (newDateRange) => {
                     </Column>
                     <Column
                         field="trade_profit"
-                        :header="`${$t('public.profit')}`"
+                        sortable
+                        :header="`${$t('public.profit')}&nbsp;($)`"
                         class="hidden md:table-cell"
                     >
                         <template #body="slotProps">
@@ -410,7 +441,9 @@ watch(selectedCloseDate, (newDateRange) => {
                         class="hidden md:table-cell"
                     >
                         <template #body="slotProps">
-                            {{ $t(`public.completed`) }}
+                            <StatusBadge value="success">
+                                {{ $t(`public.completed`) }}
+                            </StatusBadge>
                         </template>
                     </Column>
                     <Column class="md:hidden">
@@ -501,6 +534,31 @@ watch(selectedCloseDate, (newDateRange) => {
                     </div>
                 </div>
             </div>
+
+            <div class="flex flex-col items-center gap-2 self-stretch">
+                <span class="self-stretch text-gray-950 text-xs font-bold">{{ $t('public.filter_type') }}</span>
+                <div class="flex flex-col gap-1 self-stretch">
+                    <div class="flex items-center gap-2 text-sm text-gray-950">
+                        <RadioButton v-model="filters['t_type'].value" inputId="trade_buy" value="buy" class="w-4 h-4" />
+                        <label for="buy">{{ $t('public.buy') }}</label>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-gray-950">
+                        <RadioButton v-model="filters['t_type'].value" inputId="trade_sell" value="sell" class="w-4 h-4" />
+                        <label for="sell">{{ $t('public.sell') }}</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- <div class="flex w-full">
+                <Button
+                    type="button"
+                    variant="primary-outlined"
+                    class="flex justify-center w-full"
+                    @click="clearFilter"
+                >
+                    {{ $t('public.clear_all') }}
+                </Button>
+            </div> -->
         </div>
     </OverlayPanel>
 </template>
