@@ -746,7 +746,7 @@ class TradingAccountController extends Controller
                 'bank_account_no' => $response['payment']['bank_account_no'] ?? null,
                 'bank_account_name' => $response['payment']['bank_account_name'] ?? null,
                 'callback_time' => $response['payment']['callback_time'] ?? null,
-                'status' => $response['payment']['status'] == 2 ? 'success' : 'fail',
+                'status' => $response['payment']['status'] == 4 ? 'success' : 'fail',
                 'sign' => $response['sign'] ?? null,
             ];
         }
