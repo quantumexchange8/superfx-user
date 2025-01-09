@@ -503,4 +503,5 @@ return [
     "drag_and_drop_file" => "Kéo và thả tệp",
     "pending" => "Đang chờ",
     "summary" => "Bản tóm tắt",
+    "platform" => "Plataforma",
 ];

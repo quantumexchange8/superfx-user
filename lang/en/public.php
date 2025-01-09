@@ -516,4 +516,5 @@ return [
     "sell" => "Sell",
     "completed" => "Completed",
     "filter_type" => "Filter by Type",
+    "platform" => "Platform",
 ];

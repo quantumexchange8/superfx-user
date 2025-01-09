@@ -501,4 +501,5 @@ return [
     "drag_and_drop_file" => "拖放文件",
     "pending" =>  "待處理",
     "summary" => "匯總",
+    "platform" => "平台",
 ];
