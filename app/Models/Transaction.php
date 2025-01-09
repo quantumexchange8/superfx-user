@@ -26,6 +26,8 @@ class Transaction extends Model
         'to_wallet_address',
         'txn_hash',
         'amount',
+        'conversion_rate',
+        'conversion_amount',
         'transaction_charges',
         'transaction_amount',
         'old_wallet_amount',

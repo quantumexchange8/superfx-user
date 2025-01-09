@@ -54,7 +54,7 @@ const loadLazyData = (event) => {
                 include: [],
                 lazyEvent: JSON.stringify(lazyParams.value)
             };
-
+            console.log(params)
             const url = route('report.getRebateHistory', params);
             const response = await fetch(url);
             const results = await response.json();
@@ -280,6 +280,26 @@ watch(selectedCloseDate, (newDateRange) => {
                         </template>
                     </Column>
                     <Column
+                        field="deal_id"
+                        sortable
+                        :header="`${$t('public.ticket')}`"
+                        class="hidden md:table-cell"
+                    >
+                        <template #body="slotProps">
+                            {{ slotProps.data.deal_id }}
+                        </template>
+                    </Column>
+                    <Column
+                        field="open_time"
+                        sortable
+                        :header="`${$t('public.open_time')}`"
+                        class="hidden md:table-cell"
+                    >
+                        <template #body="slotProps">
+                            {{ slotProps.data.open_time }}
+                        </template>
+                    </Column>
+                    <Column
                         field="closed_time"
                         sortable
                         :header="`${$t('public.closed_time')}`"
@@ -287,6 +307,33 @@ watch(selectedCloseDate, (newDateRange) => {
                     >
                         <template #body="slotProps">
                             {{ slotProps.data.closed_time }}
+                        </template>
+                    </Column>
+                    <Column
+                        field="trade_open_price"
+                        :header="`${$t('public.open_price')}`"
+                        class="hidden md:table-cell"
+                    >
+                        <template #body="slotProps">
+                            {{ formatAmount(slotProps.data.trade_open_price ?? 0) }}
+                        </template>
+                    </Column>
+                    <Column
+                        field="trade_close_price"
+                        :header="`${$t('public.close_price')}`"
+                        class="hidden md:table-cell"
+                    >
+                        <template #body="slotProps">
+                            {{ formatAmount(slotProps.data.trade_close_price ?? 0) }}
+                        </template>
+                    </Column>
+                    <Column
+                        field="t_type"
+                        :header="`${$t('public.type')}`"
+                        class="hidden md:table-cell"
+                    >
+                        <template #body="slotProps">
+                            {{ $t(`public.${slotProps.data.t_type}`) }}
                         </template>
                     </Column>
                     <Column
@@ -308,6 +355,15 @@ watch(selectedCloseDate, (newDateRange) => {
                                     </div>
                                 </div>
                             </div>
+                        </template>
+                    </Column>
+                    <Column
+                        field="trade_profit"
+                        :header="`${$t('public.profit')}`"
+                        class="hidden md:table-cell"
+                    >
+                        <template #body="slotProps">
+                            {{ formatAmount(slotProps.data.trade_profit ?? 0) }}
                         </template>
                     </Column>
                     <Column
@@ -348,6 +404,15 @@ watch(selectedCloseDate, (newDateRange) => {
                             {{ formatAmount(slotProps.data.revenue) }}
                         </template>
                     </Column>
+                    <Column
+                        field="t_status"
+                        :header="`${$t('public.status')}`"
+                        class="hidden md:table-cell"
+                    >
+                        <template #body="slotProps">
+                            {{ $t(`public.completed`) }}
+                        </template>
+                    </Column>
                     <Column class="md:hidden">
                         <template #body="slotProps">
                             <div class="flex items-center justify-between">
@@ -372,7 +437,7 @@ watch(selectedCloseDate, (newDateRange) => {
                     </Column>
                     <ColumnGroup type="footer">
                         <Row>
-                            <Column class="hidden md:table-cell" :footer="$t('public.total') + ':'" :colspan="6" footerStyle="text-align:right" />
+                            <Column class="hidden md:table-cell" :footer="$t('public.total') + ':'" :colspan="13" footerStyle="text-align:right" />
                             <Column class="hidden md:table-cell" :footer="'$' + formatAmount(totalRebateAmount ?? 0)" />
                         </Row>
                     </ColumnGroup>

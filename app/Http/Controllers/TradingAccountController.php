@@ -561,7 +561,7 @@ class TradingAccountController extends Controller
 
         if ($request->payment_platform == 'bank'){
             $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', 'VND')->deposit_rate;
-            $conversion_amount = $amount * $conversion_rate;
+            $conversion_amount = round($amount * $conversion_rate, 2);
         }
 
         $transaction = Transaction::create([
@@ -591,7 +591,6 @@ class TradingAccountController extends Controller
             $params = [];
             switch ($payment_gateway->platform) {
                 case 'bank':
-                    $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', 'VND');
                     $params = [
                         'partner_id' => $payment_gateway->payment_app_number,
                         'timestamp' => Carbon::now()->timestamp,

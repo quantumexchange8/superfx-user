@@ -285,7 +285,8 @@ class ReportController extends Controller
                 'downline',
                 'of_account_type'
             ])
-                ->where('upline_user_id', Auth::id());
+                ->where('upline_user_id', Auth::id())
+                ->where('t_status', 'approved');
 
             if ($data['filters']['global']['value']) {
                 $keyword = $data['filters']['global']['value'];
