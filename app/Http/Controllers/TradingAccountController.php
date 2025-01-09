@@ -518,7 +518,7 @@ class TradingAccountController extends Controller
             'meta_login' => ['required', 'exists:trading_accounts,meta_login'],
             'payment_platform' => ['required'],
             // 'cryptoType' => ['required'],
-            'amount' => ['required', 'numeric', 'gte:10'],
+            'amount' => ['required', 'numeric', 'gte:50'],
         ])->setAttributeNames([
             'meta_login' => trans('public.account'),
             'payment_platform' => trans('public.platform'),

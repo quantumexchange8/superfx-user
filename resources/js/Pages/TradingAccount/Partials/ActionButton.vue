@@ -242,7 +242,7 @@ function selectCrypto(type) {
                         :invalid="!!depositForm.errors.amount"
                     />
                 </div>
-                <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount(10) }}</span>
+                <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount(50) }}</span>
                 <InputError :message="depositForm.errors.amount" />
             </div>
             <div class="flex flex-col items-center self-stretch">
