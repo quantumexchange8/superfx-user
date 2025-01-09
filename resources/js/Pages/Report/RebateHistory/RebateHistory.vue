@@ -5,12 +5,12 @@ import { FilterMatchMode } from 'primevue/api';
 import debounce from "lodash/debounce.js";
 import {usePage} from "@inertiajs/vue3";
 import dayjs from "dayjs";
-import Button from "primevue/button";
+import Button from '@/Components/Button.vue';
 import Column from "primevue/column";
 import Card from "primevue/card";
 import DataTable from "primevue/datatable";
 import Tag from "primevue/tag";
-import {IconCircleXFilled, IconSearch, IconX} from "@tabler/icons-vue";
+import {IconCircleXFilled, IconSearch, IconX, IconAdjustments} from "@tabler/icons-vue";
 import InputText from "primevue/inputtext";
 import Calendar from "primevue/calendar";
 import Empty from "@/Components/Empty.vue";
@@ -18,6 +18,7 @@ import Loader from "@/Components/Loader.vue";
 import DefaultProfilePhoto from "@/Components/DefaultProfilePhoto.vue";
 import ColumnGroup from "primevue/columngroup";
 import Row from "primevue/row";
+import OverlayPanel from 'primevue/overlaypanel';
 
 const isLoading = ref(false);
 const dt = ref(null);
@@ -32,6 +33,8 @@ const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     start_date: { value: null, matchMode: FilterMatchMode.EQUALS },
     end_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+    start_close_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+    end_close_date: { value: null, matchMode: FilterMatchMode.EQUALS },
     account_type_id: { value: null, matchMode: FilterMatchMode.EQUALS },
 });
 
@@ -117,9 +120,14 @@ const maxDate = ref(today);
 
 // Reactive variable for selected date range
 const selectedDate = ref([minDate.value, maxDate.value]);
+const selectedCloseDate = ref(null);
 
 const clearDate = () => {
-    selectedDate.value = [];
+    selectedDate.value = null;
+}
+
+const clearCloseDate = () => {
+    selectedCloseDate.value = null;
 }
 
 watch(selectedDate, (newDateRange) => {
@@ -131,7 +139,29 @@ watch(selectedDate, (newDateRange) => {
         if (startDate !== null && endDate !== null) {
             loadLazyData();
         }
-    } else {
+    }
+    else if (newDateRange === null) {
+        loadLazyData();
+    }
+    else {
+        console.warn('Invalid date range format:', newDateRange);
+    }
+})
+
+watch(selectedCloseDate, (newDateRange) => {
+    if (Array.isArray(newDateRange)) {
+        const [startCloseDate, endCloseDate] = newDateRange;
+        filters.value['start_close_date'].value = startCloseDate;
+        filters.value['end_close_date'].value = endCloseDate;
+
+        if (startCloseDate !== null && endCloseDate !== null) {
+            loadLazyData();
+        }
+    } 
+    else if (newDateRange === null) {
+        loadLazyData();
+    }
+    else {
         console.warn('Invalid date range format:', newDateRange);
     }
 })
@@ -160,7 +190,7 @@ watch(selectedDate, (newDateRange) => {
                 @page="onPage($event)"
                 @sort="onSort($event)"
                 @filter="onFilter($event)"
-                :globalFilterFields="['name', 'email', 'username']"
+                :globalFilterFields="['name', 'email', 'username', 'meta_login']"
             >
                 <template #header>
                     <div class="flex flex-col md:flex-row gap-3 items-center self-stretch pb-3 md:pb-5">
@@ -178,8 +208,8 @@ watch(selectedDate, (newDateRange) => {
                             </div>
                         </div>
                         <div class="w-full flex flex-col gap-3 md:flex-row">
-                            <div class="relative w-full md:w-[272px]">
-                                <Calendar
+                            <div class="w-full md:w-[272px]">
+                                <!-- <Calendar
                                     v-model="selectedDate"
                                     selectionMode="range"
                                     :manualInput="false"
@@ -197,7 +227,18 @@ watch(selectedDate, (newDateRange) => {
                                     @click="clearDate"
                                 >
                                     <IconX size="20" />
-                                </div>
+                                </div> -->
+                                <Button
+                                    variant="gray-outlined"
+                                    @click="toggle"
+                                    size="sm"
+                                    class="flex gap-3 items-center justify-center py-3 w-full md:w-[130px]"
+                                >
+                                    <IconAdjustments size="20" color="#0C111D" stroke-width="1.25" />
+                                    <div class="text-sm text-gray-950 font-medium">
+                                        {{ $t('public.filter') }}
+                                    </div>
+                                </Button>
                             </div>
 <!--                            <div class="w-full flex justify-end">-->
 <!--                                <Button-->
@@ -236,6 +277,16 @@ watch(selectedDate, (newDateRange) => {
                     >
                         <template #body="slotProps">
                             {{ dayjs(slotProps.data.created_at).format('YYYY/MM/DD') }}
+                        </template>
+                    </Column>
+                    <Column
+                        field="closed_time"
+                        sortable
+                        :header="`${$t('public.closed_time')}`"
+                        class="hidden md:table-cell"
+                    >
+                        <template #body="slotProps">
+                            {{ slotProps.data.closed_time }}
                         </template>
                     </Column>
                     <Column
@@ -321,7 +372,7 @@ watch(selectedDate, (newDateRange) => {
                     </Column>
                     <ColumnGroup type="footer">
                         <Row>
-                            <Column class="hidden md:table-cell" :footer="$t('public.total') + ':'" :colspan="5" footerStyle="text-align:right" />
+                            <Column class="hidden md:table-cell" :footer="$t('public.total') + ':'" :colspan="6" footerStyle="text-align:right" />
                             <Column class="hidden md:table-cell" :footer="'$' + formatAmount(totalRebateAmount ?? 0)" />
                         </Row>
                     </ColumnGroup>
@@ -329,4 +380,62 @@ watch(selectedDate, (newDateRange) => {
             </DataTable>
         </div>
     </div>
+
+    <OverlayPanel ref="op">
+        <div class="flex flex-col gap-8 w-72 py-5 px-4">
+            <div class="flex flex-col gap-2 items-center self-stretch">
+                <div class="flex self-stretch text-xs text-gray-950 font-semibold">
+                    {{ $t('public.filter_date') }}
+                </div>
+                <div class="flex flex-col relative gap-1 self-stretch">
+                    <Calendar
+                        v-model="selectedDate"
+                        selectionMode="range"
+                        :manualInput="false"
+                        :minDate="minDate"
+                        :maxDate="maxDate"
+                        dateFormat="dd/mm/yy"
+                        showIcon
+                        iconDisplay="input"
+                        placeholder="yyyy/mm/dd - yyyy/mm/dd"
+                        class="w-full md:w-[272px]"
+                    />
+                    <div
+                        v-if="selectedDate && selectedDate.length > 0"
+                        class="absolute top-2/4 -mt-2.5 right-4 text-gray-400 select-none cursor-pointer bg-white"
+                        @click="clearDate"
+                    >
+                        <IconX size="20" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2 items-center self-stretch">
+                <div class="flex self-stretch text-xs text-gray-950 font-semibold">
+                    {{ $t('public.filter_closed_time') }}
+                </div>
+                <div class="flex flex-col relative gap-1 self-stretch">
+                    <Calendar
+                        v-model="selectedCloseDate"
+                        selectionMode="range"
+                        :manualInput="false"
+                        :minDate="minDate"
+                        :maxDate="maxDate"
+                        dateFormat="dd/mm/yy"
+                        showIcon
+                        iconDisplay="input"
+                        placeholder="yyyy/mm/dd - yyyy/mm/dd"
+                        class="w-full md:w-[272px]"
+                    />
+                    <div
+                        v-if="selectedCloseDate && selectedCloseDate.length > 0"
+                        class="absolute top-2/4 -mt-2.5 right-4 text-gray-400 select-none cursor-pointer bg-white"
+                        @click="clearCloseDate"
+                    >
+                        <IconX size="20" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </OverlayPanel>
 </template>

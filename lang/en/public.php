@@ -504,4 +504,7 @@ return [
     "drag_and_drop_file" => "Drag and drop file",
     "pending" => "Pending",
     "summary" => "Summary",
+    "closed_time" => "Closed Time",
+    "filter_date" => "Filter by Date",
+    "filter_closed_time" => "Filter by Closed Time",
 ];

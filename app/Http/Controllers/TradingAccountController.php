@@ -729,7 +729,6 @@ class TradingAccountController extends Controller
         }
         else {
             //bank
-            $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', 'VND');
             $result = [
                 'partner_id' =>  $response['partner_id'],
                 'system_order_code' => $response['system_order_code'],
@@ -752,16 +751,20 @@ class TradingAccountController extends Controller
         }
 
         $status = $result['status'] == 'success' ? 'successful' : 'failed';
-        $to_wallet_address = $result['erc20address'] ?? $result['trc20address'];
+        $to_wallet_address = null;
 
         $fees = $result['amount'] - $result['fees'];
 
-        if($transaction['payment_gateway']['platform'] == 'bank') {
-            $fees = $fees / $transaction->conversion_rate;
+        if($transaction['payment_gateway']['platform'] == 'crypto') {
+            $to_wallet_address = $result['erc20address'] ?? $result['trc20address'];
+        }
+        else{
+            $to_wallet_address = $result['bank_account_no'];
+            $fees = round($fees / $transaction->conversion_rate, 2);
         }
 
         $transaction->update([
-            'to_wallet_address' => $to_wallet_address ?? $result['bank_account_no'],
+            'to_wallet_address' => $to_wallet_address ?? null,
             'txn_hash' => $result['txid'],
             'transaction_charges' => $fees,
             'transaction_amount' => $transaction->amount - $fees,

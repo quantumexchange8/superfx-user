@@ -288,13 +288,15 @@ class ReportController extends Controller
                 ->where('upline_user_id', Auth::id());
 
             if ($data['filters']['global']['value']) {
-                $query->whereHas('downline', function ($query) use ($data) {
-                    $query->where( function($q) use ($data) {
-                        $keyword = $data['filters']['global']['value'];
+                $keyword = $data['filters']['global']['value'];
 
-                        $q->where('name', 'like', '%' . $keyword . '%')
+                $query->where(function ($q) use ($keyword) {
+                    $q->whereHas('downline', function ($query) use ($keyword) {
+                        $query->where(function ($q) use ($keyword) {
+                            $q->where('name', 'like', '%' . $keyword . '%')
                             ->orWhere('email', 'like', '%' . $keyword . '%');
-                    });
+                        });
+                    })->orWhere('meta_login', 'like', '%' . $keyword . '%');
                 });
             }
 
@@ -305,11 +307,18 @@ class ReportController extends Controller
                 $query->whereBetween('created_at', [$start_date, $end_date]);
             }
 
+            if (!empty($data['filters']['start_close_date']['value']) && !empty($data['filters']['end_close_date']['value'])) {
+                $start_close_date = Carbon::parse($data['filters']['start_close_date']['value'])->addDay()->startOfDay();
+                $end_close_date = Carbon::parse($data['filters']['end_close_date']['value'])->addDay()->endOfDay();
+
+                $query->whereBetween('closed_time', [$start_close_date, $end_close_date]);
+            }
+
             if ($data['sortField'] && $data['sortOrder']) {
                 $order = $data['sortOrder'] == 1 ? 'asc' : 'desc';
                 $query->orderBy($data['sortField'], $order);
             } else {
-                $query->latest();
+                $query->orderByDesc('id');
             }
 
             // Export logic
