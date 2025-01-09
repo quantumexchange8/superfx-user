@@ -696,14 +696,15 @@ class TradingAccountController extends Controller
 
         Log::debug("Callback Response: " , $response);
 
-        $transaction = Transaction::where('transaction_number', $response['partner_order_code'])->first();
+        $transaction = Transaction::with('payment_gateway')
+            ->where('transaction_number', $response['partner_order_code'])->first();
             // ->whereHas('payment_gateway', function ($query) use ($result) {
             //     $query->where('payment_app_number', $result['partner_id']);
             // })
             // ->first();
 
         $result = [];
-        if ($transaction['payment_gateway']['platform'] == 'crypto') {
+        if ($transaction->payment_gateway->platform === 'crypto') {
             //crypto
             $result = [
                 'partner_id' =>  $response['partner_id'],
@@ -754,7 +755,7 @@ class TradingAccountController extends Controller
 
         $fees = $result['amount'] - $result['fees'];
 
-        if($transaction['payment_gateway']['platform'] == 'crypto') {
+        if($transaction->payment_gateway->platform === 'crypto') {
             $to_wallet_address = $result['erc20address'] ?? $result['trc20address'];
         }
         else{
