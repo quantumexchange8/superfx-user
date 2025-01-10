@@ -514,8 +514,9 @@ return [
     "completed" => "已完成",
     "filter_type" => "按类型筛选",
     "platform" => "平台",
-    "deposit_info_message_1" => "存款汇率: :conversionRate.",
+    "deposit_info_message_1" => "存款汇率: $:conversionRate.",
     "deposit_info_message_2" => "每笔交易的最低存款金额为 $50.00, 无手续费.",
     "deposit_info_message_3" => "每笔交易的最高存款金额为 $:maxAmount, 无手续费.",
     "id_number" => "ID",
+    "toast_deposit_request_success_message" => "存款申请成功处理",
 ];

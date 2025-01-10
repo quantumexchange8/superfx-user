@@ -17,8 +17,7 @@ import { trans } from "laravel-vue-i18n";
 
 const props = defineProps({
     account: Object,
-    conversionRate: String,
-    bankMaxAmount: String,
+    conversionRate: Number,
 });
 
 const maxAmount = ref();
@@ -36,7 +35,7 @@ const selectedPlatform = ref('');
 const depositOptions = ref(['bank', 'crypto']);
 const selectPlatform = (type) => {
     selectedPlatform.value = type;
-    maxAmount.value = type == 'bank' ? props.bankMaxAmount : formatAmount(1000000);
+    maxAmount.value = type === 'bank' ? formatAmount(4000000000/props.conversionRate) : formatAmount(1000000);
 }
 
 const selectedCryptoOption = ref('ERC20');
@@ -50,15 +49,15 @@ const errors = ref({});
 
 const steps = computed(() => {
     const stepsArray = [];
-  
+
     if (selectedPlatform.value === 'bank') {
-        stepsArray.push(trans('public.deposit_info_message_1', { conversionRate: props.conversionRate }));
+        stepsArray.push(trans('public.deposit_info_message_1', { conversionRate: formatAmount(props.conversionRate) }));
     }
-  
+
     stepsArray.push(trans('public.deposit_info_message_2'));
-    
+
     stepsArray.push(trans('public.deposit_info_message_3', { maxAmount: maxAmount.value }));
-  
+
      return stepsArray;
 });
 
@@ -84,6 +83,13 @@ const submitForm = async () => {
                 message: response.data.toast_message,
                 type: response.data.toast_type,
             });
+
+            form.value = {
+                meta_login: props.account.meta_login,
+                payment_platform: '',
+                cryptoType: '',
+                amount: 0,
+            };
 
             window.open(response.data.payment_url, '_blank');
         } else {

@@ -516,8 +516,9 @@ return [
     "completed" => "Hoàn thành",
     "filter_type" => "Lọc theo loại",
     "platform" => "Plataforma",
-    "deposit_info_message_1" => "Tỷ giá hối đoái gửi tiền: :conversionRate.",
+    "deposit_info_message_1" => "Tỷ giá hối đoái gửi tiền: $:conversionRate.",
     "deposit_info_message_2" => "Số tiền gửi tối thiểu cho mỗi giao dịch là $50.00, không tính phí dịch vụ.",
     "deposit_info_message_3" => "Số tiền gửi tối đa cho mỗi giao dịch là $:maxAmount, không tính phí dịch vụ.",
     "id_number" => "ID",
+    "toast_deposit_request_success_message" => "Yêu cầu nạp tiền đã được xử lý thành công",
 ];

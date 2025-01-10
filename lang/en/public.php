@@ -517,8 +517,9 @@ return [
     "completed" => "Completed",
     "filter_type" => "Filter by Type",
     "platform" => "Platform",
-    "deposit_info_message_1" => "Deposit exchange rate: :conversionRate.",
+    "deposit_info_message_1" => "Deposit exchange rate: $:conversionRate.",
     "deposit_info_message_2" => "Minimum deposit amount per transaction is $50.00, no service fee.",
     "deposit_info_message_3" => "Maximum deposit amount per transaction is $:maxAmount, no service fee charged.",
     "id_number" => "ID",
+    "toast_deposit_request_success_message" => "Successfully Proceed Deposit",
 ];

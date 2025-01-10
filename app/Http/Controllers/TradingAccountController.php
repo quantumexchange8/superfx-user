@@ -686,7 +686,7 @@ class TradingAccountController extends Controller
                 return response()->json([
                     'success' => true,
                     'payment_url' => $paymentUrl,
-                    'toast_title' => trans('public.toast_deposit_request_success'),
+                    'toast_title' => trans('public.successful'),
                     'toast_message' => trans('public.toast_deposit_request_success_message'),
                     'toast_type' => 'success'
                 ]);
@@ -703,7 +703,7 @@ class TradingAccountController extends Controller
         }
 
         return redirect()->back()
-            ->with('title', trans('public.toast_deposit_request_success'))
+            ->with('title', trans('public.successful'))
             ->with('success', trans('public.toast_deposit_request_success_message'));
     }
 

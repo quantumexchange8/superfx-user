@@ -1,6 +1,5 @@
 <script setup>
 import {ref, onMounted, watchEffect} from "vue";
-import StatusBadge from '@/Components/StatusBadge.vue';
 import Action from "@/Pages/TradingAccount/Partials/Action.vue";
 import ActionButton from "@/Pages/TradingAccount/Partials/ActionButton.vue";
 import Empty from '@/Components/Empty.vue';

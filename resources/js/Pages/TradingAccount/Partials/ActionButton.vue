@@ -9,27 +9,22 @@ import Dialog from 'primevue/dialog';
 import Dropdown from "primevue/dropdown";
 import axios from 'axios';
 import InputNumber from "primevue/inputnumber";
-import {transactionFormat} from "@/Composables/index.js";
 import DepositAccount from "@/Pages/TradingAccount/Partials/DepositAccount.vue";
 
 const props = defineProps({
     account: Object,
 });
 
-const {formatAmount} = transactionFormat();
-
 const showTransferDialog = ref(false);
 const transferOptions = ref([]);
 const selectedAccount = ref(0);
 const conversionRate = ref(0);
-const bankMaxAmount = ref(0);
 
 const getOptions = async () => {
     try {
         const response = await axios.get('/account/getOptions');
         transferOptions.value = response.data.transferOptions;
-        conversionRate.value = formatAmount(response.data.conversionRate);
-        bankMaxAmount.value = formatAmount((4000000000 / response.data.conversionRate).toFixed(2));
+        conversionRate.value = Number(response.data.conversionRate);
     } catch (error) {
         console.error('Error changing locale:', error);
     }
@@ -87,7 +82,6 @@ const submitForm = (formType) => {
     <DepositAccount
         :account="account"
         :conversionRate="conversionRate"
-        :bankMaxAmount="bankMaxAmount"
     />
     <Button
         type="button"
