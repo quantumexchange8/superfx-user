@@ -24,7 +24,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
 use App\Services\RunningNumberService;
 use App\Services\DropdownOptionService;
-use App\Services\ChangeTraderBalanceType;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use App\Models\PaymentGateway;
@@ -513,16 +512,16 @@ class TradingAccountController extends Controller
 
     public function deposit_to_account(Request $request)
     {
-        //change cryptoType validation as bank wont work
+        //change cryptoType validation as bank won't work
         Validator::make($request->all(), [
             'meta_login' => ['required', 'exists:trading_accounts,meta_login'],
             'payment_platform' => ['required'],
-            // 'cryptoType' => ['required'],
+            'cryptoType' => ['required_if:payment_platform,crypto'],
             'amount' => ['required', 'numeric', 'gte:50'],
         ])->setAttributeNames([
             'meta_login' => trans('public.account'),
             'payment_platform' => trans('public.platform'),
-            // 'cryptoType' => trans('public.method'),
+            'cryptoType' => trans('public.method'),
             'amount' => trans('public.amount'),
         ])->validate();
 
@@ -670,23 +669,28 @@ class TradingAccountController extends Controller
                 $paymentUrl = $responseData['data']['payment_url'];
                 Log::debug("Payment URL: " . $paymentUrl);
 
-                // Redirect to the payment URL
-                return Inertia::location($paymentUrl);
+                return response()->json([
+                    'success' => true,
+                    'payment_url' => $paymentUrl,
+                    'toast_title' => trans('public.toast_deposit_request_success'),
+                    'toast_message' => trans('public.toast_deposit_request_success_message'),
+                    'toast_type' => 'success'
+                ]);
             } else {
                 Log::error("Payment URL not found in response.", $responseData);
 
-                // Handle the error (e.g., redirect to an error page or return a response)
-                return back()->with('toast', [
-                    'title' => trans('Error'),
-                    'message' => $responseData['msg'],
-                    'type' => 'error',
+                return response()->json([
+                    'success' => false,
+                    'toast_title' => trans('public.gateway_error'),
+                    'toast_message' => $responseData['msg'],
+                    'toast_type' => 'error'
                 ]);
             }
         }
 
         return redirect()->back()
-            ->with('title', trans('public.success_request_deposit'))
-            ->with('success', trans('public.successfully_request_deposit'));
+            ->with('title', trans('public.toast_deposit_request_success'))
+            ->with('success', trans('public.toast_deposit_request_success_message'));
     }
 
     public function depositCallback(Request $request)
