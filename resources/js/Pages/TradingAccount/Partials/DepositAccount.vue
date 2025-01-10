@@ -1,6 +1,6 @@
 <script setup>
 import Button from "@/Components/Button.vue";
-import {ref} from "vue";
+import {ref, computed} from "vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import {
     IconLoader2,
@@ -12,11 +12,16 @@ import InputError from "@/Components/InputError.vue";
 import Dialog from "primevue/dialog";
 import {transactionFormat} from "@/Composables/index.js";
 import toast from "@/Composables/toast.js";
+import { trans } from "laravel-vue-i18n";
+
 
 const props = defineProps({
-    account: Object
+    account: Object,
+    conversionRate: String,
+    bankMaxAmount: String,
 });
 
+const maxAmount = ref();
 const visible = ref(false);
 const isLoading = ref(false);
 
@@ -31,6 +36,7 @@ const selectedPlatform = ref('');
 const depositOptions = ref(['bank', 'crypto']);
 const selectPlatform = (type) => {
     selectedPlatform.value = type;
+    maxAmount.value = type == 'bank' ? props.bankMaxAmount : formatAmount(1000000);
 }
 
 const selectedCryptoOption = ref('ERC20');
@@ -41,6 +47,20 @@ const selectCryptoOption = (type) => {
 
 const {formatAmount} = transactionFormat();
 const errors = ref({});
+
+const steps = computed(() => {
+    const stepsArray = [];
+  
+    if (selectedPlatform.value === 'bank') {
+        stepsArray.push(trans('public.deposit_info_message_1', { conversionRate: props.conversionRate }));
+    }
+  
+    stepsArray.push(trans('public.deposit_info_message_2'));
+    
+    stepsArray.push(trans('public.deposit_info_message_3', { maxAmount: maxAmount.value }));
+  
+     return stepsArray;
+});
 
 const submitForm = async () => {
     isLoading.value = true;
@@ -195,15 +215,11 @@ const closeDialog = () => {
                 <InputError v-if="errors.amount" :message="errors.amount[0]" />
             </div>
             <div class="flex flex-col items-center self-stretch">
-                <div class="h-2 self-stretch bg-info-500"></div>
-                <div class="flex justify-center items-start py-3 gap-3 self-stretch">
-                    <div class="text-info-500">
-                        <IconInfoOctagonFilled size="20" stroke-width="1.25" />
-                    </div>
+                <div v-if="selectedPlatform" class="flex justify-center items-start py-2 gap-3 self-stretch">
                     <div class="flex flex-col items-start gap-1 flex-grow">
                         <span class="self-stretch text-gray-950 text-sm font-semibold">{{ $t('public.deposit_info_header') }}</span>
-                        <span class="self-stretch text-gray-500 text-xs">
-                            {{ $t('public.deposit_info_message') }}
+                        <span v-for="(step, index) in steps" :key="index" class="self-stretch text-gray-500 text-xs">
+                            {{ index + 1 }}. {{ step }}
                         </span>
                     </div>
                 </div>

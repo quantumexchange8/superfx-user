@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Mail\CreateAccountMail;
+use App\Mail\DepositSuccessMail;
+use App\Mail\TransferMoneySuccessMail;
+use App\Mail\WithdrawalRequestMail;
+// use App\Mail\WithdrawalRequestUsdtMail;
 use App\Models\Term;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
@@ -70,11 +74,14 @@ class TradingAccountController extends Controller
                 ];
             });
 
+        $conversionRate = CurrencyConversionRate::firstWhere('base_currency', 'VND')->deposit_rate;
+
         return response()->json([
             'leverages' => (new DropdownOptionService())->getLeveragesOptions(),
             'transferOptions' => (new DropdownOptionService())->getInternalTransferOptions(),
             'walletOptions' => (new DropdownOptionService())->getWalletOptions(),
             'accountOptions' => $accountOptions,
+            'conversionRate' => $conversionRate,
         ]);
     }
 
@@ -320,6 +327,9 @@ class TradingAccountController extends Controller
              'status' => 'processing',
          ]);
 
+         $user = Auth::user();
+
+         Mail::to($user->email)->send(new WithdrawalRequestMail($user, $tradingAccount->meta_login, $amount, $transaction->created_at, $paymentWallet->account_no));
         // disable trade
 
         // Set notification data in the session
@@ -375,6 +385,10 @@ class TradingAccountController extends Controller
              'status' => 'successful',
              'comment' => 'to ' . $to_meta_login
          ]);
+
+         $user = Auth::user();
+
+         Mail::to($user->email)->send(new TransferMoneySuccessMail($user, $tradingAccount->meta_login, $to_meta_login, $amount));
 
         return back()->with('toast', [
             'title' => trans('public.toast_internal_transfer_success'),
@@ -765,13 +779,13 @@ class TradingAccountController extends Controller
             $to_wallet_address = $result['bank_account_no'];
             $fees = round($result['fees'] / $transaction->conversion_rate, 2);
         }
-        $final_amount = $transaction->amount - $fees;
+        // $final_amount = $transaction->amount - $fees;
 
         $transaction->update([
             'to_wallet_address' => $to_wallet_address ?? null,
             'txn_hash' => $result['txid'],
             'transaction_charges' => $fees,
-            'transaction_amount' => $final_amount,
+            'transaction_amount' => $transaction->amount,
             'status' => $status,
             'approved_at' => now()
         ]);
@@ -791,12 +805,16 @@ class TradingAccountController extends Controller
                 $ticket = $trade['ticket'];
                 $transaction->ticket = $ticket;
                 $transaction->save();
+
+                $user = User::where('id', $transaction->user_id)->first();
+
+                Mail::to($user->email)->send(new WithdrawalRequestMail($user, $transaction->to_meta_login, $amount, $transaction->created_at));
+
+                return response()->json(['success' => true, 'message' => 'Deposit Success']);
             }
         }
 
-        return response()->json([
-            'status' => 'success',
-        ]);
+        return response()->json(['success' => false, 'message' => 'Deposit Failed']);
     }
 
     //payment gateway return function

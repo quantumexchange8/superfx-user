@@ -1,6 +1,6 @@
 <script setup>
 import {onMounted, ref, watch, watchEffect} from "vue";
-import {transactionFormat} from "@/Composables/index.js";
+import {generalFormat, transactionFormat} from "@/Composables/index.js";
 import { FilterMatchMode } from 'primevue/api';
 import debounce from "lodash/debounce.js";
 import {usePage} from "@inertiajs/vue3";
@@ -27,6 +27,7 @@ const dt = ref(null);
 const histories = ref([]);
 const exportTable = ref('no');
 const {formatAmount} = transactionFormat();
+const { formatRgbaColor } = generalFormat();
 const totalRecords = ref(0);
 const first = ref(0);
 const totalRebateAmount = ref();
@@ -172,25 +173,28 @@ watch(selectedCloseDate, (newDateRange) => {
 const clearFilter = () => {
     filters.value = {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        start_date: { value: minDate.value, matchMode: FilterMatchMode.EQUALS },
-        end_date: { value: maxDate.value, matchMode: FilterMatchMode.EQUALS },
+        start_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+        end_date: { value: null, matchMode: FilterMatchMode.EQUALS },
         start_close_date: { value: null, matchMode: FilterMatchMode.EQUALS },
         end_close_date: { value: null, matchMode: FilterMatchMode.EQUALS },
         account_type_id: { value: null, matchMode: FilterMatchMode.EQUALS },
         t_type: { value: null, matchMode: FilterMatchMode.EQUALS },
     };
+    
+    selectedDate.value = [minDate.value, maxDate.value];
+    selectedCloseDate.value = null;
+    lazyParams.value.filters = filters.value ;
 };
 
 watch(filters, debounce(() => {
-    // Count active filters, excluding null, undefined, empty strings, and empty arrays
     filterCount.value = Object.values(filters.value).filter(filter => {
         if (Array.isArray(filter)) {
-            return filter.length > 0;  // Check if the array is not empty
+            return filter.length > 0; 
         }
-        return filter !== null && filter !== '';  // Check if the value is not null or an empty string
+        return filter !== null && filter !== '';  
     }).length;
 
-    loadLazyData(); // Call function to fetch the data
+    loadLazyData(); 
 }, 500), { deep: true });
 
 </script>
@@ -218,7 +222,7 @@ watch(filters, debounce(() => {
                 @page="onPage($event)"
                 @sort="onSort($event)"
                 @filter="onFilter($event)"
-                :globalFilterFields="['name', 'email', 'username', 'meta_login']"
+                :globalFilterFields="['name', 'email', 'username', 'meta_login', 'id_number', 'deal_id']"
             >
                 <template #header>
                     <div class="flex flex-col md:flex-row gap-3 items-center self-stretch pb-3 md:pb-5">
@@ -344,7 +348,7 @@ watch(filters, debounce(() => {
                         class="hidden md:table-cell"
                     >
                         <template #body="slotProps">
-                            {{ formatAmount(slotProps.data.trade_open_price ?? 0) }}
+                            {{ slotProps.data.trade_open_price ?? 0 }}
                         </template>
                     </Column>
                     <Column
@@ -354,7 +358,7 @@ watch(filters, debounce(() => {
                         class="hidden md:table-cell"
                     >
                         <template #body="slotProps">
-                            {{ formatAmount(slotProps.data.trade_close_price ?? 0) }}
+                            {{ slotProps.data.trade_close_price ?? 0 }}
                         </template>
                     </Column>
                     <Column
@@ -388,6 +392,15 @@ watch(filters, debounce(() => {
                         </template>
                     </Column>
                     <Column
+                        field="id_number"
+                        :header="`${$t('public.id_number')}`"
+                        class="hidden md:table-cell"
+                    >
+                        <template #body="slotProps">
+                            {{ slotProps.data.downline.id_number }}
+                        </template>
+                    </Column>
+                    <Column
                         field="trade_profit"
                         sortable
                         :header="`${$t('public.profit')}&nbsp;($)`"
@@ -403,7 +416,18 @@ watch(filters, debounce(() => {
                         class="hidden md:table-cell"
                     >
                         <template #body="slotProps">
-                            {{ slotProps.data.meta_login }}
+                            <div class="flex items-center content-center gap-3 flex-grow relative">
+                                <span >{{ slotProps.data.meta_login }}</span>
+                                <div
+                                    class="flex px-2 py-1 justify-center items-center text-xs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
+                                    :style="{
+                                        backgroundColor: formatRgbaColor(slotProps.data.of_account_type.color, 0.15),
+                                        color: `#${slotProps.data.of_account_type.color}`,
+                                    }"
+                                >
+                                    {{ $t(`public.${slotProps.data.of_account_type.slug}`) }}
+                                </div>
+                            </div>
                         </template>
                     </Column>
                     <Column
@@ -549,16 +573,16 @@ watch(filters, debounce(() => {
                 </div>
             </div>
 
-            <!-- <div class="flex w-full">
+            <div class="flex w-full">
                 <Button
                     type="button"
                     variant="primary-outlined"
                     class="flex justify-center w-full"
-                    @click="clearFilter"
+                    @click="clearFilter()"
                 >
                     {{ $t('public.clear_all') }}
                 </Button>
-            </div> -->
+            </div>
         </div>
     </OverlayPanel>
 </template>

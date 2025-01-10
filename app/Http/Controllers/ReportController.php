@@ -295,9 +295,11 @@ class ReportController extends Controller
                     $q->whereHas('downline', function ($query) use ($keyword) {
                         $query->where(function ($q) use ($keyword) {
                             $q->where('name', 'like', '%' . $keyword . '%')
-                            ->orWhere('email', 'like', '%' . $keyword . '%');
+                            ->orWhere('email', 'like', '%' . $keyword . '%')
+                            ->orWhere('id_number', 'like', '%' . $keyword . '%');
                         });
-                    })->orWhere('meta_login', 'like', '%' . $keyword . '%');
+                    })->orWhere('meta_login', 'like', '%' . $keyword . '%')
+                    ->orWhere('deal_id', 'like', '%' . $keyword . '%');
                 });
             }
 

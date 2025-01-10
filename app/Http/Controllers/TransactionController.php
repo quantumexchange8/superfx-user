@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\WithdrawalRequestMail;
+use Illuminate\Support\Facades\Mail;
 use App\Models\PaymentAccount;
 use App\Models\TradingAccount;
 use App\Models\TradingUser;
@@ -189,6 +191,8 @@ class TransactionController extends Controller
         ]);
 
         $wallet->save();
+
+        Mail::to($user->email)->send(new WithdrawalRequestMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no));
 
         return redirect()->back()->with('notification', [
             'details' => $transaction,
