@@ -320,7 +320,7 @@ class TradingAccountController extends Controller
              'transaction_number' => RunningNumberService::getID('transaction'),
              'payment_account_id' => $paymentWallet->id,
              'to_wallet_address' => $paymentWallet->account_no,
-             'ticket' => $trade['ticket'],
+             'ticket' => $trade['ticket'] ?? null,
              'amount' => $amount,
              'transaction_charges' => 0,
              'transaction_amount' => $amount,
@@ -369,8 +369,8 @@ class TradingAccountController extends Controller
              return response()->json(['success' => false, 'message' => $e->getMessage()]);
          }
 
-         $ticketFrom = $tradeFrom['ticket'];
-         $ticketTo = $tradeTo['ticket'];
+         $ticketFrom = $tradeFrom['ticket'] ?? null;
+         $ticketTo = $tradeTo['ticket'] ?? null;
          Transaction::create([
              'user_id' => Auth::id(),
              'category' => 'trading_account',
@@ -802,13 +802,13 @@ class TradingAccountController extends Controller
                         Log::error($e->getMessage());
                     }
                 }
-                $ticket = $trade['ticket'];
+                $ticket = $trade['ticket'] ?? null;
                 $transaction->ticket = $ticket;
                 $transaction->save();
 
                 $user = User::where('id', $transaction->user_id)->first();
 
-                Mail::to($user->email)->send(new WithdrawalRequestMail($user, $transaction->to_meta_login, $amount, $transaction->created_at));
+                Mail::to($user->email)->send(new DepositSuccessMail($user, $transaction->to_meta_login, $amount, $transaction->created_at));
 
                 return response()->json(['success' => true, 'message' => 'Deposit Success']);
             }
