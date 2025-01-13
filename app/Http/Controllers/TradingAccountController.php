@@ -808,7 +808,7 @@ class TradingAccountController extends Controller
 
                 $user = User::where('id', $transaction->user_id)->first();
 
-                Mail::to($user->email)->send(new DepositSuccessMail($user, $transaction->to_meta_login, $amount, $transaction->created_at));
+                Mail::to($user->email)->send(new DepositSuccessMail($user, $transaction->to_meta_login, $transaction->amount, $transaction->created_at));
 
                 return response()->json(['success' => true, 'message' => 'Deposit Success']);
             }
