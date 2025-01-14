@@ -103,7 +103,6 @@ class MetaFourService {
             'comment' => $comment,
         ];
 
-        dd($payload);
         $jsonPayload = json_encode($payload);
 
         $dealResponse = Http::acceptJson()
