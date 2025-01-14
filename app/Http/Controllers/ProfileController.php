@@ -128,33 +128,25 @@ class ProfileController extends Controller
 
     public function updateCryptoWalletInfo(Request $request)
     {
+        $account_types = $request->account_type;
         $wallet_names = $request->wallet_name;
         $token_addresses = $request->token_address;
 
         $errors = [];
-
-        // Validate wallets and addresses
         foreach ($wallet_names as $index => $wallet_name) {
             $token_address = $token_addresses[$index] ?? '';
-
-            if (empty($wallet_name) && !empty($token_address)) {
+            $account_type = $account_types[$index] ?? '';
+        
+            if (empty($wallet_name) && (!empty($token_address) || !empty($account_type))) {
                 $errors["wallet_name.$index"] = trans('validation.required', ['attribute' => trans('public.wallet_name') . ' #' . ($index + 1)]);
             }
-
-            if (!empty($wallet_name) && empty($token_address)) {
+        
+            if (empty($token_address) && (!empty($wallet_name) || !empty($account_type))) {
                 $errors["token_address.$index"] = trans('validation.required', ['attribute' => trans('public.token_address') . ' #' . ($index + 1)]);
             }
-        }
-
-        foreach ($token_addresses as $index => $token_address) {
-            $wallet_name = $wallet_names[$index] ?? '';
-
-            if (empty($token_address) && !empty($wallet_name)) {
-                $errors["token_address.$index"] = trans('validation.required', ['attribute' => trans('public.token_address') . ' #' . ($index + 1)]);
-            }
-
-            if (!empty($token_address) && empty($wallet_name)) {
-                $errors["wallet_name.$index"] = trans('validation.required', ['attribute' => trans('public.wallet_name') . ' #' . ($index + 1)]);
+        
+            if (empty($account_type) && (!empty($wallet_name) || !empty($token_address))) {
+                $errors["account_type.$index"] = trans('validation.required', ['attribute' => trans('public.account_type') . ' #' . ($index + 1)]);
             }
         }
 
@@ -162,10 +154,13 @@ class ProfileController extends Controller
             throw ValidationException::withMessages($errors);
         }
 
-        if ($wallet_names && $token_addresses) {
+        if ($wallet_names && $token_addresses && $account_types) {
             foreach ($wallet_names as $index => $wallet_name) {
-                // Skip iteration if id or token_address is null
-                if (is_null($token_addresses[$index])) {
+                $token_address = $token_addresses[$index] ?? null;
+                $account_type = $account_types[$index] ?? null;
+
+                // Skip iteration if mandatory fields are null
+                if (is_null($wallet_name) || is_null($token_address) || is_null($account_type)) {
                     continue;
                 }
 
@@ -187,8 +182,9 @@ class ProfileController extends Controller
                         'status' => 'active',
                         'payment_account_name' => $wallet_name,
                         'payment_platform' => 'crypto',
-                        'payment_platform_name' => 'USDT (TRC20)',
+                        'payment_platform_name' => 'USDT (' . strtoupper($account_type) . ')',
                         'account_no' => $token_addresses[$index],
+                        'payment_account_type' => $account_type,
                         'currency' => 'USDT'
                     ]
                 );
