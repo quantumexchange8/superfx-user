@@ -30,7 +30,7 @@ const variantClasses = computed(() => {
         return 'bg-warning-50 text-warning-500'
     } else if (props.value === 'info' || props.value === 'demo' || props.value === 'processing') {
         return 'bg-info-50 text-info-500'
-    } else if (props.value === 'gray') {
+    } else if (props.value === 'gray' || props.value === 'cancelled') {
         return 'bg-gray-50 text-gray-500'
     }
     return 'bg-primary-600 text-gray-950'

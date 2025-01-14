@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -204,6 +205,8 @@ class ProfileController extends Controller
     {
         return response()->json([
             'countries' => (new DropdownOptionService())->getCountries(),
+            'banks' => (new DropdownOptionService())->getBanks(),
+            'bankOptions' => (new DropdownOptionService())->getBankOptions(),
         ]);
     }
 
@@ -213,5 +216,54 @@ class ProfileController extends Controller
             'kyc_status' => Auth::user()->kyc_status,
             'kycVerification' => Auth::user()->getMedia('kyc_verification'),
         ]);
+    }
+
+    public function addPaymentAccount(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'payment_account_name' => ['required'],
+            'payment_account_type' => ['required'],
+            'payment_platform_name' => ['required'],
+            'account_no' => ['required_if:payment_account_type,account'],
+            'card_no' => ['required_if:payment_account_type,card'],
+        ])->setAttributeNames([
+            'payment_account_name' => trans('public.account_name'),
+            'payment_account_type' => trans('public.account_type'),
+            'payment_platform_name' => trans('public.bank'),
+            'account_no' => trans('public.account_no'),
+            'card_no' => trans('public.card_no'),
+        ]);
+        $validator->validate();
+        $user = Auth::user();
+
+        $data = [
+            'user_id' => $user->id,
+            'payment_account_name' => $request->payment_account_name,
+            'payment_platform' => 'bank',
+            'payment_platform_name' => $request->payment_platform_name,
+            'account_no' => $request->payment_account_type == 'account' ? $request->account_no : $request->card_no,
+            'payment_account_type' => $request->payment_account_type,
+            'bank_code' => $request->bank_code,
+            'country_id' => 240,
+            'currency' => 'VND',
+            'status' => 'active',
+        ];
+        Log::debug($data);
+        PaymentAccount::create($data);
+
+        return redirect()->back()->with('toast', [
+            'title' => trans('public.toast_payment_account_success'),
+            'type' => 'success'
+        ]);
+    }
+
+    public function updateBankInfo(Request $request)
+    {
+        
+
+        // return redirect()->back()->with('toast', [
+        //     'title' => trans('public.toast_update_bank_info_success'),
+        //     'type' => 'success'
+        // ]);
     }
 }

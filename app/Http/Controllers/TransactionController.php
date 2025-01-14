@@ -46,6 +46,7 @@ class TransactionController extends Controller
         $endDate = $request->query('endDate');
 
         $query = Transaction::where('user_id', Auth::id())
+            ->where('category', '!=', 'rebate_wallet')
             ->where(function (Builder $query) {
                 $query->where('transaction_type', 'deposit')
                     ->orWhere('transaction_type', 'withdrawal');
@@ -133,7 +134,9 @@ class TransactionController extends Controller
             'from_wallet_id' => $wallet->id,
             'to_meta_login' => $tradingAccount->meta_login,
             'transaction_number' => RunningNumberService::getID('transaction'),
-            'ticket' => $trade['ticket'],
+            'ticket' => $trade['ticket'] ?? null,
+            'from_currency' => 'USD',
+            'to_currency' => 'USD',
             'amount' => $amount,
             'transaction_charges' => 0,
             'transaction_amount' => $amount,
@@ -181,6 +184,14 @@ class TransactionController extends Controller
             'from_wallet_id' => $wallet->id,
             'transaction_number' => RunningNumberService::getID('transaction'),
             'payment_account_id' => $paymentWallet->id,
+            'payment_account_name' => $paymentWallet->payment_account_name,
+            'payment_platform' => $paymentWallet->payment_platform,
+            'payment_platform_name' => $paymentWallet->payment_platform_name,
+            'payment_account_no' => $paymentWallet->account_no,
+            'payment_account_type' => $paymentWallet->payment_account_type,
+            'bank_code' => $paymentWallet->bank_code,
+            'from_currency' => 'USD',
+            'to_currency' => $paymentWallet->currency,
             'to_wallet_address' => $paymentWallet->account_no,
             'amount' => $amount,
             'transaction_charges' => 0,
@@ -289,6 +300,91 @@ class TransactionController extends Controller
             return back()->with('toast', [
                 'title' => trans("public.unable_to_apply_rebate"),
                 'message' => trans("public.toast_apply_rebate_error"),
+                'type' => 'error',
+            ]);
+        }
+    }
+
+    public function cancelWithdrawal(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'remarks' => ['required']
+        ])->setAttributeNames([
+            'remarks' => trans('public.remarks'),
+        ]);
+        $validator->validate();
+
+        $user = Auth::user();
+
+        $transaction = Transaction::where('transaction_number', $request->transaction_number)->first();
+
+        if ($transaction->status == 'processing') { 
+            $transaction->update([
+                'remarks' => $request->remarks,
+                'status' => 'cancelled',
+            ]);
+    
+            if ($transaction->category == 'rebate_wallet') {
+                $rebate_wallet = Wallet::where('user_id', $transaction->user_id)
+                    ->where('type', 'rebate_wallet')
+                    ->first();
+
+                $transaction->update([
+                    'old_wallet_amount' => $rebate_wallet->balance,
+                    'new_wallet_amount' => $rebate_wallet->balance += $transaction->amount,
+                ]);
+
+                $rebate_wallet->save();
+            }
+
+            if ($transaction->category == 'bonus_wallet') {
+                $bonus_wallet = Wallet::where('user_id', $transaction->user_id)
+                    ->where('type', 'bonus_wallet')
+                    ->first();
+
+                $transaction->update([
+                    'old_wallet_amount' => $bonus_wallet->balance,
+                    'new_wallet_amount' => $bonus_wallet->balance += $transaction->amount,
+                ]);
+
+                $bonus_wallet->save();
+            }
+
+            if ($transaction->category == 'trading_account') {
+                try {
+                    $trade = (new MetaFourService)->createTrade($transaction->from_meta_login, $transaction->amount, $transaction->remarks, 'balance', '');
+
+                    $transaction->update([
+                        'ticket' => $trade['ticket'] ?? null,
+                    ]);
+                } catch (\Throwable $e) {
+                    // Log the main error
+                    Log::error('Error creating trade: ' . $e->getMessage());
+
+                    // Attempt to get the account and mark account as inactive if not found
+                    $account = (new MetaFourService())->getUser($transaction->meta_login);
+                    if (!$account) {
+                        TradingUser::where('meta_login', $transaction->meta_login)
+                            ->update(['acc_status' => 'inactive']);
+                    }
+
+                    return back()
+                        ->with('toast', [
+                            'title' => 'Trading account error',
+                            'type' => 'error'
+                        ]);
+                }
+            }
+
+            return back()->with('toast', [
+                'title' => trans("public.toast_cancel_withdrawal_success"),
+                'type' => 'success',
+            ]);
+        }
+        else {
+            return back()->with('toast', [
+                'title' => trans("public.unable_to_cancel_withdrawal"),
+                'message' => trans("public.toast_cancel_withdrawal_error"),
                 'type' => 'error',
             ]);
         }

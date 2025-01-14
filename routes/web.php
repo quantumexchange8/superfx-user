@@ -149,7 +149,7 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('/getTotal', [TransactionController::class, 'getTotal'])->name('transaction.getTotal');
         Route::get('/getTransactions', [TransactionController::class, 'getTransactions'])->name('transaction.getTransactions');
         Route::get('/getRebateTransactions', [TransactionController::class, 'getRebateTransactions'])->name('transaction.getRebateTransactions');
-
+        Route::post('/cancelWithdrawal', [TransactionController::class, 'cancelWithdrawal'])->name('transaction.cancel_withdrawal');
     });
 
     /**
@@ -170,11 +170,12 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('/', [ProfileController::class, 'index'])->name('profile');
         Route::get('/getFilterData', [ProfileController::class, 'getFilterData'])->name('profile.getFilterData');
         Route::get('/getKycVerification', [ProfileController::class, 'getKycVerification'])->name('profile.getKycVerification');
-
+        Route::post('/addPaymentAccount', [ProfileController::class, 'addPaymentAccount'])->name('profile.addPaymentAccount');
         Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::post('/updateProfilePhoto', [ProfileController::class, 'updateProfilePhoto'])->name('profile.updateProfilePhoto');
         Route::post('/updateKyc', [ProfileController::class, 'updateKyc'])->name('profile.updateKyc');
         Route::post('/updateCryptoWalletInfo', [ProfileController::class, 'updateCryptoWalletInfo'])->name('profile.updateCryptoWalletInfo');
+        Route::post('/updateBankInfo', [ProfileController::class, 'updateBankInfo'])->name('profile.updateBankInfo');
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
 });

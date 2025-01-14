@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\PaymentAccount;
 use App\Models\User;
+use App\Models\Bank;
 use App\Models\Group;
 use App\Models\Country;
 use App\Models\Transaction;
@@ -37,6 +38,17 @@ class DropdownOptionService
                 'id' => $country->id,
                 'name' => $country->name,
                 'phone_code' => $country->phone_code,
+            ];
+        });
+    }
+
+    public function getBanks(): Collection
+    {
+        return Bank::get()->map(function ($bank) {
+            return [
+                'id' => $bank->id,
+                'bank_name' => $bank->bank_name,
+                'bank_code' => $bank->bank_code,
             ];
         });
     }
@@ -113,6 +125,22 @@ class DropdownOptionService
                     });
     }
 
+    public function getBankOptions(): Collection
+    {
+        return PaymentAccount::where('user_id', Auth::id())
+                    ->where('payment_platform', 'bank')
+                    ->get()
+                    ->map(function ($bankOption) {
+                        return [
+                            'id' => $bankOption->id,
+                            'account_name' => $bankOption->payment_account_name,
+                            'bank_name' => $bankOption->payment_platform_name,
+                            'account_number' => $bankOption->account_no,
+                            'bank_code' => $bankOption->bank_code,
+                            'payment_account_type' => $bankOption->payment_account_type,
+                        ];
+                    });
+    }
 
     public function getAgents(): Collection
     {

@@ -3,13 +3,17 @@ import StatusBadge from '@/Components/StatusBadge.vue';
 import Tag from 'primevue/tag';
 import {transactionFormat} from "@/Composables/index.js";
 import { ref } from 'vue';
+import Button from "@/Components/Button.vue";
+import InputText from "primevue/inputtext";
+import InputError from '@/Components/InputError.vue';
+import {useForm} from "@inertiajs/vue3";
 
 const { formatDateTime, formatAmount } = transactionFormat();
 
 const props = defineProps({
     data: Object,
 })
-
+const emit = defineEmits(['update:visible']);
 const tooltipText = ref('copy')
 
 function copyToClipboard(text) {
@@ -33,6 +37,25 @@ function copyToClipboard(text) {
     }
 
     document.body.removeChild(textArea);
+}
+
+const cancelForm = useForm({
+    remarks: '',
+    transaction_number: '',
+});
+
+const submitForm = (transaction_number) => {
+    cancelForm.transaction_number = transaction_number;
+
+    cancelForm.post(route('transaction.cancel_withdrawal'), {
+        onSuccess: () => {
+            closeDialog();
+        },
+    });
+}
+
+const closeDialog = () => {
+    emit('update:visible', false)
 }
 </script>
 
@@ -162,12 +185,35 @@ function copyToClipboard(text) {
         <div v-if="['deposit', 'withdrawal'].includes(data.transaction_type)" class="flex flex-col items-center py-4 gap-3 self-stretch">
             <div class="flex flex-col items-start gap-1 self-stretch md:flex-row">
                 <span class="h-5 flex flex-col justify-center self-stretch text-gray-500 text-xs font-medium md:w-[120px]">{{ $t('public.remarks') }}</span>
-                <span class="md:max-w-[220px] text-gray-950 text-sm font-medium md:flex-grow">
+                <span class="md:max-w-[220px] text-gray-950 text-sm font-medium md:flex-grow w-full">
                     <template v-if="data.remarks">
                         {{ data.remarks }}
                     </template>
+                    <template v-else-if="data.transaction_type === 'withdrawal' && data.status === 'processing'">
+                        <InputText
+                            id="remarks"
+                            type="text"
+                            class="block w-full"
+                            v-model="cancelForm.remarks"
+                            autofocus
+                            :placeholder="$t('public.remarks_placeholder')"
+                            :invalid="!!cancelForm.errors.remarks"
+                        />
+                        <InputError :message="cancelForm.errors.remarks" />
+                    </template>
                     <template v-else>-</template>
                 </span>
+            </div>
+        </div>
+        <div v-if="data.transaction_type === 'withdrawal' && data.status === 'processing'" class="flex flex-col items-center pt-4 gap-3 self-stretch border-t border-gray-200">
+            <div class="flex flex-col justify-end gap-1 self-stretch md:flex-row">
+                <Button
+                    type="button"
+                    variant="gray-flat"
+                    @click="submitForm(data.transaction_number)"
+                >
+                    {{ $t('public.cancel_withdrawal') }}
+                </Button>
             </div>
         </div>
     </template>

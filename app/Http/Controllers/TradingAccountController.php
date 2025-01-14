@@ -319,6 +319,14 @@ class TradingAccountController extends Controller
              'from_meta_login' => $tradingAccount->meta_login,
              'transaction_number' => RunningNumberService::getID('transaction'),
              'payment_account_id' => $paymentWallet->id,
+             'payment_account_name' => $paymentWallet->payment_account_name,
+             'payment_platform' => $paymentWallet->payment_platform,
+             'payment_platform_name' => $paymentWallet->payment_platform_name,
+             'payment_account_no' => $paymentWallet->account_no,
+             'payment_account_type' => $paymentWallet->payment_account_type,
+             'bank_code' => $paymentWallet->bank_code,
+             'from_currency' => 'USD',
+             'to_currency' => $paymentWallet->currency,
              'to_wallet_address' => $paymentWallet->account_no,
              'ticket' => $trade['ticket'] ?? null,
              'amount' => $amount,
@@ -372,18 +380,20 @@ class TradingAccountController extends Controller
          $ticketFrom = $tradeFrom['ticket'] ?? null;
          $ticketTo = $tradeTo['ticket'] ?? null;
          Transaction::create([
-             'user_id' => Auth::id(),
-             'category' => 'trading_account',
-             'transaction_type' => 'account_to_account',
-             'from_meta_login' => $tradingAccount->meta_login,
-             'to_meta_login' => $to_meta_login,
-             'ticket' => $ticketFrom . ','. $ticketTo,
-             'transaction_number' => RunningNumberService::getID('transaction'),
-             'amount' => $amount,
-             'transaction_charges' => 0,
-             'transaction_amount' => $amount,
-             'status' => 'successful',
-             'comment' => 'to ' . $to_meta_login
+            'user_id' => Auth::id(),
+            'category' => 'trading_account',
+            'transaction_type' => 'account_to_account',
+            'from_meta_login' => $tradingAccount->meta_login,
+            'to_meta_login' => $to_meta_login,
+            'ticket' => $ticketFrom . ','. $ticketTo,
+            'transaction_number' => RunningNumberService::getID('transaction'),
+            'from_currency' => 'USD',
+            'to_currency' => 'USD',
+            'amount' => $amount,
+            'transaction_charges' => 0,
+            'transaction_amount' => $amount,
+            'status' => 'successful',
+            'comment' => 'to ' . $to_meta_login
          ]);
 
          $user = Auth::user();
@@ -744,6 +754,7 @@ class TradingAccountController extends Controller
                 'trc20address' => $response['payment']['trc20address'] ?? null,
                 'status' => $response['payment']['status'] ?? null,
                 'sign' => $response['sign'] ?? null,
+                'currency' => 'USDT',
             ];
         }
         else {
@@ -766,6 +777,7 @@ class TradingAccountController extends Controller
                 'callback_time' => $response['payment']['callback_time'] ?? null,
                 'status' => $response['payment']['status'] == 4 ? 'success' : 'fail',
                 'sign' => $response['sign'] ?? null,
+                'currency' => 'VND',
             ];
         }
 
@@ -786,6 +798,8 @@ class TradingAccountController extends Controller
             'txn_hash' => $result['txid'],
             'transaction_charges' => $fees,
             'transaction_amount' => $transaction->amount,
+            'from_currency' => $result['currency'],
+            'to_currency' => 'USD',
             'status' => $status,
             'approved_at' => now()
         ]);

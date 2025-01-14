@@ -52,6 +52,7 @@ const getResults = async (filterDate = null) => {
 
         const response = await axios.get(url);
         transactions.value = response.data.transactions;
+        console.log(transactions)
         totalTransaction.value = transactions.value?.length;
         maxFilterAmount.value = transactions.value?.length ? Math.max(...transactions.value.map(item => parseFloat(item.transaction_amount || 0))) : 0;
     } catch (error) {
@@ -270,7 +271,16 @@ const rowClicked = (data) => {
                     :header="$t('public.account')"
                 >
                     <template #body="slotProps">
-                        {{ slotProps.data.transaction_type === 'deposit' ? slotProps.data.to_meta_login : slotProps.data.from_meta_login }}
+                        <div v-if="slotProps.data.transaction_type === 'deposit'">
+                            {{ slotProps.data.to_meta_login }}
+                        </div>
+                        <div v-else-if="slotProps.data.transaction_type === 'withdrawal' && slotProps.data.from_meta_login !== null">
+                            {{ slotProps.data.from_meta_login }}
+                        </div>
+                        <div v-else>
+                            <!-- Optional: Handle unexpected transaction types -->
+                            {{ $t('public.wallet') }}
+                        </div>
                     </template>
                 </Column>
                 <Column
@@ -437,6 +447,6 @@ const rowClicked = (data) => {
         :header="$t('public.details')"
         class="dialog-xs md:dialog-sm"
     >
-        <TransactionDetails :data="selectedRow" />
+        <TransactionDetails :data="selectedRow" @update:visible="visible = false"/>
     </Dialog>
 </template>

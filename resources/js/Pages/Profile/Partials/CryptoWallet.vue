@@ -16,16 +16,23 @@ const form = useForm({
 });
 
 const displayAccounts = computed(() => {
-    if (paymentAccounts.value.length === 0) {
+    const filteredAccounts = paymentAccounts.value.filter(
+        account => account.payment_platform === 'crypto'
+    );
+
+    if (filteredAccounts.length === 0) {
         return new Array(3).fill({ wallet_name: '', token_address: '' });
     }
-    return paymentAccounts.value.concat(new Array(3 - paymentAccounts.value.length).fill({ wallet_name: '', token_address: '' }));
+
+    return filteredAccounts.concat(
+        new Array(3 - filteredAccounts.length).fill({ wallet_name: '', token_address: '' })
+    );
 });
 
 watch(
-    () => paymentAccounts.value,
+    () => displayAccounts.value,
     (newAccounts) => {
-        if (paymentAccounts.value.length > 0) {
+        if (displayAccounts.value.length > 0) {
             const updatedAccounts = newAccounts.concat(new Array(3 - newAccounts.length).fill({ wallet_name: '', token_address: '' }));
             form.wallet_name = updatedAccounts.map((account, index) => account.payment_account_name || form.wallet_name[index] || '');
             form.token_address = updatedAccounts.map((account, index) => account.account_no || form.token_address[index] || '');
