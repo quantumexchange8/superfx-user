@@ -98,11 +98,12 @@ class MetaFourService {
         $payload = [
             'meta_login' => $meta_login,
             'type' => $type,
-            'amount' => $amount,
+            'amount' => (float) $amount,
             'expiration_date' => $expire_date,
             'comment' => $comment,
         ];
 
+        dd($payload);
         $jsonPayload = json_encode($payload);
 
         $dealResponse = Http::acceptJson()
