@@ -152,13 +152,13 @@ const closeDialog = () => {
                     severity="contrast"
                     :value="$t(`public.${tooltipText}`)"
                 ></Tag>
-                <span class="self-stretch w-[120px] text-gray-500 text-xs font-medium">{{ $t('public.sent_address') }}</span>
+                <span class="self-stretch w-[120px] text-gray-500 text-xs font-medium">{{ $t('public.receiving_address') }}</span>
                 <div
-                    class="w-full max-w-[360px] md:max-w-[220px] text-gray-950 font-medium text-sm truncate select-none cursor-pointer"
-                    @click="copyToClipboard(data.from_wallet_address)"
+                    class="w-full max-w-[360px] md:max-w-[220px] text-gray-950 font-medium text-sm break-all select-none cursor-pointer"
+                    @click="copyToClipboard(data.to_wallet_address)"
                 >
-                    <template v-if="data.from_wallet_address">
-                        {{ data.from_wallet_address }}
+                    <template v-if="data.to_wallet_address">
+                        {{ data.to_wallet_address }}
                     </template>
                     <template v-else>-</template>
                 </div>
@@ -200,7 +200,7 @@ const closeDialog = () => {
                     }}
                 </span>
                 <div
-                    class="w-full max-w-[360px] md:max-w-[220px] text-gray-950 font-medium text-sm truncate select-none cursor-pointer"
+                    class="w-full max-w-[360px] md:max-w-[220px] text-gray-950 font-medium text-sm break-all select-none cursor-pointer"
                     @click="copyToClipboard(data.to_wallet_address)"
                 >
                     {{ data.to_wallet_address }}
