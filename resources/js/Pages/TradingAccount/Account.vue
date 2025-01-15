@@ -1,12 +1,10 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Button from "@/Components/Button.vue";
-import {ref, h, watch, onMounted, computed} from "vue";
+import {ref, h, watch, computed} from "vue";
 import TabView from 'primevue/tabview';
 import TabPanel from 'primevue/tabpanel';
 import IndividualAccounts from '@/Pages/TradingAccount/Partials/IndividualAccounts.vue';
-import ManagedAccounts from '@/Pages/TradingAccount/Partials/ManagedAccounts.vue';
-import DemoAccounts from '@/Pages/TradingAccount/Partials/DemoAccounts.vue';
 import { usePage, useForm } from "@inertiajs/vue3";
 import Dialog from 'primevue/dialog';
 import InputError from '@/Components/InputError.vue';
@@ -15,8 +13,7 @@ import InputText from 'primevue/inputtext';
 import IconField from 'primevue/iconfield';
 import Dropdown from "primevue/dropdown";
 import {IconCircleCheckFilled, IconInfoOctagonFilled, IconX} from '@tabler/icons-vue';
-import { trans, wTrans } from "laravel-vue-i18n";
-// import TermsAndCondition from "@/Components/TermsAndCondition.vue";
+import { wTrans } from "laravel-vue-i18n";
 
 const props = defineProps({
     terms: Object

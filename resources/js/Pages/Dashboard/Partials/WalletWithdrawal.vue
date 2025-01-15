@@ -15,13 +15,16 @@ const props = defineProps({
 })
 
 const walletOptions = ref([]);
+const loadPaymentAccounts = ref(false);
+const selectedPaymentAccount = ref();
 const {formatAmount} = transactionFormat()
 const emit = defineEmits(['update:visible'])
 
 const getOptions = async () => {
     try {
-        const response = await axios.get('/account/getOptions');
-        walletOptions.value = response.data.walletOptions;
+        const response = await axios.get('/getPaymentAccounts');
+        walletOptions.value = response.data.payment_accounts;
+        selectedPaymentAccount.value = walletOptions.value[0];
     } catch (error) {
         console.error('Error changing locale:', error);
     }
@@ -32,11 +35,11 @@ getOptions();
 const form = useForm({
     wallet_id: props.wallet.id,
     amount: 0,
-    wallet_address: '',
+    payment_account_id: '',
 })
 
-watch(walletOptions, (newWallet) => {
-    form.wallet_address = newWallet[0].value
+watch(selectedPaymentAccount, (newWallet) => {
+    selectedPaymentAccount.value = newWallet
 })
 
 const toggleFullAmount = () => {
@@ -48,6 +51,8 @@ const toggleFullAmount = () => {
 };
 
 const submitForm = () => {
+    form.payment_account_id = selectedPaymentAccount.value.id;
+
     form.post(route('dashboard.walletWithdrawal'), {
         onSuccess: () => {
             closeDialog();
@@ -104,18 +109,28 @@ const closeDialog = () => {
                 <div class="flex flex-col items-start gap-1 self-stretch">
                     <InputLabel for="receiving_wallet" :value="$t('public.receiving_wallet')" />
                     <Dropdown
-                        v-model="form.wallet_address"
+                        v-model="selectedPaymentAccount"
                         :options="walletOptions"
-                        optionLabel="name"
-                        optionValue="value"
                         :placeholder="$t('public.receiving_wallet_placeholder')"
                         class="w-full"
                         scroll-height="236px"
-                        :invalid="!!form.errors.wallet_address"
-                        :disabled="!walletOptions.length"
-                    />
-                    <InputError :message="form.errors.wallet_address" />
-                    <span class="self-stretch text-gray-500 text-xs">{{ walletOptions.length ? form.wallet_address : $t('public.loading_caption')}}</span>
+                        :invalid="!!form.errors.payment_account_id"
+                        :loading="loadPaymentAccounts"
+                    >
+                        <template #value="slotProps">
+                            <div v-if="slotProps.value" class="flex items-center">
+                                <div>{{ slotProps.value.payment_account_name }}</div>
+                            </div>
+                            <span v-else>{{ slotProps.placeholder }}</span>
+                        </template>
+                        <template #option="slotProps">
+                            <div class="flex items-center w-[262px] md:max-w-[236px]">
+                                {{ slotProps.option.payment_account_name }}
+                            </div>
+                        </template>
+                    </Dropdown>
+                    <InputError :message="form.errors.payment_account_id" />
+                    <span class="self-stretch text-gray-500 text-xs">{{ walletOptions.length ? selectedPaymentAccount.account_no : $t('public.loading_caption')}}</span>
                 </div>
             </div>
             <!-- <div class="text-left w-full text-gray-500 text-xs">{{ $t('public.agreement_text') }}

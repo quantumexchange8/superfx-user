@@ -158,20 +158,18 @@ class TransactionController extends Controller
         $validator = Validator::make($request->all(), [
             'wallet_id' => ['required', 'exists:wallets,id'],
             'amount' => ['required', 'numeric', 'gte:30'],
-            'wallet_address' => ['required']
+            'payment_account_id' => ['required']
         ])->setAttributeNames([
             'wallet_id' => trans('public.wallet'),
             'amount' => trans('public.amount'),
-            'wallet_address' => trans('public.receiving_wallet'),
+            'payment_account_id' => trans('public.receiving_wallet'),
         ]);
         $validator->validate();
 
         $user = Auth::user();
         $amount = $request->amount;
         $wallet = Wallet::find($request->wallet_id);
-        $paymentWallet = PaymentAccount::where('user_id', Auth::id())
-            ->where('account_no', $request->wallet_address)
-            ->first();
+        $paymentWallet = PaymentAccount::find($request->payment_account_id);
 
         if ($wallet->balance < $amount) {
             throw ValidationException::withMessages(['amount' => trans('public.insufficient_balance')]);
@@ -318,12 +316,12 @@ class TransactionController extends Controller
 
         $transaction = Transaction::where('transaction_number', $request->transaction_number)->first();
 
-        if ($transaction->status == 'processing') { 
+        if ($transaction->status == 'processing') {
             $transaction->update([
                 'remarks' => $request->remarks,
                 'status' => 'cancelled',
             ]);
-    
+
             if ($transaction->category == 'rebate_wallet') {
                 $rebate_wallet = Wallet::where('user_id', $transaction->user_id)
                     ->where('type', 'rebate_wallet')

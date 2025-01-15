@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BillboardController;
+use App\Http\Controllers\SelectOptionController;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,9 @@ Route::post('deposit_callback', [TradingAccountController::class, 'depositCallba
 
 Route::middleware(['auth','verified'])->group(function () {
     Route::get('deposit_return', [TradingAccountController::class, 'depositReturn'])->name('depositReturn');
+
+    // Select Option
+    Route::get('getPaymentAccounts', [SelectOptionController::class, 'getPaymentAccounts'])->name('getPaymentAccounts');
 
     /**
      * ==============================
