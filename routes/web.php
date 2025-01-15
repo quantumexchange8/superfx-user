@@ -170,7 +170,10 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('/', [ProfileController::class, 'index'])->name('profile');
         Route::get('/getFilterData', [ProfileController::class, 'getFilterData'])->name('profile.getFilterData');
         Route::get('/getKycVerification', [ProfileController::class, 'getKycVerification'])->name('profile.getKycVerification');
+        Route::get('/getPaymentAccounts', [ProfileController::class, 'getPaymentAccounts'])->name('profile.getPaymentAccounts');
+
         Route::post('/addPaymentAccount', [ProfileController::class, 'addPaymentAccount'])->name('profile.addPaymentAccount');
+        Route::post('/updatePaymentAccount', [ProfileController::class, 'updatePaymentAccount'])->name('profile.updatePaymentAccount');
         Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::post('/updateProfilePhoto', [ProfileController::class, 'updateProfilePhoto'])->name('profile.updateProfilePhoto');
         Route::post('/updateKyc', [ProfileController::class, 'updateKyc'])->name('profile.updateKyc');

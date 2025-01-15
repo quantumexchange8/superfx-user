@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Bank;
 use App\Models\PaymentAccount;
 use App\Services\DropdownOptionService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -23,9 +24,13 @@ class ProfileController extends Controller
      */
     public function index(Request $request): Response
     {
+        $paymentAccountsCount = PaymentAccount::where('user_id', Auth::id())
+            ->count();
+
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
+            'paymentAccountsCount' => $paymentAccountsCount,
         ]);
     }
 
@@ -136,15 +141,15 @@ class ProfileController extends Controller
         foreach ($wallet_names as $index => $wallet_name) {
             $token_address = $token_addresses[$index] ?? '';
             $account_type = $account_types[$index] ?? '';
-        
+
             if (empty($wallet_name) && (!empty($token_address) || !empty($account_type))) {
                 $errors["wallet_name.$index"] = trans('validation.required', ['attribute' => trans('public.wallet_name') . ' #' . ($index + 1)]);
             }
-        
+
             if (empty($token_address) && (!empty($wallet_name) || !empty($account_type))) {
                 $errors["token_address.$index"] = trans('validation.required', ['attribute' => trans('public.token_address') . ' #' . ($index + 1)]);
             }
-        
+
             if (empty($account_type) && (!empty($wallet_name) || !empty($token_address))) {
                 $errors["account_type.$index"] = trans('validation.required', ['attribute' => trans('public.account_type') . ' #' . ($index + 1)]);
             }
@@ -202,7 +207,6 @@ class ProfileController extends Controller
         return response()->json([
             'countries' => (new DropdownOptionService())->getCountries(),
             'banks' => (new DropdownOptionService())->getBanks(),
-            'bankOptions' => (new DropdownOptionService())->getBankOptions(),
         ]);
     }
 
@@ -216,36 +220,53 @@ class ProfileController extends Controller
 
     public function addPaymentAccount(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $attributeNames = [
+            'payment_platform' => trans('public.payment_account_type'),
+            'payment_account_name' => $request->payment_platform == 'crypto'
+                ? trans('public.wallet_name')
+                : ($request->payment_account_type == 'account' ? trans('public.account_name') : trans('public.card_name')),
+            'payment_account_type' => trans('public.account_type'),
+            'payment_platform_name' => trans('public.bank'),
+            'account_no' => $request->payment_platform == 'crypto'
+                ? trans('public.token_address')
+                : ($request->payment_account_type == 'account' ? trans('public.account_no') : trans('public.card_no')),
+            'bank_code' => trans('public.bank_code'),
+        ];
+
+        Validator::make($request->all(), [
+            'payment_platform' => ['required'],
             'payment_account_name' => ['required'],
             'payment_account_type' => ['required'],
             'payment_platform_name' => ['required'],
-            'account_no' => ['required_if:payment_account_type,account'],
-            'card_no' => ['required_if:payment_account_type,card'],
-        ])->setAttributeNames([
-            'payment_account_name' => trans('public.account_name'),
-            'payment_account_type' => trans('public.account_type'),
-            'payment_platform_name' => trans('public.bank'),
-            'account_no' => trans('public.account_no'),
-            'card_no' => trans('public.card_no'),
-        ]);
-        $validator->validate();
-        $user = Auth::user();
+            'account_no' => ['required'],
+            'bank_code' => ['required_if:payment_platform,bank'],
+        ])->setAttributeNames($attributeNames)
+            ->validate();
 
-        $data = [
-            'user_id' => $user->id,
+        $payment_account = PaymentAccount::create([
+            'user_id' => Auth::id(),
             'payment_account_name' => $request->payment_account_name,
-            'payment_platform' => 'bank',
+            'payment_platform' => $request->payment_platform,
             'payment_platform_name' => $request->payment_platform_name,
-            'account_no' => $request->payment_account_type == 'account' ? $request->account_no : $request->card_no,
+            'account_no' => $request->account_no,
             'payment_account_type' => $request->payment_account_type,
-            'bank_code' => $request->bank_code,
-            'country_id' => 240,
-            'currency' => 'VND',
             'status' => 'active',
-        ];
-        Log::debug($data);
-        PaymentAccount::create($data);
+        ]);
+
+        if ($payment_account->payment_platform == 'bank') {
+            $bank = Bank::firstWhere('bank_code', $request->bank_code);
+
+            $payment_account->update([
+                'bank_code' => $bank->bank_code,
+                'country_id' => $bank->country_id,
+                'currency' => $bank->currency,
+            ]);
+        } else {
+            $payment_account->update([
+                'payment_platform_name' => 'USDT (' . strtoupper($payment_account->payment_account_type) . ')',
+                'currency' => 'USDT',
+            ]);
+        }
 
         return redirect()->back()->with('toast', [
             'title' => trans('public.toast_payment_account_success'),
@@ -253,13 +274,75 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function updateBankInfo(Request $request)
+    public function getPaymentAccounts(Request $request)
     {
-        
+        $paymentAccounts = PaymentAccount::where([
+            'user_id' => Auth::id(),
+        ])
+            ->latest()
+            ->get();
 
-        // return redirect()->back()->with('toast', [
-        //     'title' => trans('public.toast_update_bank_info_success'),
-        //     'type' => 'success'
-        // ]);
+        return response()->json([
+            'paymentAccounts' => $paymentAccounts,
+        ]);
+    }
+
+    public function updatePaymentAccount(Request $request)
+    {
+        $attributeNames = [
+            'payment_platform' => trans('public.payment_account_type'),
+            'payment_account_name' => $request->payment_platform == 'crypto'
+                ? trans('public.wallet_name')
+                : ($request->payment_account_type == 'account' ? trans('public.account_name') : trans('public.card_name')),
+            'payment_account_type' => trans('public.account_type'),
+            'payment_platform_name' => trans('public.bank'),
+            'account_no' => $request->payment_platform == 'crypto'
+                ? trans('public.token_address')
+                : ($request->payment_account_type == 'account' ? trans('public.account_no') : trans('public.card_no')),
+            'bank_code' => trans('public.bank_code'),
+        ];
+
+        Validator::make($request->all(), [
+            'payment_platform' => ['required'],
+            'payment_account_name' => ['required'],
+            'payment_account_type' => ['required'],
+            'payment_platform_name' => ['required'],
+            'account_no' => ['required'],
+            'bank_code' => ['required_if:payment_platform,bank'],
+        ])->setAttributeNames($attributeNames)
+            ->validate();
+
+        $payment_account = PaymentAccount::find($request->payment_account_id);
+
+        $payment_account->update([
+            'payment_account_name' => $request->payment_account_name,
+            'payment_platform' => $request->payment_platform,
+            'payment_platform_name' => $request->payment_platform_name,
+            'account_no' => $request->account_no,
+            'payment_account_type' => $request->payment_account_type,
+            'status' => 'active',
+        ]);
+
+        if ($payment_account->payment_platform == 'bank') {
+            $bank = Bank::firstWhere('bank_code', $request->bank_code);
+
+            $payment_account->update([
+                'bank_code' => $bank->bank_code,
+                'country_id' => $bank->country_id,
+                'currency' => $bank->currency,
+            ]);
+        } else {
+            $payment_account->update([
+                'bank_code' => null,
+                'country_id' => null,
+                'payment_platform_name' => 'USDT (' . strtoupper($payment_account->payment_account_type) . ')',
+                'currency' => 'USDT',
+            ]);
+        }
+
+        return redirect()->back()->with('toast', [
+            'title' => trans('public.toast_update_payment_account_success'),
+            'type' => 'success'
+        ]);
     }
 }
