@@ -549,4 +549,11 @@ return [
     "toast_update_payment_account_success" => "You’ve successfully updated a payment account!",
     "no_payment_account" => "No Payment Account",
     "no_payment_account_desc" => "You dont have payment account for withdrawal. Add your account details.",
+    "bank_account" => "Bank Account",
+    "bank_account_caption" => "Add your bank account details here for easy and seamless withdrawals.",
+    "select_account" => "Select Account",
+    "balance_in" => "Balance In",
+    "balance_out" => "Balance Out",
+    "payment_account_required" => "Missing Payment Account",
+    "payment_account_required_text" => "Oops! You haven't added a payment account for withdrawal. Add your wallet details to proceed.",
 ];

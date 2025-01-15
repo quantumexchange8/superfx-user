@@ -70,6 +70,11 @@ class TransactionController extends Controller
                     'to_meta_login' => $transaction->to_meta_login,
                     'transaction_number' => $transaction->transaction_number,
                     'payment_account_id' => $transaction->payment_account_id,
+                    'payment_platform' => $transaction->payment_platform ?? $transaction->payment_account->platform ?? '-',
+                    'payment_platform_name' => $transaction->payment_platform_name,
+                    'payment_account_no' => $transaction->payment_account_no,
+                    'payment_account_type' => $transaction->payment_account_type,
+                    'bank_code' => $transaction->bank_code,
                     'from_wallet_address' => $transaction->from_wallet_address,
                     'to_wallet_address' => $transaction->to_wallet_address,
                     'txn_hash' => $transaction->txn_hash,
@@ -80,7 +85,7 @@ class TransactionController extends Controller
                     'comment' => $transaction->comment,
                     'remarks' => $transaction->remarks,
                     'created_at' => $transaction->created_at,
-                    'wallet_name' => $transaction->payment_account->payment_account_name ?? '-'
+                    'wallet_name' => $transaction->payment_account_name ?? $transaction->payment_account->payment_account_name ?? '-',
                 ];
             });
 

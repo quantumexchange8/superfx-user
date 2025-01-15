@@ -549,4 +549,11 @@ return [
     "toast_update_payment_account_success" => "Bạn đã cập nhật tài khoản thanh toán thành công!",
     "no_payment_account" => "Không có tài khoản thanh toán",
     "no_payment_account_desc" => "Bạn chưa có tài khoản thanh toán để rút tiền. Vui lòng thêm thông tin tài khoản của bạn.",
+    "bank_account" => "Tài khoản ngân hàng",
+    "bank_account_caption" => "Thêm chi tiết tài khoản ngân hàng của bạn tại đây để rút tiền dễ dàng và tiện lợi.",
+    "select_account" => "Chọn tài khoản",
+    "balance_in" => "Số dư thu",
+    "balance_out" => "Số dư chi",
+    "payment_account_required" => "Thiếu tài khoản thanh toán",
+    "payment_account_required_text" => "Rất tiếc! Bạn chưa thêm tài khoản thanh toán cho việc rút tiền. Vui lòng thêm chi tiết ví của bạn để tiếp tục.",
 ];

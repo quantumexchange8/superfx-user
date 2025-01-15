@@ -547,4 +547,11 @@ return [
     "toast_update_payment_account_success" => "您已成功更新支付账户！",
     "no_payment_account" => "无支付账户",
     "no_payment_account_desc" => "您没有用于提现的支付账户。请添加您的账户信息。",
+    "bank_account" => "银行账户",
+    "bank_account_caption" => "在这里添加您的银行账户详细信息, 以便轻松无忧地提款.",
+    "select_account" => "选择账户",
+    "balance_in" => "余额收入",
+    "balance_out" => "余额支出",
+    "payment_account_required" => "缺少支付账户",
+    "payment_account_required_text" => "糟糕! 您尚未添加用于提款的支付账户. 请添加您的钱包详细信息以继续.",
 ];

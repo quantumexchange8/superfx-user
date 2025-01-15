@@ -111,6 +111,7 @@ const submitForm = (formType) => {
                         :placeholder="$t('public.transfer_to_placeholder')"
                         class="w-full"
                         scroll-height="236px"
+                        :invalid="!!transferForm.errors.to_meta_login"
                         :disabled="!filteredTransferOptions.length"
                     />
                     <span class="self-stretch text-gray-500 text-xs">{{ $t('public.balance') }}: $ {{ selectedAccount ? selectedAccount.value : selectedAccount }}</span>

@@ -15,6 +15,7 @@ use App\Models\AccountType;
 use App\Models\AssetRevoke;
 use App\Models\TradingUser;
 use App\Models\Transaction;
+use App\Models\Bank;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\PaymentAccount;
@@ -348,9 +349,14 @@ class TradingAccountController extends Controller
 
     public function internal_transfer(Request $request)
     {
-         $request->validate([
-             'account_id' => 'required|exists:trading_accounts,id',
-         ]);
+        $validator = Validator::make($request->all(), [
+            'account_id' => ['required', 'exists:trading_accounts,id'],
+            'to_meta_login' => ['required']
+        ])->setAttributeNames([
+            'account_id' => trans('public.account'),
+            'to_meta_login' => trans('public.transfer_to'),
+        ]);
+        $validator->validate();
 
          $tradingAccount = TradingAccount::find($request->account_id);
          (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
@@ -591,6 +597,7 @@ class TradingAccountController extends Controller
             'user_id' => $user->id,
             'to_meta_login' => $request->meta_login,
             'transaction_number' => RunningNumberService::getID('transaction'),
+            'payment_platform' => $request->payment_platform,
             'transaction_type' => 'deposit',
             'amount' => $amount,
             'conversion_rate' => $conversion_rate ?? null,
@@ -752,7 +759,6 @@ class TradingAccountController extends Controller
                 'trc20address' => $response['payment']['trc20address'] ?? null,
                 'status' => $response['payment']['status'] ?? null,
                 'sign' => $response['sign'] ?? null,
-                'currency' => 'USDT',
             ];
         }
         else {
@@ -775,7 +781,6 @@ class TradingAccountController extends Controller
                 'callback_time' => $response['payment']['callback_time'] ?? null,
                 'status' => $response['payment']['status'] == 4 ? 'success' : 'fail',
                 'sign' => $response['sign'] ?? null,
-                'currency' => 'VND',
             ];
         }
 
@@ -784,23 +789,40 @@ class TradingAccountController extends Controller
         if($transaction->payment_gateway->platform === 'crypto') {
             $fees = $result['amount'] - $result['fees'];
             $to_wallet_address = $result['erc20address'] ?? $result['trc20address'];
+
+            $transaction->update([
+                'to_wallet_address' => $to_wallet_address ?? null,
+                'txn_hash' => $result['txid'],
+                'transaction_charges' => $fees,
+                'transaction_amount' => $transaction->amount,
+                'from_currency' => 'USDT',
+                'to_currency' => 'USD',
+                'status' => $status,
+                'approved_at' => now()
+            ]);
         }
         else{
             $to_wallet_address = $result['bank_account_no'];
             $fees = round($result['fees'] / $transaction->conversion_rate, 2);
+
+            $payment_platform_name = Bank::where('bank_code', $result['bank_code'])->first();;
+
+            $transaction->update([
+                'payment_platform_name' => $payment_platform_name->bank_name ?? null,
+                'payment_account_no' => $result['bank_account_no'] ?? null,
+                'payment_account_type' => 'account',
+                'bank_code' => $result['bank_code'] ?? null,
+                'to_wallet_address' => $to_wallet_address ?? null,
+                'txn_hash' => $result['txid'],
+                'transaction_charges' => $fees,
+                'transaction_amount' => $transaction->amount,
+                'from_currency' => 'VND',
+                'to_currency' => 'USD',
+                'status' => $status,
+                'approved_at' => now()
+            ]);
         }
         // $final_amount = $transaction->amount - $fees;
-
-        $transaction->update([
-            'to_wallet_address' => $to_wallet_address ?? null,
-            'txn_hash' => $result['txid'],
-            'transaction_charges' => $fees,
-            'transaction_amount' => $transaction->amount,
-            'from_currency' => $result['currency'],
-            'to_currency' => 'USD',
-            'status' => $status,
-            'approved_at' => now()
-        ]);
 
         if ($transaction->status == 'successful') {
             if ($transaction->transaction_type == 'deposit') {

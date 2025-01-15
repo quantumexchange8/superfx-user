@@ -152,8 +152,8 @@ const requireAccountConfirmation = (accountType) => {
         },
         crypto: {
             group: 'headless-primary',
-            header: trans('public.crypto_wallet_required'),
-            text: trans('public.crypto_wallet_required_text'),
+            header: trans('public.payment_account_required'),
+            text: trans('public.payment_account_required_text'),
             actionType: 'crypto',
             cancelButton: trans('public.later'),
             acceptButton: trans('public.add_Wallet'),

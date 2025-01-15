@@ -39,7 +39,6 @@ const maxFilterAmount = ref(0);
 const totalTransaction = ref(0);
 
 const getResults = async (filterDate = null) => {
-    if (loading.value) return;
     loading.value = true;
 
     try {
@@ -52,7 +51,6 @@ const getResults = async (filterDate = null) => {
 
         const response = await axios.get(url);
         transactions.value = response.data.transactions;
-        console.log(transactions)
         totalTransaction.value = transactions.value?.length;
         maxFilterAmount.value = transactions.value?.length ? Math.max(...transactions.value.map(item => parseFloat(item.transaction_amount || 0))) : 0;
     } catch (error) {
@@ -84,10 +82,12 @@ const filters = ref({
 
 // Watch minFilterAmount and maxAmount to update the amount filter
 watch([minFilterAmount, maxFilterAmount], ([newMin, newMax]) => {
+    console.log('filter');
     filters.value.amount.value = [newMin, newMax];
 });
 
 watch(selectedDate, (newDateRange) => {
+    console.log('Date');
     if (Array.isArray(newDateRange)) {
         const [startDate, endDate] = newDateRange;
 
@@ -129,6 +129,7 @@ const recalculateTotals = () => {
 };
 
 watch(filters, () => {
+    console.log('other filter');
     recalculateTotals();
     // Check if amount filter covers the entire range (considering full range as minFilterAmount and maxFilterAmount)
     const amountFilterIsActive = filters.value.amount.value[0] !== minFilterAmount.value || filters.value.amount.value[1] !== maxFilterAmount.value;
@@ -290,12 +291,7 @@ const rowClicked = (data) => {
                     :header="`${$t('public.amount')} ($)`"
                 >
                     <template #body="slotProps">
-                        <template v-if="slotProps.data.transaction_amount">
-                            $ {{ formatAmount(slotProps.data.transaction_type === 'withdrawal' ? slotProps.data.amount : slotProps.data.transaction_amount) }}
-                        </template>
-                        <template v-else>
-                            -
-                        </template>
+                        $ {{ formatAmount(slotProps.data.amount) }}
                     </template>
                 </Column>
                 <Column

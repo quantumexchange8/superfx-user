@@ -7,6 +7,7 @@ import Button from "@/Components/Button.vue";
 import InputText from "primevue/inputtext";
 import InputError from '@/Components/InputError.vue';
 import {useForm} from "@inertiajs/vue3";
+import TextArea from "primevue/textarea";
 
 const { formatDateTime, formatAmount } = transactionFormat();
 
@@ -128,12 +129,7 @@ const closeDialog = () => {
             <div class="flex items-center gap-1 self-stretch">
                 <span class="w-[120px] text-gray-500 text-xs font-medium">{{ $t('public.amount') }}</span>
                 <span class="flex-grow text-gray-950 text-sm font-medium">
-                    <template v-if="data.transaction_amount">
-                        $ {{ formatAmount(data.transaction_type === 'withdrawal' ? data.amount : data.transaction_amount) }}
-                    </template>
-                    <template v-else>
-                        -
-                    </template>
+                    $ {{ formatAmount(data.amount) }}
                 </span>
             </div>
             <div class="flex items-center gap-1 self-stretch">
@@ -141,29 +137,46 @@ const closeDialog = () => {
                 <StatusBadge :value="data.status">{{ $t('public.' + data.status) }}</StatusBadge>
             </div>
         </div>
-        <div v-if="['deposit', 'withdrawal'].includes(data.transaction_type)" class="flex flex-col items-center py-4 gap-3 self-stretch border-t border-b border-gray-200">
+        <div v-if="data.transaction_type === 'withdrawal' || (data.transaction_type === 'deposit' && data.status !== 'processing')" class="flex flex-col items-center py-4 gap-3 self-stretch border-t border-gray-200">
+            <div v-if="data.payment_platform === 'bank'" class="h-[42px] flex flex-col justify-center items-start gap-1 self-stretch md:h-auto md:flex-row md:justify-normal md:items-center">
+                <span class="self-stretch w-[120px] text-gray-500 text-xs font-medium">{{ $t('public.bank') }}</span>
+                <div class="flex flex-col gap-1 w-full max-w-[360px] md:max-w-[220px] overflow-hidden">
+                    <span class=" text-gray-950 text-ellipsis text-sm font-medium">{{ data.payment_platform_name }}</span>
+                    <span class=" text-gray-600 text-ellipsis text-sm font-medium">( {{ data.bank_code }} )</span>
+                </div>
+            </div>
             <div v-if="data.transaction_type === 'deposit'" class="flex flex-col justify-center items-start gap-1 self-stretch md:flex-row md:justify-normal md:items-center relative">
-                <template v-if="data.status !== 'processing'">
-                    <Tag
-                        v-if="tooltipText === 'copied'"
-                        class="absolute -top-1 right-[120px] md:-top-7 md:right-20"
-                        severity="contrast"
-                        :value="$t(`public.${tooltipText}`)"
-                    ></Tag>
-                </template>
+                <Tag
+                    v-if="tooltipText === 'copied'"
+                    class="absolute -top-1 right-[120px] md:-top-7 md:right-20"
+                    severity="contrast"
+                    :value="$t(`public.${tooltipText}`)"
+                ></Tag>
                 <span class="self-stretch w-[120px] text-gray-500 text-xs font-medium">{{ $t('public.sent_address') }}</span>
                 <div
                     class="w-full max-w-[360px] md:max-w-[220px] text-gray-950 font-medium text-sm truncate select-none cursor-pointer"
                     @click="copyToClipboard(data.from_wallet_address)"
                 >
-                    <template v-if="data.status === 'processing'">
-                        -
+                    <template v-if="data.from_wallet_address">
+                        {{ data.from_wallet_address }}
                     </template>
-                    <template v-else>{{ data.from_wallet_address }}</template>
+                    <template v-else>-</template>
                 </div>
             </div>
             <div v-if="data.transaction_type === 'withdrawal'" class="h-[42px] flex flex-col justify-center items-start gap-1 self-stretch md:h-auto md:flex-row md:justify-normal md:items-center">
-                <span class="self-stretch w-[120px] text-gray-500 text-xs font-medium">{{ $t('public.wallet_name') }}</span>
+                <span class="self-stretch w-[120px] text-gray-500 text-xs font-medium">
+                    {{ 
+                        $t(
+                            `public.${
+                                data.payment_account_type === 'account' 
+                                ? 'account_name' 
+                                : data.payment_account_type === 'card' 
+                                ? 'card_name' 
+                                : 'wallet_name'
+                            }`
+                        ) 
+                    }}
+                </span>
                 <span class="w-full max-w-[360px] md:max-w-[220px] overflow-hidden text-gray-950 text-ellipsis text-sm font-medium">{{ data.wallet_name }}</span>
             </div>
             <div v-if="data.transaction_type === 'withdrawal'" class="h-[42px] flex flex-col justify-center items-start gap-1 self-stretch md:h-auto md:flex-row md:justify-normal md:items-center relative">
@@ -173,7 +186,19 @@ const closeDialog = () => {
                     severity="contrast"
                     :value="$t(`public.${tooltipText}`)"
                 ></Tag>
-                <span class="self-stretch w-[120px] text-gray-500 text-xs font-medium">{{ $t('public.receiving_address') }}</span>
+                <span class="self-stretch w-[120px] text-gray-500 text-xs font-medium">
+                    {{ 
+                        $t(
+                            `public.${
+                                data.payment_account_type === 'account' 
+                                ? 'account_no' 
+                                : data.payment_account_type === 'card' 
+                                ? 'card_no' 
+                                : 'receiving_address'
+                            }`
+                        ) 
+                    }}
+                </span>
                 <div
                     class="w-full max-w-[360px] md:max-w-[220px] text-gray-950 font-medium text-sm truncate select-none cursor-pointer"
                     @click="copyToClipboard(data.to_wallet_address)"
@@ -182,22 +207,23 @@ const closeDialog = () => {
                 </div>
             </div>
         </div>
-        <div v-if="['deposit', 'withdrawal'].includes(data.transaction_type)" class="flex flex-col items-center py-4 gap-3 self-stretch">
-            <div class="flex flex-col items-start gap-1 self-stretch md:flex-row">
+        <div v-if="data.transaction_type === 'withdrawal' || (data.transaction_type === 'deposit' && data.status !== 'processing')" class="flex flex-col items-center py-4 gap-3 self-stretch border-t border-gray-200">
+            <div class="flex flex-col items-start gap-1 self-stretch">
                 <span class="h-5 flex flex-col justify-center self-stretch text-gray-500 text-xs font-medium md:w-[120px]">{{ $t('public.remarks') }}</span>
                 <span class="md:max-w-[220px] text-gray-950 text-sm font-medium md:flex-grow w-full">
                     <template v-if="data.remarks">
                         {{ data.remarks }}
                     </template>
                     <template v-else-if="data.transaction_type === 'withdrawal' && data.status === 'processing'">
-                        <InputText
+                        <TextArea
                             id="remarks"
                             type="text"
-                            class="block w-full"
+                            class="flex flex-1 self-stretch"
                             v-model="cancelForm.remarks"
-                            autofocus
                             :placeholder="$t('public.remarks_placeholder')"
                             :invalid="!!cancelForm.errors.remarks"
+                            rows="3"
+                            cols="35"
                         />
                         <InputError :message="cancelForm.errors.remarks" />
                     </template>

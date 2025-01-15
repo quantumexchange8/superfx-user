@@ -5,7 +5,7 @@ import {useForm} from "@inertiajs/vue3";
 import Button from "@/Components/Button.vue"
 import InputError from "@/Components/InputError.vue";
 import Dropdown from "primevue/dropdown";
-import {ref, watch} from "vue";
+import {ref, watch, computed} from "vue";
 import {transactionFormat} from "@/Composables/index.js";
 
 const props = defineProps({
@@ -13,7 +13,7 @@ const props = defineProps({
 })
 
 const transferOptions = ref([]);
-const transferAmount = ref(0);
+const selectedAccount = ref(0);
 const {formatAmount} = transactionFormat()
 const emit = defineEmits(['update:visible'])
 
@@ -21,6 +21,7 @@ const getOptions = async () => {
     try {
         const response = await axios.get('/account/getOptions');
         transferOptions.value = response.data.transferOptions;
+        console.log(transferOptions)
     } catch (error) {
         console.error('Error changing locale:', error);
     }
@@ -34,23 +35,6 @@ const form = useForm({
     meta_login: '',
 })
 
-watch(transferOptions, (newAccount) => {
-    if (Array.isArray(newAccount) && newAccount.length > 0) {
-        transferAmount.value = newAccount[0].value;
-    } else {
-        transferAmount.value = 0; 
-    }
-});
-
-watch(transferAmount, (newValue) => {
-    const selectedOption = transferOptions.value.find(option => option.value === newValue);
-    if (selectedOption) {
-        form.meta_login = selectedOption.name;
-    } else {
-        form.meta_login = '';
-    }
-});
-
 const toggleFullAmount = () => {
     if (form.amount) {
         form.amount = 0;
@@ -60,6 +44,7 @@ const toggleFullAmount = () => {
 };
 
 const submitForm = () => {
+    form.meta_login = selectedAccount.value.name;
     form.post(route('dashboard.walletTransfer'), {
         onSuccess: () => {
             closeDialog();
@@ -85,10 +70,9 @@ const closeDialog = () => {
                 <div class="flex flex-col items-start gap-1 self-stretch">
                     <InputLabel for="receiving_wallet" :value="$t('public.transfer_to')" />
                     <Dropdown
-                        v-model="transferAmount"
+                        v-model="selectedAccount"
                         :options="transferOptions"
                         optionLabel="name"
-                        optionValue="value"
                         :placeholder="$t('public.select')"
                         class="w-full"
                         scroll-height="236px"
@@ -96,7 +80,7 @@ const closeDialog = () => {
                         :disabled="!transferOptions.length"
                     />
                     <InputError :message="form.errors.meta_login" />
-                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.balance') }}: $ {{ transferOptions.length ? formatAmount(transferAmount, 0) : $t('public.loading_caption')}}</span>
+                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.balance') }}: $ {{ selectedAccount ? selectedAccount.value : selectedAccount}}</span>
                 </div>
 
                 <div class="flex flex-col items-start gap-1 self-stretch">

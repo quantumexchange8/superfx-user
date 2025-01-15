@@ -208,7 +208,7 @@ function copyToClipboard(text) {
                 <div
                     :class="{
                             'text-success-500': slotProps.data.to_meta_login,
-                            'text-error-500': slotProps.data.from_meta_login,
+                            '!text-error-500': account.meta_login === slotProps.data.from_meta_login,
                         }"
                 >
                     {{ formatAmount(slotProps.data.transaction_amount > 0 ? slotProps.data.transaction_amount : 0) }}
@@ -220,7 +220,15 @@ function copyToClipboard(text) {
                 <div class="flex items-center justify-between">
                     <div class="flex flex-col items-start gap-1 flex-grow">
                         <span class="overflow-hidden text-gray-950 text-ellipsis text-sm font-semibold">
-                            {{ slotProps.data.transaction_type }}
+                            <div v-if="['transfer_to_account', 'account_to_account'].includes(slotProps.data.transaction_type)">
+                                <div v-if="account.meta_login === slotProps.data.to_meta_login">
+                                    {{ $t('public.from') }} {{ slotProps.data.from_meta_login ?? $t(`public.${slotProps.data.wallet_type}`) }}
+                                </div>
+                                <div v-else>
+                                    {{ $t('public.to') }} {{ slotProps.data.to_meta_login }}
+                                </div>
+                            </div>
+                            <div v-else>{{ $t(`public.${slotProps.data.transaction_type}`) }}</div>
                         </span>
                         <span class="text-gray-500 text-xs">
                             {{ formatDateTime(slotProps.data.created_at) }}
@@ -230,7 +238,7 @@ function copyToClipboard(text) {
                         class="overflow-hidden text-right text-ellipsis font-semibold"
                         :class="{
                             'text-success-500': slotProps.data.to_meta_login,
-                            'text-error-500': slotProps.data.from_meta_login,
+                            '!text-error-500': account.meta_login === slotProps.data.from_meta_login,
                         }"
                     >
                         {{ formatAmount(slotProps.data.transaction_amount > 0 ? slotProps.data.transaction_amount : 0) }}
