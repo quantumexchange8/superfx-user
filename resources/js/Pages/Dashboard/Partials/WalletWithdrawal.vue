@@ -158,24 +158,24 @@ const closeDialog = () => {
                     v-if="walletOptions.length && selectedPaymentAccount.payment_platform == 'crypto'"
                     class="flex flex-col items-start self-stretch pt-2 border-t border-gray-20"
                 >
-                    <div class="grid grid-cols-3 items-start gap-1 self-stretch">
-                        <span class="col-span-2 text-left text-gray-500 text-sm">
+                    <div class="flex justify-between items-start gap-1 self-stretch">
+                        <span class="text-xs text-gray-500">
                             {{ $t('public.withdrawal_amount') }} :
                         </span>
                         <span class="col-span-1 text-right text-gray-500 text-sm">
                             ${{ formatAmount(form.amount) }}
                         </span>
                     </div>
-                    <div class="grid grid-cols-3 items-start gap-1 self-stretch">
-                        <span class="col-span-2 text-left text-gray-500 text-sm">
+                    <div class="flex justify-between items-start gap-1 self-stretch">
+                        <span class="text-xs text-gray-500">
                             {{ $t('public.withdrawal_fee') }} :
                         </span>
                         <span class="col-span-1 text-right text-gray-500 text-sm">
                             ${{ formatAmount(selectedCryptoOption.fee ?? 0) }}
                         </span>
                     </div>
-                    <div class="grid grid-cols-3 items-start gap-1 self-stretch">
-                        <span class="col-span-2 text-left text-gray-950 text-sm font-semibold">
+                    <div class="flex justify-between items-start gap-1 self-stretch">
+                        <span class="text-xs text-gray-950 font-semibold">
                             {{ $t('public.final_amount_to_receive') }} :
                         </span>
                         <span class="col-span-1 text-right text-gray-950 text-sm font-semibold">
