@@ -263,26 +263,26 @@ const closeDialog = () => {
             </div>
             <div
                 v-if="selectedPlatform ==='crypto'"
-                class="flex flex-col items-end justify-end self-stretch pt-2 border-t border-gray-200"
+                class="flex flex-col items-end justify-end self-stretch pt-5 border-t border-gray-200"
             >
-                <div class="grid grid-cols-3 items-start gap-1 self-stretch">
-                    <span class="col-span-2 text-right text-gray-500 text-sm">
+                <div class="flex justify-between items-start gap-1 self-stretch">
+                    <span class="text-xs text-gray-500">
                         {{ $t('public.deposit_amount') }} :
                     </span>
                     <span class="col-span-1 text-right text-gray-500 text-sm">
                         ${{ formatAmount(form.amount) }}
                     </span>
                 </div>
-                <div class="grid grid-cols-3 items-start gap-1 self-stretch">
-                    <span class="col-span-2 text-right text-gray-500 text-sm">
+                <div class="flex justify-between items-start gap-1 self-stretch">
+                    <span class="text-xs text-gray-500">
                         {{ $t('public.deposit_fee') }} :
                     </span>
                     <span class="col-span-1 text-right text-gray-500 text-sm">
                         ${{ formatAmount(selectedCryptoOption.fee ?? 0) }}
                     </span>
                 </div>
-                <div class="grid grid-cols-3 items-start gap-1 self-stretch">
-                    <span class="col-span-2 text-right text-gray-950 text-sm font-semibold">
+                <div class="flex justify-between items-start gap-1 self-stretch">
+                    <span class="text-sm text-gray-950 font-semibold">
                         {{ $t('public.final_amount_to_pay') }} :
                     </span>
                     <span class="col-span-1 text-right text-gray-950 text-sm font-semibold">

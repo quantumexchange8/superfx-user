@@ -175,7 +175,7 @@ const closeDialog = () => {
                         </span>
                     </div>
                     <div class="flex justify-between items-start gap-1 self-stretch">
-                        <span class="text-xs text-gray-950 font-semibold">
+                        <span class="text-sm text-gray-950 font-semibold">
                             {{ $t('public.final_amount_to_receive') }} :
                         </span>
                         <span class="col-span-1 text-right text-gray-950 text-sm font-semibold">
