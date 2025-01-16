@@ -82,7 +82,6 @@ const filters = ref({
 
 // Watch minFilterAmount and maxAmount to update the amount filter
 watch([minFilterAmount, maxFilterAmount], ([newMin, newMax]) => {
-    console.log('filter');
     filters.value.amount.value = [newMin, newMax];
 });
 
@@ -129,7 +128,6 @@ const recalculateTotals = () => {
 };
 
 watch(filters, () => {
-    console.log('other filter');
     recalculateTotals();
     // Check if amount filter covers the entire range (considering full range as minFilterAmount and maxFilterAmount)
     const amountFilterIsActive = filters.value.amount.value[0] !== minFilterAmount.value || filters.value.amount.value[1] !== maxFilterAmount.value;

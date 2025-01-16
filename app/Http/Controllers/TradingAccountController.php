@@ -275,7 +275,7 @@ class TradingAccountController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'account_id' => ['required', 'exists:trading_accounts,id'],
-            'amount' => ['required', 'numeric', 'gte:30'],
+            'amount' => ['required', 'numeric', 'gte:50'],
             'payment_account_id' => ['required']
         ])->setAttributeNames([
             'account_id' => trans('public.account'),
@@ -285,6 +285,8 @@ class TradingAccountController extends Controller
         $validator->validate();
 
         $amount = $request->amount;
+        $fee = $request->fee ?? 0;
+        $transaction_amount = $amount - $fee;
 
          $tradingAccount = TradingAccount::find($request->account_id);
          (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
@@ -308,7 +310,6 @@ class TradingAccountController extends Controller
                  ]);
          }
 
-         $amount = $request->input('amount');
          $paymentWallet = PaymentAccount::find($request->payment_account_id);
 
          $transaction = Transaction::create([
@@ -329,8 +330,8 @@ class TradingAccountController extends Controller
              'to_wallet_address' => $paymentWallet->account_no,
              'ticket' => $trade['ticket'] ?? null,
              'amount' => $amount,
-             'transaction_charges' => 0,
-             'transaction_amount' => $amount,
+             'transaction_charges' => $fee,
+             'transaction_amount' => $transaction_amount,
              'status' => 'processing',
          ]);
 
@@ -586,6 +587,7 @@ class TradingAccountController extends Controller
 
         $conversion_rate = null;
         $conversion_amount = null;
+        $fee = $request->fee ?? 0;
 
         if ($request->payment_platform == 'bank'){
             $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', 'VND')->deposit_rate;
@@ -607,11 +609,6 @@ class TradingAccountController extends Controller
         ]);
 
         if ($payment_gateway) {
-            $transaction->update([
-                'payment_gateway_id' => $payment_gateway->id,
-                'comment' => $payment_gateway->platform == 'crypto' ? $request->cryptoType : null,
-            ]);
-
             // $domain = $_SERVER['HTTP_HOST'];
             // $notifyUrl = "https://$domain/deposit_callback";
             // $returnUrl = "https://$domain/deposit_return";
@@ -620,6 +617,10 @@ class TradingAccountController extends Controller
             $params = [];
             switch ($payment_gateway->platform) {
                 case 'bank':
+                    $transaction->update([
+                        'payment_gateway_id' => $payment_gateway->id,
+                    ]);
+
                     $params = [
                         'partner_id' => $payment_gateway->payment_app_number,
                         'timestamp' => Carbon::now()->timestamp,
@@ -651,6 +652,15 @@ class TradingAccountController extends Controller
                     break;
 
                 case 'crypto':
+                    $transaction->update([
+                        'payment_gateway_id' => $payment_gateway->id,
+                        'payment_account_type' => strtolower($request->cryptoType),
+                        'amount'  => $amount + $fee,
+                        'transaction_charges' => $fee,
+                        'transaction_amount' => $amount,
+                        'comment' => $request->cryptoType,
+                    ]);
+
                     $params = [
                         'partner_id' => $payment_gateway->payment_app_number,
                         'timestamp' => Carbon::now()->timestamp,
@@ -659,7 +669,7 @@ class TradingAccountController extends Controller
                         'order_currency' => 0,
                         'order_language' => 'en_ww',
                         'guest_id' => md5('SuperFX' . $user->id),
-                        'amount' => $amount,
+                        'amount' => $transaction->amount,
                         'notify_url' => route('depositCallback'),
                         'return_url' => route('depositReturn'),
                     ];
@@ -793,8 +803,6 @@ class TradingAccountController extends Controller
             $transaction->update([
                 'to_wallet_address' => $to_wallet_address ?? null,
                 'txn_hash' => $result['txid'],
-                'transaction_charges' => $fees,
-                'transaction_amount' => $transaction->amount,
                 'from_currency' => 'USDT',
                 'to_currency' => 'USD',
                 'status' => $status,

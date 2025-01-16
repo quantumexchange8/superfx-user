@@ -5,7 +5,7 @@ import {useForm} from "@inertiajs/vue3";
 import Button from "@/Components/Button.vue"
 import InputError from "@/Components/InputError.vue";
 import Dropdown from "primevue/dropdown";
-import {ref, watch} from "vue";
+import {ref, watch, computed} from "vue";
 import {transactionFormat} from "@/Composables/index.js";
 // import TermsAndCondition from "@/Components/TermsAndCondition.vue";
 
@@ -17,14 +17,17 @@ const props = defineProps({
 const walletOptions = ref([]);
 const loadPaymentAccounts = ref(false);
 const selectedPaymentAccount = ref();
+const cryptoOptions = ref([]);
+const selectedCryptoOption = ref();
 const {formatAmount} = transactionFormat()
 const emit = defineEmits(['update:visible'])
 
 const getOptions = async () => {
     try {
-        const response = await axios.get('/getPaymentAccounts');
+        const response = await axios.get('/getPaymentAccounts?type=withdrawal');
         walletOptions.value = response.data.payment_accounts;
         selectedPaymentAccount.value = walletOptions.value[0];
+        cryptoOptions.value = response.data.crypto_options;
     } catch (error) {
         console.error('Error changing locale:', error);
     }
@@ -35,12 +38,31 @@ getOptions();
 const form = useForm({
     wallet_id: props.wallet.id,
     amount: 0,
+    fee: 0,
     payment_account_id: '',
 })
 
 watch(selectedPaymentAccount, (newWallet) => {
-    selectedPaymentAccount.value = newWallet
+    selectedPaymentAccount.value = newWallet;
+
+    const matchingOption = cryptoOptions.value.find(
+        (option) => option.type === selectedPaymentAccount.value.payment_account_type.toUpperCase()
+    );
+
+    if (matchingOption) {
+        selectedCryptoOption.value = matchingOption;
+    } else {
+        selectedCryptoOption.value = null;
+    }
 })
+
+const finalAmount = computed(() => {
+    if (form.amount - Number(selectedCryptoOption.value.fee) < 0) {
+        return 0;
+    }
+
+    return form.amount - Number(selectedCryptoOption.value.fee);
+});
 
 const toggleFullAmount = () => {
     if (form.amount) {
@@ -52,7 +74,7 @@ const toggleFullAmount = () => {
 
 const submitForm = () => {
     form.payment_account_id = selectedPaymentAccount.value.id;
-
+    form.fee = Number(selectedCryptoOption.value?.fee ?? 0);
     form.post(route('dashboard.walletWithdrawal'), {
         onSuccess: () => {
             closeDialog();
@@ -102,7 +124,7 @@ const closeDialog = () => {
                             {{ form.amount ? $t('public.clear') : $t('public.full_amount') }}
                         </div>
                     </div>
-                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount(30) }}</span>
+                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount(50) }}</span>
                     <InputError :message="form.errors.amount" />
                 </div>
 
@@ -131,6 +153,35 @@ const closeDialog = () => {
                     </Dropdown>
                     <InputError :message="form.errors.payment_account_id" />
                     <span class="self-stretch text-gray-500 text-xs">{{ walletOptions.length ? selectedPaymentAccount.account_no : $t('public.loading_caption')}}</span>
+                </div>
+                <div
+                    v-if="walletOptions.length && selectedPaymentAccount.payment_platform == 'crypto'"
+                    class="flex flex-col items-start self-stretch pt-2 border-t border-gray-20"
+                >
+                    <div class="grid grid-cols-3 items-start gap-1 self-stretch">
+                        <span class="col-span-2 text-left text-gray-500 text-sm">
+                            {{ $t('public.withdrawal_amount') }} :
+                        </span>
+                        <span class="col-span-1 text-right text-gray-500 text-sm">
+                            ${{ formatAmount(form.amount) }}
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-3 items-start gap-1 self-stretch">
+                        <span class="col-span-2 text-left text-gray-500 text-sm">
+                            {{ $t('public.withdrawal_fee') }} :
+                        </span>
+                        <span class="col-span-1 text-right text-gray-500 text-sm">
+                            ${{ formatAmount(selectedCryptoOption.fee ?? 0) }}
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-3 items-start gap-1 self-stretch">
+                        <span class="col-span-2 text-left text-gray-950 text-sm font-semibold">
+                            {{ $t('public.final_amount_to_receive') }} :
+                        </span>
+                        <span class="col-span-1 text-right text-gray-950 text-sm font-semibold">
+                            ${{ formatAmount(finalAmount) }}
+                        </span>
+                    </div>
                 </div>
             </div>
             <!-- <div class="text-left w-full text-gray-500 text-xs">{{ $t('public.agreement_text') }}

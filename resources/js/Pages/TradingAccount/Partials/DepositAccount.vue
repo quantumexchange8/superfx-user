@@ -23,12 +23,15 @@ const props = defineProps({
 const maxAmount = ref();
 const visible = ref(false);
 const isLoading = ref(false);
+const cryptoOptions = ref([]);
+const selectedCryptoOption = ref();
 
 const form = ref({
     meta_login: props.account.meta_login,
     payment_platform: '',
     cryptoType: '',
     amount: 0,
+    fee: 0,
 });
 
 const selectedPlatform = ref('');
@@ -38,11 +41,30 @@ const selectPlatform = (type) => {
     maxAmount.value = type === 'bank' ? formatAmount(4000000000/props.conversionRate) : formatAmount(1000000);
 }
 
-const selectedCryptoOption = ref('ERC20');
-const cryptoOptions = ref(['ERC20', 'TRC20']);
+const getFee = async () => {
+    try {
+        const response = await axios.get('/getPaymentAccounts?type=deposit');
+        cryptoOptions.value = response.data.crypto_options;
+        selectedCryptoOption.value = cryptoOptions.value[0];
+    } catch (error) {
+        console.error('Error changing locale:', error);
+    }
+};
+
+getFee();
+
+// const selectedCryptoOption = ref({ type: 'ERC20', fee: 20 });
+// const cryptoOptions = ref([
+//     { type: 'ERC20', fee: 20 },
+//     { type: 'TRC20', fee: 2 },
+// ]);
+
 const selectCryptoOption = (type) => {
-    selectedCryptoOption.value = type;
-}
+    const selectedOption = cryptoOptions.value.find(option => option.type === type);
+    if (selectedOption) {
+        selectedCryptoOption.value = selectedOption;
+    }
+};
 
 const {formatAmount} = transactionFormat();
 const errors = ref({});
@@ -52,13 +74,19 @@ const steps = computed(() => {
 
     if (selectedPlatform.value === 'bank') {
         stepsArray.push(trans('public.deposit_info_message_1', { conversionRate: formatAmount(props.conversionRate) }));
+        stepsArray.push(trans('public.deposit_info_message_2'));
+        stepsArray.push(trans('public.deposit_info_message_3', { maxAmount: maxAmount.value }));
+    }
+    else {
+        stepsArray.push(trans('public.crypto_deposit_info_message_1'));
+        stepsArray.push(trans('public.crypto_deposit_info_message_2', { maxAmount: maxAmount.value }));
     }
 
-    stepsArray.push(trans('public.deposit_info_message_2'));
-
-    stepsArray.push(trans('public.deposit_info_message_3', { maxAmount: maxAmount.value }));
-
      return stepsArray;
+});
+
+const finalAmount = computed(() => {
+    return form.value.amount + selectedCryptoOption.value.fee;
 });
 
 const submitForm = async () => {
@@ -67,7 +95,8 @@ const submitForm = async () => {
         form.value.payment_platform = selectedPlatform.value;
 
         if (form.value.payment_platform === 'crypto') {
-            form.value.cryptoType = selectedCryptoOption.value;
+            form.value.cryptoType = selectedCryptoOption.value.type;
+            form.value.fee = selectedCryptoOption.value.fee;
         } else {
             form.value.cryptoType = null;
         }
@@ -89,6 +118,7 @@ const submitForm = async () => {
                 payment_platform: '',
                 cryptoType: '',
                 amount: 0,
+                fee: 0,
             };
 
             window.open(response.data.payment_url, '_blank');
@@ -132,7 +162,7 @@ const closeDialog = () => {
         modal
         class="dialog-xs sm:dialog-sm"
     >
-        <div class="flex flex-col items-center gap-8 self-stretch">
+        <div class="flex flex-col items-center gap-5 self-stretch">
             <div class="flex flex-col justify-center items-center py-4 px-8 gap-2 self-stretch bg-gray-200">
                 <span class="text-gray-500 text-center text-xs font-medium">#{{ account.meta_login }} - {{ $t('public.current_account_balance') }}</span>
                 <span class="text-gray-950 text-center text-xl font-semibold">$ {{ account.balance ?? 0 }}</span>
@@ -176,24 +206,25 @@ const closeDialog = () => {
                 <div class="grid grid-cols-2 items-start gap-3 self-stretch">
                     <div
                         v-for="network in cryptoOptions"
-                        @click="selectCryptoOption(network)"
+                        :key="network.type"
+                        @click="selectCryptoOption(network.type)"
                         class="group col-span-1 items-start py-3 px-4 gap-1 self-stretch rounded-lg border shadow-input transition-colors duration-300 select-none cursor-pointer"
                         :class="{
-                            'bg-primary-50 border-primary-500': selectedCryptoOption === network,
-                            'bg-white border-gray-300 hover:bg-primary-50 hover:border-primary-500': selectedCryptoOption !== network,
+                            'bg-primary-50 border-primary-500': selectedCryptoOption.type === network.type,
+                            'bg-white border-gray-300 hover:bg-primary-50 hover:border-primary-500': selectedCryptoOption.type !== network.type,
                         }"
                     >
                         <div class="flex items-center gap-3 self-stretch">
                             <span
                                 class="flex-grow text-sm font-semibold transition-colors duration-300 group-hover:text-primary-700"
                                 :class="{
-                                    'text-primary-700': selectedCryptoOption === network,
-                                    'text-gray-950': selectedCryptoOption !== network
+                                    'text-primary-700': selectedCryptoOption.type === network.type,
+                                    'text-gray-950': selectedCryptoOption.type !== network.type
                                 }"
                             >
-                                {{ network }}
+                                {{ network.type }}
                             </span>
-                            <IconCircleCheckFilled v-if="selectedCryptoOption === network" size="20" stroke-width="1.25" color="#06D001" />
+                            <IconCircleCheckFilled v-if="selectedCryptoOption.type === network.type" size="20" stroke-width="1.25" color="#06D001" />
                         </div>
                     </div>
                 </div>
@@ -221,13 +252,42 @@ const closeDialog = () => {
                 <InputError v-if="errors.amount" :message="errors.amount[0]" />
             </div>
             <div class="flex flex-col items-center self-stretch">
-                <div v-if="selectedPlatform" class="flex justify-center items-start py-2 gap-3 self-stretch">
+                <div v-if="selectedPlatform" class="flex justify-center items-start gap-3 self-stretch">
                     <div class="flex flex-col items-start gap-1 flex-grow">
                         <span class="self-stretch text-gray-950 text-sm font-semibold">{{ $t('public.deposit_info_header') }}</span>
                         <span v-for="(step, index) in steps" :key="index" class="self-stretch text-gray-500 text-xs">
                             {{ index + 1 }}. {{ step }}
                         </span>
                     </div>
+                </div>
+            </div>
+            <div
+                v-if="selectedPlatform ==='crypto'"
+                class="flex flex-col items-end justify-end self-stretch pt-2 border-t border-gray-200"
+            >
+                <div class="grid grid-cols-3 items-start gap-1 self-stretch">
+                    <span class="col-span-2 text-right text-gray-500 text-sm">
+                        {{ $t('public.deposit_amount') }} :
+                    </span>
+                    <span class="col-span-1 text-right text-gray-500 text-sm">
+                        ${{ formatAmount(form.amount) }}
+                    </span>
+                </div>
+                <div class="grid grid-cols-3 items-start gap-1 self-stretch">
+                    <span class="col-span-2 text-right text-gray-500 text-sm">
+                        {{ $t('public.deposit_fee') }} :
+                    </span>
+                    <span class="col-span-1 text-right text-gray-500 text-sm">
+                        ${{ formatAmount(selectedCryptoOption.fee ?? 0) }}
+                    </span>
+                </div>
+                <div class="grid grid-cols-3 items-start gap-1 self-stretch">
+                    <span class="col-span-2 text-right text-gray-950 text-sm font-semibold">
+                        {{ $t('public.final_amount_to_pay') }} :
+                    </span>
+                    <span class="col-span-1 text-right text-gray-950 text-sm font-semibold">
+                        ${{ formatAmount(finalAmount) }}
+                    </span>
                 </div>
             </div>
         </div>

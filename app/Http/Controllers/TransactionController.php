@@ -162,7 +162,7 @@ class TransactionController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'wallet_id' => ['required', 'exists:wallets,id'],
-            'amount' => ['required', 'numeric', 'gte:30'],
+            'amount' => ['required', 'numeric', 'gte:50'],
             'payment_account_id' => ['required']
         ])->setAttributeNames([
             'wallet_id' => trans('public.wallet'),
@@ -173,6 +173,8 @@ class TransactionController extends Controller
 
         $user = Auth::user();
         $amount = $request->amount;
+        $fee = $request->fee ?? 0;
+        $transaction_amount = $amount - $fee;
         $wallet = Wallet::find($request->wallet_id);
         $paymentWallet = PaymentAccount::find($request->payment_account_id);
 
@@ -197,8 +199,8 @@ class TransactionController extends Controller
             'to_currency' => $paymentWallet->currency,
             'to_wallet_address' => $paymentWallet->account_no,
             'amount' => $amount,
-            'transaction_charges' => 0,
-            'transaction_amount' => $amount,
+            'transaction_charges' => $fee,
+            'transaction_amount' => $transaction_amount,
             'old_wallet_amount' => $wallet->balance,
             'new_wallet_amount' => $wallet->balance -= $amount,
             'status' => 'processing',
@@ -240,6 +242,11 @@ class TransactionController extends Controller
                     'to_meta_login' => $transaction->to_meta_login,
                     'transaction_number' => $transaction->transaction_number,
                     'payment_account_id' => $transaction->payment_account_id,
+                    'payment_platform' => $transaction->payment_platform ?? $transaction->payment_account->platform ?? '-',
+                    'payment_platform_name' => $transaction->payment_platform_name,
+                    'payment_account_no' => $transaction->payment_account_no,
+                    'payment_account_type' => $transaction->payment_account_type,
+                    'bank_code' => $transaction->bank_code,
                     'from_wallet_address' => $transaction->from_wallet_address,
                     'to_wallet_address' => $transaction->to_wallet_address,
                     'txn_hash' => $transaction->txn_hash,
@@ -250,7 +257,7 @@ class TransactionController extends Controller
                     'comment' => $transaction->comment,
                     'remarks' => $transaction->remarks,
                     'created_at' => $transaction->created_at,
-                    'wallet_name' => $transaction->payment_account->payment_account_name ?? '-'
+                    'wallet_name' => $transaction->payment_account_name ?? $transaction->payment_account->payment_account_name ?? '-',
                 ];
             });
 
