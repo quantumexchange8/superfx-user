@@ -56,6 +56,8 @@ class ProfileController extends Controller
             'dial_code' => $dial_code['phone_code'],
             'phone' => $request->phone,
             'phone_number' => $request->phone_number,
+            'country_id' => $request->country_id,
+            'nationality' => $request->nationality,
         ]);
 
         return redirect()->back()->with('toast', [
@@ -204,8 +206,17 @@ class ProfileController extends Controller
 
     public function getFilterData()
     {
+        $countries = (new DropdownOptionService())->getCountries();
+        $nationalities = $countries->map(function ($country) {
+            return [
+                'id' => $country['id'],
+                'nationality' => $country['nationality'],
+            ];
+        });
+
         return response()->json([
-            'countries' => (new DropdownOptionService())->getCountries(),
+            'countries' => $countries,
+            'nationalities' => $nationalities,
             'banks' => (new DropdownOptionService())->getBanks(),
         ]);
     }

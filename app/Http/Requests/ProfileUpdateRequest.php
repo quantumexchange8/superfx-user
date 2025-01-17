@@ -21,6 +21,8 @@ class ProfileUpdateRequest extends FormRequest
             'dial_code' => ['required'],
             'phone' => ['required', 'max:255'],
             'phone_number' => ['required', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
+            'country_id' => ['required'],
+            'nationality' => ['required'],
         ];
     }
 
@@ -32,6 +34,8 @@ class ProfileUpdateRequest extends FormRequest
             'dial_code' => trans('public.phone_code'),
             'phone' => trans('public.phone'),
             'phone_number' => trans('public.phone_number'),
+            'country_id' => trans('public.country'),
+            'nationality' => trans('public.nationality'),
         ];
     }
 }

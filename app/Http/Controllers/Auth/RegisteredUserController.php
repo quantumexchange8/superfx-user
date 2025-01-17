@@ -42,12 +42,16 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:' . User::class],
             'dial_code' => ['required'],
             'phone' => ['required', 'max:255', 'unique:' . User::class],
+            'country_id' => ['required'],
+            'nationality' => ['required'],
         ];
 
         $attributes = [
             'name'=> trans('public.full_name'),
             'email' => trans('public.email'),
             'phone' => trans('public.phone_number'),
+            'country_id' => trans('public.country'),
+            'nationality' => trans('public.nationality'),
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -89,7 +93,6 @@ class RegisteredUserController extends Controller
         // $validator->validate();
 
         $dial_code = $request->dial_code;
-        $country = Country::find($dial_code['id']);
         $default_agent_id = User::where('id_number', 'IB00000')->first()->id;
 
         $userData = [
@@ -98,8 +101,8 @@ class RegisteredUserController extends Controller
             'dial_code' => $dial_code['phone_code'],
             'phone' => $request->phone,
             'phone_number' => $request->phone_number,
-            'country_id' => $country->id,
-            'nationality' => $country->nationality,
+            'country_id' => $request->country_id,
+            'nationality' => $request->nationality,
             'password' => Hash::make($request->password),
             'kyc_status' => 'unverified',
         ];
@@ -179,8 +182,17 @@ class RegisteredUserController extends Controller
 
     public function getFilterData()
     {
+        $countries = (new DropdownOptionService())->getCountries();
+        $nationalities = $countries->map(function ($country) {
+            return [
+                'id' => $country['id'],
+                'nationality' => $country['nationality'],
+            ];
+        });
+
         return response()->json([
-            'countries' => (new DropdownOptionService())->getCountries(),
+            'countries' => $countries,
+            'nationalities' => $nationalities,
         ]);
     }
 }
