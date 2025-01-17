@@ -14,7 +14,7 @@ import {
     IconPhotoPlus,
     IconUpload
 } from "@tabler/icons-vue"
-import {computed, h, ref} from "vue";
+import {computed, h, ref, watch} from "vue";
 import InputText from "primevue/inputtext";
 import Dropdown from "primevue/dropdown";
 import Password from 'primevue/password';
@@ -84,10 +84,10 @@ const selectStep = (stepNumber) => {
 selectStep(1);
 
 const handleContinue = () => {
-    form.dial_code = selectedCountry.value;
+    form.dial_code = selectedCode.value;
 
-    if (selectedCountry.value) {
-        form.phone_number = selectedCountry.value.phone_code + form.phone;
+    if (selectedCode.value) {
+        form.phone_number = selectedCode.value.phone_code + form.phone;
     }
 
     form.step = selectedStep.value.step;
@@ -127,18 +127,23 @@ const form = useForm({
     dial_code: '',
     phone: '',
     phone_number: '',
+    country_id: '',
+    nationality: '',
     password: '',
     password_confirmation: '',
     kyc_verification: '',
     referral_code: props.referral_code ? props.referral_code : '',
 });
 
-const countries = ref()
+const countries = ref();
+const nationalities = ref();
+const selectedCode = ref();
 const selectedCountry = ref();
 const getResults = async () => {
     try {
         const response = await axios.get('/getFilterData');
         countries.value = response.data.countries;
+        nationalities.value = response.data.nationalities;
     } catch (error) {
         console.error('Error changing locale:', error);
     }
@@ -194,6 +199,21 @@ const formatSize = (bytes) => {
 
     return `${formattedSize} ${sizes[i]}`;
 };
+
+watch(selectedCountry, (newCountry) => {
+    if (newCountry) {
+        form.country_id = newCountry.id;
+        const foundNationality = nationalities.value.find(nationality => nationality.id === newCountry.id);
+        if (foundNationality) {
+            form.nationality = foundNationality.nationality;
+        } else {
+            form.nationality = ''; // Reset if not found
+        }
+    } else {
+        selectedCountry.value = null;
+        form.nationality = '';
+    }
+});
 
 </script>
 
@@ -320,23 +340,23 @@ const formatSize = (bytes) => {
                                         <InputLabel for="phone" :value="$t('public.phone_number')" :invalid="!!form.errors.phone" />
                                         <div class="flex gap-2 items-center self-stretch relative">
                                             <Dropdown
-                                                v-model="selectedCountry"
+                                                v-model="selectedCode"
                                                 :options="countries"
                                                 filter
                                                 :filterFields="['name', 'phone_code']"
                                                 optionLabel="name"
                                                 :placeholder="$t('public.phone_code')"
-                                                class="w-[100px]"
+                                                class="w-[120px]"
                                                 scroll-height="236px"
                                                 :invalid="!!form.errors.phone"
                                             >
                                                 <template #value="slotProps">
-                                                    <div v-if="slotProps.value" class="flex items-center">
+                                                    <div v-if="slotProps.value" class="flex w-[120px] items-center">
                                                         <div>{{ slotProps.value.phone_code }}</div>
                                                     </div>
                                                     <span v-else>
-                                            {{ slotProps.placeholder }}
-                                        </span>
+                                                        {{ slotProps.placeholder }}
+                                                    </span>
                                                 </template>
                                                 <template #option="slotProps">
                                                     <div class="flex items-center w-[262px] md:max-w-[236px]">
@@ -355,6 +375,69 @@ const formatSize = (bytes) => {
                                             />
                                         </div>
                                         <InputError :message="form.errors.phone" />
+                                    </div>
+
+                                    <!-- country -->
+                                    <div class="flex flex-col gap-1 items-start self-stretch">
+                                        <InputLabel for="country" :value="$t('public.country')" :invalid="!!form.errors.country_id" />
+                                        <Dropdown
+                                            v-model="selectedCountry"
+                                            :options="countries"
+                                            filter
+                                            :filterFields="['name']"
+                                            optionLabel="name"
+                                            :placeholder="$t('public.country_placeholder')"
+                                            class="w-full"
+                                            scroll-height="236px"
+                                            :invalid="!!form.errors.country_id"
+                                        >
+                                            <template #value="slotProps">
+                                                <div v-if="slotProps.value" class="flex items-center">
+                                                    <div>{{ slotProps.value.name }}</div>
+                                                </div>
+                                                <span v-else>
+                                                    {{ slotProps.placeholder }}
+                                                </span>
+                                            </template>
+                                            <template #option="slotProps">
+                                                <div class="flex items-center w-[262px] md:max-w-[236px]">
+                                                    <div>{{ slotProps.option.name }}</div>
+                                                </div>
+                                            </template>
+                                        </Dropdown>
+                                        <InputError :message="form.errors.country_id" />
+                                    </div>
+
+                                    <!-- nationality -->
+                                    <div class="flex flex-col gap-1 items-start self-stretch">
+                                        <InputLabel for="nationality" :value="$t('public.nationality')" :invalid="!!form.errors.nationality" />
+                                        <Dropdown
+                                            v-model="form.nationality"
+                                            :options="nationalities"
+                                            filter
+                                            :filterFields="['nationality']"
+                                            optionLabel="nationality"
+                                            optionValue="nationality"
+                                            :placeholder="$t('public.nationality_placeholder')"
+                                            class="w-full"
+                                            scroll-height="236px"
+                                            :invalid="!!form.errors.nationality"
+                                        >
+                                            <template #value="slotProps">
+                                                <div v-if="slotProps.value" class="flex items-center">
+                                                    <div>{{ slotProps.value }}</div>
+                                                </div>
+                                                <span v-else>
+                                                    {{ slotProps.placeholder }}
+                                                </span>
+                                            </template>
+                                            <template #option="slotProps">
+                                                <div class="flex items-center w-[262px] md:max-w-[236px]">
+                                                    <div>{{ slotProps.option.nationality }}</div>
+                                                </div>
+                                            </template>
+                                        </Dropdown>
+                                        <InputError :message="form.errors.nationality" />
                                     </div>
                                 </div>
                             </template>

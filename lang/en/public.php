@@ -566,4 +566,8 @@ return [
     "final_amount_to_receive" => "Final Amount to Receive",
     "charged" => "Charged",
     "received" => "Received",
+    "country" => "Country",
+    "nationality" => "Nationality",
+    "country_placeholder" => "Select Country",
+    "nationality_placeholder" => "Select Nationality",
 ];
