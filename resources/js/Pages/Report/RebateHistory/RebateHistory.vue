@@ -10,7 +10,7 @@ import Column from "primevue/column";
 import Card from "primevue/card";
 import DataTable from "primevue/datatable";
 import Tag from "primevue/tag";
-import {IconCircleXFilled, IconSearch, IconX, IconAdjustments} from "@tabler/icons-vue";
+import {IconCircleXFilled, IconSearch, IconX, IconAdjustments, IconCloudDownload} from "@tabler/icons-vue";
 import InputText from "primevue/inputtext";
 import Calendar from "primevue/calendar";
 import Empty from "@/Components/Empty.vue";
@@ -22,6 +22,7 @@ import OverlayPanel from 'primevue/overlaypanel';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import RadioButton from 'primevue/radiobutton';
 
+const exportStatus = ref(false);
 const isLoading = ref(false);
 const dt = ref(null);
 const histories = ref([]);
@@ -197,6 +198,36 @@ watch(filters, debounce(() => {
     loadLazyData(); 
 }, 500), { deep: true });
 
+const exportHistory = () => {
+    exportStatus.value = true;
+    isLoading.value = true;
+
+    lazyParams.value = { ...lazyParams.value, first: event?.first || first.value };
+
+    if (filters.value) {
+        lazyParams.value.filters = { ...filters.value }; 
+    } else {
+        lazyParams.value.filters = {}; 
+    }
+
+    let params = {
+        include: [],
+        lazyEvent: JSON.stringify(lazyParams.value),
+        exportStatus: true,
+    };
+
+    const url = route('report.getRebateHistory', params);
+
+    try {
+
+        window.location.href = url; 
+    } catch (e) {
+        console.error('Error occurred during export:', e);  
+    } finally {
+        isLoading.value = false;  
+        exportStatus.value = false; 
+    }
+};
 </script>
 
 <template>
@@ -272,15 +303,16 @@ watch(filters, debounce(() => {
                                     </div>
                                 </Button>
                             </div>
-<!--                            <div class="w-full flex justify-end">-->
-<!--                                <Button-->
-<!--                                    variant="primary-outlined"-->
-<!--                                    @click="exportCSV($event)"-->
-<!--                                    class="w-full md:w-auto"-->
-<!--                                >-->
-<!--                                    {{ $t('public.export') }}-->
-<!--                                </Button>-->
-<!--                            </div>-->
+                           <div class="w-full flex justify-end">
+                               <Button
+                                   variant="primary-outlined"
+                                   @click="exportHistory()"
+                                   class="w-full md:w-auto"
+                               >
+                                   {{ $t('public.export') }}
+                                   <IconCloudDownload size="20" />
+                               </Button>
+                           </div>
                         </div>
                         <div class="flex justify-end self-stretch md:hidden">
                             <span class="text-gray-500 text-right text-sm font-medium">{{ $t('public.total') }}:</span>

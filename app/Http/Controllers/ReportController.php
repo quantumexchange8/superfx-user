@@ -11,6 +11,8 @@ use Illuminate\Support\Carbon;
 use App\Models\RebateAllocation;
 use App\Models\TradeRebateSummary;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\RebateHistoryExport;
 
 class ReportController extends Controller
 {
@@ -328,10 +330,11 @@ class ReportController extends Controller
                 $query->orderByDesc('id');
             }
 
-            // Export logic
-//            if ($request->has('exportStatus') && $request->exportStatus) {
-//                return Excel::download(new MemberListingExport($query), now() . '-member-report.xlsx');
-//            }
+            if ($request->has(key: 'exportStatus') && $request->exportStatus == true) {
+                $histories = $query->clone();
+                return Excel::download(new RebateHistoryExport($histories), now() . '-rebate-report.xlsx');
+            }
+
             $totalRebateAmount = (clone $query)->sum('revenue');
 
             $histories = $query->paginate($data['rows']);
