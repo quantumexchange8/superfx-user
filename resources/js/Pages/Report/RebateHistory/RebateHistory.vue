@@ -546,7 +546,6 @@ const exportHistory = () => {
                         v-model="selectedDate"
                         selectionMode="range"
                         :manualInput="false"
-                        :minDate="minDate"
                         :maxDate="maxDate"
                         dateFormat="dd/mm/yy"
                         showIcon
@@ -573,7 +572,6 @@ const exportHistory = () => {
                         v-model="selectedCloseDate"
                         selectionMode="range"
                         :manualInput="false"
-                        :minDate="minDate"
                         :maxDate="maxDate"
                         dateFormat="dd/mm/yy"
                         showIcon

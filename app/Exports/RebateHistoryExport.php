@@ -8,35 +8,41 @@ use Carbon\Carbon;
 
 class RebateHistoryExport implements FromCollection, WithHeadings
 {
-    protected $histories;
+    protected $query;
 
-    public function __construct($histories)
+    public function __construct($query)
     {
-        $this->histories = $histories;
+        $this->query = $query;
     }
 
     public function collection()
     {
-        return $this->histories->get()->map(function ($history) {
-            return [
+        $histories = $this->query
+                        ->orderByDesc('created_at')
+                        ->get();
+
+        $result = array();
+        foreach ($histories as $history){
+            $result[] = array(
                 'created_at' => Carbon::parse($history->created_at)->format('Y-m-d'),
                 'deal_id' => $history->deal_id,
                 'open_time' => $history->open_time,
                 'closed_time' => $history->closed_time,
-                'trade_open_price' => (string) ($history->trade_open_price ?? '0'),
-                'trade_close_price' => (string) ($history->trade_close_price ?? '0'),
+                'trade_open_price' => (float)$history->trade_open_price,
+                'trade_close_price' => (float)$history->trade_close_price,
                 't_type' => trans("public.{$history->t_type}"),
                 'downline_name' => $history->downline->name ?? '-',
                 'downline_email' => $history->downline->email ?? '-',
                 'downline_id_number' => $history->downline->id_number ?? '-',
-                'trade_profit' => (string) ($history->trade_profit ?? '0'),
+                'trade_profit' => number_format((float)$history->trade_profit, 2, '.', ''),
                 'meta_login' => $history->meta_login,
                 'symbol' => $history->symbol,
-                'volume' => (string) ($history->volume ?? '0'),
-                'rebate' => (string) ($history->revenue ?? '0')
-            ];
-        });
-        return $histories;
+                'volume' => (float)$history->volume,
+                'rebate' => number_format((float)$history->revenue, 2, '.', '')
+            );
+        }
+
+        return collect($result);
     }
 
     public function headings(): array
