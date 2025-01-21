@@ -15,7 +15,7 @@ const { formatAmount } = transactionFormat();
 const tabs = ref([
         {
             title: wTrans('public.trading_accounts'),
-            component: h(TradingAccounts)
+            component: h(TradingAccounts),
         },
         {
             title: wTrans('public.rebate_wallet'),
@@ -25,6 +25,8 @@ const tabs = ref([
 
 const totalDeposit = ref(null)
 const totalWithdrawal = ref(null)
+const maxAccountAmount = ref(0)
+const maxRebateAmount = ref(0)
 
 const getResults = async () => {
     try {
@@ -32,6 +34,8 @@ const getResults = async () => {
 
         totalDeposit.value = response.data.totalDeposit;
         totalWithdrawal.value = response.data.totalWithdrawal;
+        maxAccountAmount.value = Number(response.data.maxAccountAmount);
+        maxRebateAmount.value = Number(response.data.maxRebateAmount);
     } catch (error) {
         console.error('Error get total:', error);
     }
@@ -93,12 +97,13 @@ const user = usePage().props.auth.user;
                 class="flex flex-col gap-5 self-stretch"
             >
                 <TabPanel v-for="(tab, index) in tabs" :key="index" :header="tab.title">
-                    <component :is="tab.component" />
+                    <component :is="tab.component" :maxAccountAmount="maxAccountAmount" :maxRebateAmount="maxRebateAmount"/>
                 </TabPanel>
             </TabView>
 
             <TradingAccounts
                 v-else
+                :maxAccountAmount="maxAccountAmount"
             />
         </div>
     </AuthenticatedLayout>

@@ -12,7 +12,7 @@ import {
     IconX,
 } from '@tabler/icons-vue';
 import {transactionFormat} from "@/Composables/index.js";
-import {ref, watch, watchEffect} from "vue";
+import {onMounted, ref, watch, watchEffect} from "vue";
 import { wTrans } from 'laravel-vue-i18n';
 import Button from '@/Components/Button.vue';
 import Badge from '@/Components/Badge.vue';
@@ -26,109 +26,141 @@ import TransactionDetails from '@/Pages/Transaction/Partials/TransactionDetails.
 import Slider from 'primevue/slider';
 import dayjs from 'dayjs'
 import Empty from '@/Components/Empty.vue';
+import debounce from "lodash/debounce.js";
 
 const { formatDateTime, formatAmount } = transactionFormat();
 
-const loading = ref(false);
-const dt = ref();
-const paginator_caption = wTrans('public.paginator_caption');
-const transactions = ref();
-const selectedDate = ref();
-const minFilterAmount = ref(0);
-const maxFilterAmount = ref(0);
-const totalTransaction = ref(0);
-
-const getResults = async (filterDate = null) => {
-    if (loading.value) return;
-    loading.value = true;
-
-    try {
-        let url = '/transaction/getRebateTransactions';
-
-        if (filterDate) {
-            const [startDate, endDate] = filterDate;
-            url += `?startDate=${dayjs(startDate).format('YYYY-MM-DD')}&endDate=${dayjs(endDate).format('YYYY-MM-DD')}`;
-        }
-
-        const response = await axios.get(url);
-        transactions.value = response.data.transactions;
-        totalTransaction.value = transactions.value?.length;
-        maxFilterAmount.value = transactions.value?.length ? Math.max(...transactions.value.map(item => parseFloat(item.transaction_amount || 0))) : 0;
-    } catch (error) {
-        console.error('Error get rebate transactions:', error);
-    } finally {
-        loading.value = false;
-    }
-};
-
-getResults();
-
-watchEffect(() => {
-    if (usePage().props.toast !== null) {
-        getResults();
-    }
+const props = defineProps({
+    maxAccountAmount: Number,
+    maxRebateAmount: Number,
 });
 
-const exportCSV = () => {
-    dt.value.exportCSV();
-};
+const exportStatus = ref(false);
+const loading = ref(false);
+const dt = ref(null);
+const paginator_caption = wTrans('public.paginator_caption');
+const transactions = ref([]);
+const selectedDate = ref();
+const minFilterAmount = ref(0);
+const maxFilterAmount = ref(10000);
+const totalTransaction = ref(0);
+const first = ref(0);
+const lazyParams = ref({});
 
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
     transaction_type: { value: null, matchMode: FilterMatchMode.EQUALS },
+    start_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+    end_date: { value: null, matchMode: FilterMatchMode.EQUALS },
     amount: { value: [minFilterAmount.value, maxFilterAmount.value], matchMode: FilterMatchMode.BETWEEN },
     status: { value: null, matchMode: FilterMatchMode.EQUALS },
 });
 
-// Watch minFilterAmount and maxAmount to update the amount filter
-watch([minFilterAmount, maxFilterAmount], ([newMin, newMax]) => {
-    filters.value.amount.value = [newMin, newMax];
+watch(() => props.maxRebateAmount, (newValue) => {
+    if (newValue) {
+        maxFilterAmount.value = newValue;
+        filters.value.amount.value[1] = maxFilterAmount.value;
+    }
+  },
+  { immediate: true } 
+);
+
+const loadLazyData = (event) => {
+    loading.value = true;
+
+    lazyParams.value = { ...lazyParams.value, first: event?.first || first.value };
+    lazyParams.value.filters = filters.value;
+    try {
+        setTimeout(async () => {
+            const params = {
+                page: JSON.stringify(event?.page + 1),
+                sortField: event?.sortField,
+                sortOrder: event?.sortOrder,
+                include: [],
+                lazyEvent: JSON.stringify(lazyParams.value)
+            };
+            const url = route('transaction.getRebateTransactions', params);
+            const response = await fetch(url);
+            const results = await response.json();
+
+            transactions.value = results?.transactions?.data;
+            totalTransaction.value = results?.transactions?.total;
+            loading.value = false;
+        }, 100);
+    }  catch (e) {
+        transactions.value = [];
+        totalTransaction.value = 0;
+        loading.value = false;
+    }
+};
+const onPage = (event) => {
+    lazyParams.value = event;
+    loadLazyData(event);
+};
+const onSort = (event) => {
+    lazyParams.value = event;
+    loadLazyData(event);
+};
+const onFilter = (event) => {
+    lazyParams.value.filters = filters.value ;
+    loadLazyData(event);
+};
+
+const op = ref();
+const filterCount = ref(0);
+const toggle = (event) => {
+    op.value.toggle(event);
+}
+
+onMounted(() => {
+    lazyParams.value = {
+        first: dt.value.first,
+        rows: dt.value.rows,
+        sortField: null,
+        sortOrder: null,
+        filters: filters.value
+    };
+
+    loadLazyData();
+});
+
+watch(
+    filters.value['global'],
+    debounce(() => {
+        loadLazyData();
+    }, 300)
+);
+
+watchEffect(() => {
+    if (usePage().props.toast !== null) {
+        loadLazyData();
+    }
 });
 
 watch(selectedDate, (newDateRange) => {
     if (Array.isArray(newDateRange)) {
         const [startDate, endDate] = newDateRange;
+        filters.value['start_date'].value = startDate;
+        filters.value['end_date'].value = endDate;
 
-        if (startDate && endDate) {
-            getResults([startDate, endDate]);
-        } else if (startDate || endDate) {
-            getResults([startDate || endDate, endDate || startDate]);
-        } else {
-            getResults([]);
+        if (startDate !== null && endDate !== null) {
+            loadLazyData();
         }
-    } else {
+    }
+    else if (newDateRange === null) {
+        loadLazyData();
+    }
+    else {
         console.warn('Invalid date range format:', newDateRange);
     }
-});
+})
 
 const clearDate = () => {
     selectedDate.value = null;
 };
 
-// overlay panel
-const op = ref();
-const filterCount = ref(0);
-
-const toggle = (event) => {
-    op.value.toggle(event);
-}
-
-const recalculateTotals = () => {
-    const filtered = transactions.value.filter(transaction => {
-        return (
-            (!filters.value.name?.value || transaction.name.startsWith(filters.value.name.value)) &&
-            (!filters.value.transaction_type?.value || transaction.transaction_type === filters.value.transaction_type.value) &&
-            (!filters.value.amount?.value[0] || !filters.value.amount?.value[1] || (transaction.transaction_amount >= filters.value.amount.value[0] && transaction.transaction_amount <= filters.value.amount.value[1])) &&
-            (!filters.value.status?.value || transaction.status === filters.value.status.value)
-        );
-    });
-
-    totalTransaction.value = filtered.length;
-};
-
-watch(filters, () => {
-    recalculateTotals();
+watch(filters, debounce(() => {
     // Check if amount filter covers the entire range (considering full range as minFilterAmount and maxFilterAmount)
     const amountFilterIsActive = filters.value.amount.value[0] !== minFilterAmount.value || filters.value.amount.value[1] !== maxFilterAmount.value;
 
@@ -140,16 +172,23 @@ watch(filters, () => {
         }
         return filter.value !== null;
     }).length;
-}, { deep: true });
+
+    loadLazyData(); 
+}, 500), { deep: true });
 
 const clearFilter = () => {
     filters.value = {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
         name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
         transaction_type: { value: null, matchMode: FilterMatchMode.EQUALS },
+        start_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+        end_date: { value: null, matchMode: FilterMatchMode.EQUALS },
         amount: { value: [minFilterAmount.value, maxFilterAmount.value], matchMode: FilterMatchMode.BETWEEN },
         status: { value: null, matchMode: FilterMatchMode.EQUALS },
     };
+
+    selectedDate.value = null;
+    lazyParams.value.filters = filters.value ;
 };
 
 const clearFilterGlobal = () => {
@@ -163,15 +202,48 @@ const rowClicked = (data) => {
     selectedRow.value = data;
     visible.value = true;
 }
+
+const exportTransaction = () => {
+    exportStatus.value = true;
+    loading.value = true;
+
+    lazyParams.value = { ...lazyParams.value, first: event?.first || first.value };
+
+    if (filters.value) {
+        lazyParams.value.filters = { ...filters.value }; 
+    } else {
+        lazyParams.value.filters = {}; 
+    }
+
+    let params = {
+        include: [],
+        lazyEvent: JSON.stringify(lazyParams.value),
+        exportStatus: true,
+    };
+
+    const url = route('transaction.getRebateTransactions', params);
+
+    try {
+
+        window.location.href = url; 
+    } catch (e) {
+        console.error('Error occurred during export:', e);  
+    } finally {
+        loading.value = false;  
+        exportStatus.value = false; 
+    }
+};
 </script>
 
 <template>
         <div class="p-6 flex flex-col items-center justify-center self-stretch gap-6 border border-gray-200 bg-white shadow-table rounded-2xl">
         <DataTable
+            lazy
             v-model:filters="filters"
             :value="transactions"
-            :paginator="transactions?.length > 0 && totalTransaction > 0"
+            paginator
             removableSort
+            :first="first"
             :rows="10"
             :rowsPerPageOptions="[10, 20, 50, 100]"
             tableStyle="min-width: 50rem"
@@ -179,9 +251,14 @@ const rowClicked = (data) => {
             :currentPageReportTemplate="paginator_caption"
             :globalFilterFields="['transaction_number', 'to_meta_login', 'from_meta_login']"
             ref="dt"
+            dataKey="id"
             :loading="loading"
+            :totalRecords="totalTransaction"
             table-style="min-width:fit-content"
             selectionMode="single"
+            @page="onPage($event)"
+            @sort="onSort($event)"
+            @filter="onFilter($event)"
             @row-click="rowClicked($event.data)"
         >
             <template #header>
@@ -217,7 +294,7 @@ const rowClicked = (data) => {
                         <div class="w-full flex justify-end">
                             <Button
                                 variant="primary-outlined"
-                                @click="exportCSV($event)"
+                                @click="exportTransaction()"
                                 class="w-full md:w-auto"
                             >
                                 {{ $t('public.export') }}

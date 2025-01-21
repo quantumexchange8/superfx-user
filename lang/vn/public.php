@@ -568,4 +568,6 @@ return [
     "nationality" => "Quốc tịch",
     "country_placeholder" => "Chọn quốc gia",
     "nationality_placeholder" => "Chọn quốc tịch",
+    "final_amount" => "Số tiền cuối cùng",
+    "platform_name" => "Tên nền tảng",
 ];

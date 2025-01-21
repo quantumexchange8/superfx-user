@@ -566,4 +566,6 @@ return [
     "nationality" => "國籍",
     "country_placeholder" => "選擇國家",
     "nationality_placeholder" => "選擇國籍",
+    "final_amount" => "最終金額",
+    "platform_name" => "平台名稱",
 ];

@@ -26,7 +26,6 @@ const exportStatus = ref(false);
 const isLoading = ref(false);
 const dt = ref(null);
 const histories = ref([]);
-const exportTable = ref('no');
 const {formatAmount} = transactionFormat();
 const { formatRgbaColor } = generalFormat();
 const totalRecords = ref(0);
@@ -49,7 +48,7 @@ const loadLazyData = (event) => {
     isLoading.value = true;
 
     lazyParams.value = { ...lazyParams.value, first: event?.first || first.value };
-
+    lazyParams.value.filters = filters.value;
     try {
         setTimeout(async () => {
             const params = {

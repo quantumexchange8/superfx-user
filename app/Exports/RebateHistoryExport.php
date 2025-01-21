@@ -38,7 +38,8 @@ class RebateHistoryExport implements FromCollection, WithHeadings
                 'meta_login' => $history->meta_login,
                 'symbol' => $history->symbol,
                 'volume' => (float)$history->volume,
-                'rebate' => number_format((float)$history->revenue, 2, '.', '')
+                'rebate' => number_format((float)$history->revenue, 2, '.', ''),
+                'status' => trans('public.completed')
             );
         }
 
@@ -46,24 +47,25 @@ class RebateHistoryExport implements FromCollection, WithHeadings
     }
 
     public function headings(): array
-{
-    
-    return [
-        trans('public.date'),
-        trans('public.ticket'),
-        trans('public.open_time'),
-        trans('public.closed_time'),
-        trans('public.open_price') . ' ($)',
-        trans('public.close_price') . ' ($)',
-        trans('public.type'),
-        trans('public.name'),
-        trans('public.email'),
-        trans('public.id_number'),
-        trans('public.profit') . ' ($)',
-        trans('public.account'),
-        trans('public.product'),
-        trans('public.volume') . ' (Ł)',
-        trans('public.rebate') . ' ($)',
-    ];
-}
+    {
+        
+        return [
+            trans('public.date'),
+            trans('public.ticket'),
+            trans('public.open_time'),
+            trans('public.closed_time'),
+            trans('public.open_price') . ' ($)',
+            trans('public.close_price') . ' ($)',
+            trans('public.type'),
+            trans('public.name'),
+            trans('public.email'),
+            trans('public.id_number'),
+            trans('public.profit') . ' ($)',
+            trans('public.account'),
+            trans('public.product'),
+            trans('public.volume') . ' (Ł)',
+            trans('public.rebate') . ' ($)',
+            trans('public.status'),
+        ];
+    }
 }

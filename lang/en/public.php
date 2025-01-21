@@ -172,7 +172,7 @@ return [
     "total_fund_size_caption" => "Total fund size of",
     "join_pamm" => "Join PAMM",
     "months" => "months",
-    "fee" => "fee",
+    "fee" => "Fee",
     "lock_free" => "Lock-free",
     "latest" => "Latest",
     "account_banner_header" => "Start Trading Today: Open Your Account Now",
@@ -568,4 +568,6 @@ return [
     "nationality" => "Nationality",
     "country_placeholder" => "Select Country",
     "nationality_placeholder" => "Select Nationality",
+    "final_amount" => "Final Amount",
+    "platform_name" => "Platform Name",
 ];

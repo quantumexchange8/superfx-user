@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\TransactionDetailExport;
 
 class TransactionController extends Controller
 {
@@ -33,36 +35,76 @@ class TransactionController extends Controller
     {
         $total_deposit = Auth::user()->transactions->where('transaction_type', 'deposit')->where('status', 'successful')->sum('transaction_amount');
         $total_withdrawal = Auth::user()->transactions->where('transaction_type', 'withdrawal')->where('status', 'successful')->sum('transaction_amount');
+        $max_account_amount = Auth::user()->transactions->where('category', '!=', 'rebate_wallet')->max('amount');
+        $max_rebate_amount = Auth::user()->transactions->where('category', '=', 'rebate_wallet')->max('amount');
 
         return response()->json([
             'totalDeposit' => $total_deposit,
             'totalWithdrawal' => $total_withdrawal,
+            'maxAccountAmount' => $max_account_amount,
+            'maxRebateAmount' => $max_rebate_amount,
         ]);
     }
 
     public function getTransactions(Request $request)
     {
-        $startDate = $request->query('startDate');
-        $endDate = $request->query('endDate');
+        if ($request->has('lazyEvent')) {
+            $data = json_decode($request->only(['lazyEvent'])['lazyEvent'], true);
+            $query = Transaction::where('user_id', Auth::id())
+            ->where('category', '!=', 'rebate_wallet');
 
-        $query = Transaction::where('user_id', Auth::id())
-            ->where('category', '!=', 'rebate_wallet')
-            ->where(function (Builder $query) {
-                $query->where('transaction_type', 'deposit')
-                    ->orWhere('transaction_type', 'withdrawal');
-            });
+            if ($data['filters']['global']['value']) {
+                $keyword = $data['filters']['global']['value'];
 
-        if ($startDate && $endDate) {
-            $start_date = Carbon::createFromFormat('Y-m-d', $startDate)->startOfDay();
-            $end_date = Carbon::createFromFormat('Y-m-d', $endDate)->endOfDay();
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('transaction_number', 'like', '%' . $keyword . '%')
+                    ->orWhere('from_meta_login', 'like', '%' . $keyword . '%')
+                    ->orWhere('to_meta_login', 'like', '%' . $keyword . '%');
+                });
+            }
 
-            $query->whereBetween('created_at', [$start_date, $end_date]);
-        }
+            if (!empty($data['filters']['start_date']['value']) && !empty($data['filters']['end_date']['value'])) {
+                $start_date = Carbon::parse($data['filters']['start_date']['value'])->addDay()->startOfDay();
+                $end_date = Carbon::parse($data['filters']['end_date']['value'])->addDay()->endOfDay();
 
-        $transactions = $query
-            ->latest()
-            ->get()
-            ->map(function ($transaction) {
+                $query->whereBetween('created_at', [$start_date, $end_date]);
+            }
+
+            if (!empty($data['filters']['transaction_type']['value'])) {
+                $query->where('transaction_type', $data['filters']['transaction_type']['value']);
+            }
+            else {
+                $query->where(function ($q) {
+                    $q->where('transaction_type', 'deposit')
+                      ->orWhere('transaction_type', 'withdrawal');
+                });
+            }
+
+            if (isset($data['filters']['amount']['value'][0], $data['filters']['amount']['value'][1])) {
+                $minAmount = $data['filters']['amount']['value'][0];
+                $maxAmount = $data['filters']['amount']['value'][1];
+
+                $query->whereBetween('amount', [$minAmount, $maxAmount]);
+            }
+
+            if (!empty($data['filters']['status']['value'])) {
+                $query->where('status', $data['filters']['status']['value']);
+            }
+
+            if ($data['sortField'] && $data['sortOrder']) {
+                $order = $data['sortOrder'] == 1 ? 'asc' : 'desc';
+                $query->orderBy($data['sortField'], $order);
+            } else {
+                $query->orderByDesc('id');
+            }
+
+            if ($request->has('exportStatus') && $request->exportStatus) {
+                return Excel::download(new TransactionDetailExport($query), now() . '-account-transactions.xlsx');
+            }
+
+            $transactions = $query->paginate($data['rows']);
+
+            $transactions->getCollection()->transform(function ($transaction) {
                 return [
                     'category' => $transaction->category,
                     'transaction_type' => $transaction->transaction_type,
@@ -89,9 +131,13 @@ class TransactionController extends Controller
                 ];
             });
 
-        return response()->json([
-            'transactions' => $transactions,
-        ]);
+            return response()->json([
+                'success' => true,
+                'transactions' => $transactions,
+            ]);
+        }
+
+        return response()->json(['success' => false, 'transactions' => []]);
     }
 
     public function walletTransfer(Request $request)
@@ -219,22 +265,63 @@ class TransactionController extends Controller
 
     public function getRebateTransactions(Request $request)
     {
-        $startDate = $request->query('startDate');
-        $endDate = $request->query('endDate');
+        if ($request->has('lazyEvent')) {
+            $data = json_decode($request->only(['lazyEvent'])['lazyEvent'], true);
+            $query = Transaction::where('user_id', Auth::id())
+            ->where('category', '=', 'rebate_wallet');
 
-        $query = Transaction::where(['category' => 'rebate_wallet', 'user_id' => Auth::id()]);
+            if ($data['filters']['global']['value']) {
+                $keyword = $data['filters']['global']['value'];
 
-        if ($startDate && $endDate) {
-            $start_date = Carbon::createFromFormat('Y-m-d', $startDate)->startOfDay();
-            $end_date = Carbon::createFromFormat('Y-m-d', $endDate)->endOfDay();
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('transaction_number', 'like', '%' . $keyword . '%')
+                    ->orWhere('from_meta_login', 'like', '%' . $keyword . '%')
+                    ->orWhere('to_meta_login', 'like', '%' . $keyword . '%');
+                });
+            }
 
-            $query->whereBetween('created_at', [$start_date, $end_date]);
-        }
+            if (!empty($data['filters']['start_date']['value']) && !empty($data['filters']['end_date']['value'])) {
+                $start_date = Carbon::parse($data['filters']['start_date']['value'])->addDay()->startOfDay();
+                $end_date = Carbon::parse($data['filters']['end_date']['value'])->addDay()->endOfDay();
 
-        $transactions = $query
-            ->latest()
-            ->get()
-            ->map(function ($transaction) {
+                $query->whereBetween('created_at', [$start_date, $end_date]);
+            }
+
+            if (!empty($data['filters']['transaction_type']['value'])) {
+                $query->where('transaction_type', $data['filters']['transaction_type']['value']);
+            }
+            else {
+                $query->where(function ($q) {
+                    $q->where('transaction_type', 'deposit')
+                      ->orWhere('transaction_type', 'withdrawal');
+                });
+            }
+
+            if (isset($data['filters']['amount']['value'][0], $data['filters']['amount']['value'][1])) {
+                $minAmount = $data['filters']['amount']['value'][0];
+                $maxAmount = $data['filters']['amount']['value'][1];
+
+                $query->whereBetween('amount', [$minAmount, $maxAmount]);
+            }
+
+            if (!empty($data['filters']['status']['value'])) {
+                $query->where('status', $data['filters']['status']['value']);
+            }
+
+            if ($data['sortField'] && $data['sortOrder']) {
+                $order = $data['sortOrder'] == 1 ? 'asc' : 'desc';
+                $query->orderBy($data['sortField'], $order);
+            } else {
+                $query->orderByDesc('id');
+            }
+
+            if ($request->has('exportStatus') && $request->exportStatus) {
+                return Excel::download(new TransactionDetailExport($query), now() . '-rebate-transactions.xlsx');
+            }
+
+            $transactions = $query->paginate($data['rows']);
+
+            $transactions->getCollection()->transform(function ($transaction) {
                 return [
                     'category' => $transaction->category,
                     'transaction_type' => $transaction->transaction_type,
@@ -261,9 +348,13 @@ class TransactionController extends Controller
                 ];
             });
 
-        return response()->json([
-            'transactions' => $transactions,
-        ]);
+            return response()->json([
+                'success' => true,
+                'transactions' => $transactions,
+            ]);
+        }
+
+        return response()->json(['success' => false, 'transactions' => []]);
     }
 
     public function applyRebate()

@@ -151,6 +151,7 @@ const getSeverity = (status) => {
                 type="button"
                 variant="primary-flat"
                 @click="openDialog('submit_kyc')"
+                :disabled="kyc_status === 'approved'"
             >
                 {{ $t('public.submit_again') }}
             </Button>
