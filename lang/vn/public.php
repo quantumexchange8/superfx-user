@@ -579,4 +579,5 @@ return [
     "sell_stop" => "Dừng bán",
     "buy_limit" => "Giới hạn mua",
     "buy_stop" => "Dừng mua",
+    "upline_id" => "ID tuyến trên",
 ];

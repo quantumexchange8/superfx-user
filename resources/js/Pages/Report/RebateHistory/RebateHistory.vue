@@ -374,6 +374,15 @@ const exportHistory = () => {
                         </template>
                     </Column>
                     <Column
+                        field="upline_id"
+                        :header="`${$t('public.upline_id')}`"
+                        class="hidden md:table-cell"
+                    >
+                        <template #body="slotProps">
+                            {{ slotProps.data.upline.id_number }}
+                        </template>
+                    </Column>
+                    <Column
                         field="deal_id"
                         sortable
                         :header="`${$t('public.ticket')}`"

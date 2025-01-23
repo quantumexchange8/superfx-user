@@ -577,4 +577,5 @@ return [
     "sell_stop" => "卖出止损",
     "buy_limit" => "买入限价",
     "buy_stop" => "买入止损",
+    "upline_id" => "上线 ID",
 ];

@@ -579,4 +579,5 @@ return [
     "sell_stop" => "Sell Stop",
     "buy_limit" => "Buy Limit",
     "buy_stop" => "Buy Stop",
+    "upline_id" => "Upline ID",
 ];
