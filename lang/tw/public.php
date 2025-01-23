@@ -568,4 +568,13 @@ return [
     "nationality_placeholder" => "選擇國籍",
     "final_amount" => "最終金額",
     "platform_name" => "平台名稱",
+    "filter_upline" => "篩選上線",
+    "select_all" => "全選",
+    "uplines_selected" => "已選擇的上線",
+    "upline_name" => "上線名稱",
+    "upline_email" => "上線電子郵件",
+    "sell_limit" => "賣出限價",
+    "sell_stop" => "賣出止損",
+    "buy_limit" => "買入限價",
+    "buy_stop" => "買入止損",
 ];

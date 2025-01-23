@@ -25,6 +25,8 @@ class RebateHistoryExport implements FromCollection, WithHeadings
         foreach ($histories as $history){
             $result[] = array(
                 'created_at' => Carbon::parse($history->created_at)->format('Y-m-d'),
+                'upline_name' => $history->upline->name ?? '-',
+                'upline_email' => $history->upline->email ?? '-',
                 'deal_id' => $history->deal_id,
                 'open_time' => $history->open_time,
                 'closed_time' => $history->closed_time,
@@ -51,6 +53,8 @@ class RebateHistoryExport implements FromCollection, WithHeadings
         
         return [
             trans('public.date'),
+            trans('public.upline_name'),
+            trans('public.upline_email'),
             trans('public.ticket'),
             trans('public.open_time'),
             trans('public.closed_time'),

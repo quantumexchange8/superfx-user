@@ -10,8 +10,9 @@ import { usePage, useForm } from "@inertiajs/vue3";
 import { trans, wTrans } from "laravel-vue-i18n";
 import RebateHistory from "@/Pages/Report/RebateHistory/RebateHistory.vue";
 
-// Initialize the form with user data
-const user = usePage().props.auth.user;
+const props = defineProps({
+  uplines: Array,
+});
 
 const tabs = ref([
     { title: wTrans('public.rebate'), component: h(RebateHistory), type: 'rebate' },
@@ -44,7 +45,10 @@ function updateType(event) {
                     <TabPanel v-for="(tab, index) in tabs" :key="index" :header="tab.title" />
                 </TabView>
             </div>
-            <component :is="tabs[activeIndex]?.component" />
+            <component 
+                :is="tabs[activeIndex]?.component" 
+                v-bind="selectedType === 'rebate' ? { uplines: props.uplines } : {}" 
+            />
         </div>
     </AuthenticatedLayout>
 

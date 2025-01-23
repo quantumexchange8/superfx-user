@@ -570,4 +570,13 @@ return [
     "nationality_placeholder" => "Select Nationality",
     "final_amount" => "Final Amount",
     "platform_name" => "Platform Name",
+    "filter_upline" => "Filter Upline",
+    "select_all" => "Select All",
+    "uplines_selected" => "Uplines Selected",
+    "upline_name" => "Upline Name",
+    "upline_email" => "Upline Email",
+    "sell_limit" => "Sell Limit",
+    "sell_stop" => "Sell Stop",
+    "buy_limit" => "Buy Limit",
+    "buy_stop" => "Buy Stop",
 ];

@@ -21,6 +21,11 @@ import Row from "primevue/row";
 import OverlayPanel from 'primevue/overlaypanel';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import RadioButton from 'primevue/radiobutton';
+import MultiSelect from 'primevue/multiselect';
+
+const props = defineProps({
+  uplines: Array,
+});
 
 const exportStatus = ref(false);
 const isLoading = ref(false);
@@ -31,7 +36,9 @@ const { formatRgbaColor } = generalFormat();
 const totalRecords = ref(0);
 const first = ref(0);
 const totalRebateAmount = ref();
+const selectedUplines = ref([]);
 
+const uplines = ref();
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     start_date: { value: null, matchMode: FilterMatchMode.EQUALS },
@@ -39,7 +46,26 @@ const filters = ref({
     start_close_date: { value: null, matchMode: FilterMatchMode.EQUALS },
     end_close_date: { value: null, matchMode: FilterMatchMode.EQUALS },
     account_type_id: { value: null, matchMode: FilterMatchMode.EQUALS },
+    upline_id: { value: [], matchMode: FilterMatchMode.EQUALS },
     t_type: { value: null, matchMode: FilterMatchMode.EQUALS },
+});
+
+// Watch for changes in props.uplines
+watch(() => props.uplines, (newUplines) => {
+    // Whenever uplines change, update the local ref
+    uplines.value = newUplines;
+  }, { immediate: true }
+);
+
+// Watch for individual changes in upline_id and apply it to filters
+watch([selectedUplines], (newUplineId) => {
+    if (newUplineId !== null) {
+        // note to self: check a proper usage for multiselect to prevent below solution
+        const flatUplineId = Array.isArray(newUplineId[0]) ? newUplineId[0] : newUplineId;
+        const uplineIds = flatUplineId.map(upline => upline.value);
+        
+        filters.value['upline_id'].value = uplineIds;
+    }
 });
 
 const lazyParams = ref({});
@@ -58,6 +84,7 @@ const loadLazyData = (event) => {
                 include: [],
                 lazyEvent: JSON.stringify(lazyParams.value)
             };
+
             const url = route('report.getRebateHistory', params);
             const response = await fetch(url);
             const results = await response.json();
@@ -178,11 +205,13 @@ const clearFilter = () => {
         start_close_date: { value: null, matchMode: FilterMatchMode.EQUALS },
         end_close_date: { value: null, matchMode: FilterMatchMode.EQUALS },
         account_type_id: { value: null, matchMode: FilterMatchMode.EQUALS },
+        upline_id: { value: [], matchMode: FilterMatchMode.EQUALS },
         t_type: { value: null, matchMode: FilterMatchMode.EQUALS },
     };
     
     selectedDate.value = [minDate.value, maxDate.value];
     selectedCloseDate.value = null;
+    selectedUplines.value = [];
     lazyParams.value.filters = filters.value ;
 };
 
@@ -271,25 +300,6 @@ const exportHistory = () => {
                         </div>
                         <div class="w-full flex flex-col gap-3 md:flex-row">
                             <div class="w-full md:w-[272px]">
-                                <!-- <Calendar
-                                    v-model="selectedDate"
-                                    selectionMode="range"
-                                    :manualInput="false"
-                                    :minDate="minDate"
-                                    :maxDate="maxDate"
-                                    dateFormat="dd/mm/yy"
-                                    showIcon
-                                    iconDisplay="input"
-                                    placeholder="yyyy/mm/dd - yyyy/mm/dd"
-                                    class="w-full md:w-[272px]"
-                                />
-                                <div
-                                    v-if="selectedDate && selectedDate.length > 0"
-                                    class="absolute top-2/4 -mt-2.5 right-4 text-gray-400 select-none cursor-pointer bg-white"
-                                    @click="clearDate"
-                                >
-                                    <IconX size="20" />
-                                </div> -->
                                 <Button
                                     variant="gray-outlined"
                                     @click="toggle"
@@ -340,6 +350,27 @@ const exportHistory = () => {
                     >
                         <template #body="slotProps">
                             {{ dayjs(slotProps.data.created_at).format('YYYY/MM/DD') }}
+                        </template>
+                    </Column>
+                    <Column
+                        field="upline"
+                        :header="$t('public.upline')"
+                        class="hidden md:table-cell"
+                    >
+                        <template #body="slotProps">
+                            <div class="flex items-center gap-3">
+                                <div class="w-7 h-7 rounded-full overflow-hidden grow-0 shrink-0">
+                                    <DefaultProfilePhoto />
+                                </div>
+                                <div class="flex flex-col items-start">
+                                    <div class="font-medium">
+                                        {{ slotProps.data.upline.name }}
+                                    </div>
+                                    <div class="text-gray-500 text-xs">
+                                        {{ slotProps.data.upline.email }}
+                                    </div>
+                                </div>
+                            </div>
                         </template>
                     </Column>
                     <Column
@@ -588,6 +619,41 @@ const exportHistory = () => {
                 </div>
             </div>
 
+            <!-- Filter Upline-->
+            <div class="flex flex-col gap-2 items-center self-stretch">
+                <div class="flex self-stretch text-xs text-gray-950 font-semibold">
+                    {{ $t('public.filter_upline') }}
+                </div>
+                <MultiSelect
+                    v-model="selectedUplines"
+                    :options="uplines"
+                    :placeholder="$t('public.filter_by_sales_team')"
+                    :maxSelectedLabels="1"
+                    :selectedItemsLabel="`${selectedUplines.length} ${$t('public.uplines_selected')}`"
+                    class="w-full md:w-64 font-normal pl-3"
+                >
+                    <template #header>
+                        <div class="absolute flex left-10 top-3">
+                            {{ $t('public.select_all') }}
+                        </div>
+                    </template>
+                    <template #option="{option}">
+                        <span>{{ option.name }}</span>
+                    </template>
+                    <template #value>
+                        <div v-if="selectedUplines.length === 1">
+                            <span>{{ selectedUplines[0].name }}</span>
+                        </div>
+                        <span v-else-if="selectedUplines.length > 1">
+                            {{ selectedUplines.length }} {{ $t('public.uplines_selected') }}
+                        </span>
+                        <span v-else class="text-gray-400">
+                            {{ $t('public.filter_upline') }}
+                        </span>
+                    </template>
+                </MultiSelect>
+            </div>
+
             <div class="flex flex-col items-center gap-2 self-stretch">
                 <span class="self-stretch text-gray-950 text-xs font-bold">{{ $t('public.filter_type') }}</span>
                 <div class="flex flex-col gap-1 self-stretch">
@@ -596,8 +662,24 @@ const exportHistory = () => {
                         <label for="buy">{{ $t('public.buy') }}</label>
                     </div>
                     <div class="flex items-center gap-2 text-sm text-gray-950">
+                        <RadioButton v-model="filters['t_type'].value" inputId="trade_buy_limit" value="buy_limit" class="w-4 h-4" />
+                        <label for="buy_limit">{{ $t('public.buy_limit') }}</label>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-gray-950">
+                        <RadioButton v-model="filters['t_type'].value" inputId="trade_buy_stop" value="buy_stop" class="w-4 h-4" />
+                        <label for="buy_stop">{{ $t('public.buy_stop') }}</label>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-gray-950">
                         <RadioButton v-model="filters['t_type'].value" inputId="trade_sell" value="sell" class="w-4 h-4" />
                         <label for="sell">{{ $t('public.sell') }}</label>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-gray-950">
+                        <RadioButton v-model="filters['t_type'].value" inputId="trade_sell_limit" value="sell_limit" class="w-4 h-4" />
+                        <label for="sell_limit">{{ $t('public.sell_limit') }}</label>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-gray-950">
+                        <RadioButton v-model="filters['t_type'].value" inputId="trade_sell_stop" value="sell_stop" class="w-4 h-4" />
+                        <label for="sell_stop">{{ $t('public.sell_stop') }}</label>
                     </div>
                 </div>
             </div>

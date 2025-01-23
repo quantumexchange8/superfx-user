@@ -568,4 +568,13 @@ return [
     "nationality_placeholder" => "选择国籍",
     "final_amount" => "最终金额",
     "platform_name" => "平台名称",
+    "filter_upline" => "筛选上线",
+    "select_all" => "全选",
+    "uplines_selected" => "已选择的上线",
+    "upline_name" => "上线名称",
+    "upline_email" => "上线邮箱",
+    "sell_limit" => "卖出限价",
+    "sell_stop" => "卖出止损",
+    "buy_limit" => "买入限价",
+    "buy_stop" => "买入止损",
 ];

@@ -13,12 +13,16 @@ use App\Models\TradeRebateSummary;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RebateHistoryExport;
+use App\Services\DropdownOptionService;
+use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Report/Report');
+        return Inertia::render('Report/Report', [
+            'uplines' => (new DropdownOptionService())->getRebateUplines(),
+        ]);
     }
 
     public function getRebateSummary(Request $request)
@@ -284,10 +288,11 @@ class ReportController extends Controller
             $data = json_decode($request->only(['lazyEvent'])['lazyEvent'], true);
 
             $query = TradeRebateHistory::with([
-                'downline',
+                'upline:id,name,email,id_number',
+                'downline:id,name,email,id_number',
                 'of_account_type'
             ])
-                ->where('upline_user_id', Auth::id())
+                ->whereIn('upline_user_id', array_merge([Auth::id()], Auth::user()->getChildrenIds()))
                 ->where('t_status', 'approved');
 
             if ($data['filters']['global']['value']) {
@@ -317,6 +322,13 @@ class ReportController extends Controller
                 $end_close_date = Carbon::parse($data['filters']['end_close_date']['value'])->addDay()->endOfDay();
 
                 $query->whereBetween('closed_time', [$start_close_date, $end_close_date]);
+            }
+
+            if (!empty($data['filters']['upline_id']['value'])) {
+                $uplineIds = $data['filters']['upline_id']['value'];    
+                Log::debug('Upline IDs:', $uplineIds); // Log the extracted IDs
+            
+                $query->whereIn('upline_user_id', $uplineIds);
             }
 
             if (!empty($data['filters']['t_type']['value'])) {

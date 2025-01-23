@@ -570,4 +570,13 @@ return [
     "nationality_placeholder" => "Chọn quốc tịch",
     "final_amount" => "Số tiền cuối cùng",
     "platform_name" => "Tên nền tảng",
+    "filter_upline" => "Lọc tuyến trên",
+    "select_all" => "Chọn tất cả",
+    "uplines_selected" => "Tuyến trên đã chọn",
+    "upline_name" => "Tên tuyến trên",
+    "upline_email" => "Email tuyến trên",
+    "sell_limit" => "Giới hạn bán",
+    "sell_stop" => "Dừng bán",
+    "buy_limit" => "Giới hạn mua",
+    "buy_stop" => "Dừng mua",
 ];

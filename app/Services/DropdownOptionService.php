@@ -26,7 +26,8 @@ class DropdownOptionService
                 return [
                     'value' => $user->id,
                     'name' => $user->name,
-                    'profile_photo' => $user->getFirstMediaUrl('profile_photo')
+                    'email' => $user->email,
+                    // 'profile_photo' => $user->getFirstMediaUrl('profile_photo')
                 ];
             });
     }
@@ -176,6 +177,21 @@ class DropdownOptionService
             ->values();
 
         return $months;
+    }
+
+    public function getRebateUplines(): Collection
+    {
+        return User::whereIn('id', array_merge([Auth::id()],User::find(Auth::id())->getChildrenIds()))
+            ->select('id', 'name')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'value' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    // 'profile_photo' => $user->getFirstMediaUrl('profile_photo')
+                ];
+            });
     }
 
 }
