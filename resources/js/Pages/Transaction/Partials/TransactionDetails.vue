@@ -226,7 +226,7 @@ const closeDialog = () => {
                     <template v-if="data.remarks">
                         {{ data.remarks }}
                     </template>
-                    <template v-else-if="data.transaction_type === 'withdrawal' && data.status === 'processing'">
+                    <template v-else-if="data.transaction_type === 'withdrawal' && (data.status === 'processing' || data.status === 'required_confirmation')">
                         <TextArea
                             id="remarks"
                             type="text"
@@ -243,7 +243,7 @@ const closeDialog = () => {
                 </span>
             </div>
         </div>
-        <div v-if="data.transaction_type === 'withdrawal' && data.status === 'processing'" class="flex flex-col items-center pt-4 gap-3 self-stretch border-t border-gray-200">
+        <div v-if="data.transaction_type === 'withdrawal' && (data.status === 'processing' || data.status === 'required_confirmation')" class="flex flex-col items-center pt-4 gap-3 self-stretch border-t border-gray-200">
             <div class="flex flex-col justify-end gap-1 self-stretch md:flex-row">
                 <Button
                     type="button"

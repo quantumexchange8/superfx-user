@@ -30,6 +30,8 @@ Route::get('/', function () {
 Route::get('/admin_login/{hashedToken}', [DashboardController::class, 'admin_login']);
 Route::post('deposit_callback', [TradingAccountController::class, 'depositCallback'])->name('depositCallback');
 
+Route::get('/confirmWithdrawal/{transaction_number}/{token}', [TransactionController::class, 'confirmWithdrawal'])->name('confirmWithdrawal');
+
 Route::middleware(['auth','verified'])->group(function () {
     Route::get('deposit_return', [TradingAccountController::class, 'depositReturn'])->name('depositReturn');
 

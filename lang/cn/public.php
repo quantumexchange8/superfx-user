@@ -578,4 +578,7 @@ return [
     "buy_limit" => "买入限价",
     "buy_stop" => "买入止损",
     "upline_id" => "上线 ID",
+    "required_confirmation" => "需要确认",
+    "withdrawal_confirmed" => "提款已确认",
+    "invalid_token" => "无效的令牌",
 ];

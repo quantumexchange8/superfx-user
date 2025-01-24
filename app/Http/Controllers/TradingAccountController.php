@@ -312,12 +312,15 @@ class TradingAccountController extends Controller
 
          $paymentWallet = PaymentAccount::find($request->payment_account_id);
 
+         $transaction_number = RunningNumberService::getID('transaction');
+         $user = Auth::user();
+
          $transaction = Transaction::create([
-             'user_id' => Auth::id(),
+             'user_id' => $user->id,
              'category' => 'trading_account',
              'transaction_type' => 'withdrawal',
              'from_meta_login' => $tradingAccount->meta_login,
-             'transaction_number' => RunningNumberService::getID('transaction'),
+             'transaction_number' => $transaction_number,
              'payment_account_id' => $paymentWallet->id,
              'payment_account_name' => $paymentWallet->payment_account_name,
              'payment_platform' => $paymentWallet->payment_platform,
@@ -332,12 +335,10 @@ class TradingAccountController extends Controller
              'amount' => $amount,
              'transaction_charges' => $fee,
              'transaction_amount' => $transaction_amount,
-             'status' => 'processing',
+             'status' => 'required_confirmation',
          ]);
 
-         $user = Auth::user();
-
-         Mail::to($user->email)->send(new WithdrawalRequestMail($user, $tradingAccount->meta_login, $amount, $transaction->created_at, $paymentWallet->account_no));
+         Mail::to($user->email)->send(new WithdrawalRequestMail($user, $tradingAccount->meta_login, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no)));
         // disable trade
 
         // Set notification data in the session

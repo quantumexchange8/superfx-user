@@ -580,4 +580,7 @@ return [
     "buy_limit" => "Buy Limit",
     "buy_stop" => "Buy Stop",
     "upline_id" => "Upline ID",
+    "required_confirmation" => "Confirmation Required",
+    "withdrawal_confirmed" => "Withdrawal Confirmed",
+    "invalid_token" => "Invalid Token",
 ];

@@ -631,33 +631,34 @@ const exportHistory = () => {
             <!-- Filter Upline-->
             <div class="flex flex-col gap-2 items-center self-stretch">
                 <div class="flex self-stretch text-xs text-gray-950 font-semibold">
-                    {{ $t('public.filter_upline') }}
+                    {{ $t('public.filter_upline_header') }}
                 </div>
                 <MultiSelect
                     v-model="selectedUplines"
                     :options="uplines"
-                    :placeholder="$t('public.filter_by_sales_team')"
+                    :placeholder="$t('public.filter_upline_header')"
                     :maxSelectedLabels="1"
                     :selectedItemsLabel="`${selectedUplines.length} ${$t('public.uplines_selected')}`"
                     class="w-full md:w-64 font-normal pl-3"
+                    :showToggleAll="false"
                 >
-                    <template #header>
+                    <!-- <template #header>
                         <div class="absolute flex left-10 top-3">
                             {{ $t('public.select_all') }}
                         </div>
-                    </template>
+                    </template> -->
                     <template #option="{option}">
-                        <span>{{ option.name }}</span>
+                        <span>{{ option.id_number }}</span>
                     </template>
                     <template #value>
                         <div v-if="selectedUplines.length === 1">
-                            <span>{{ selectedUplines[0].name }}</span>
+                            <span>{{ selectedUplines[0].id_number }}</span>
                         </div>
                         <span v-else-if="selectedUplines.length > 1">
                             {{ selectedUplines.length }} {{ $t('public.uplines_selected') }}
                         </span>
                         <span v-else class="text-gray-400">
-                            {{ $t('public.filter_upline') }}
+                            {{ $t('public.filter_upline_header') }}
                         </span>
                     </template>
                 </MultiSelect>

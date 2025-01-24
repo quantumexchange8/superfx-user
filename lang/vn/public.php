@@ -580,4 +580,7 @@ return [
     "buy_limit" => "Giới hạn mua",
     "buy_stop" => "Dừng mua",
     "upline_id" => "ID tuyến trên",
+    "required_confirmation" => "Cần xác nhận",
+    "withdrawal_confirmed" => "Rút tiền đã được xác nhận",
+    "invalid_token" => "Mã token không hợp lệ",
 ];

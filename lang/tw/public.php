@@ -578,4 +578,7 @@ return [
     "buy_limit" => "買入限價",
     "buy_stop" => "買入止損",
     "upline_id" => "上線 ID",
+    "required_confirmation" => "需要確認",
+    "withdrawal_confirmed" => "提款已確認",
+    "invalid_token" => "無效的令牌",
 ];

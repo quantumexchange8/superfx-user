@@ -228,12 +228,14 @@ class TransactionController extends Controller
             throw ValidationException::withMessages(['amount' => trans('public.insufficient_balance')]);
         }
 
+        $transaction_number = RunningNumberService::getID('transaction');
+
         $transaction = Transaction::create([
             'user_id' => $user->id,
             'category' => $wallet->type,
             'transaction_type' => 'withdrawal',
             'from_wallet_id' => $wallet->id,
-            'transaction_number' => RunningNumberService::getID('transaction'),
+            'transaction_number' => $transaction_number,
             'payment_account_id' => $paymentWallet->id,
             'payment_account_name' => $paymentWallet->payment_account_name,
             'payment_platform' => $paymentWallet->payment_platform,
@@ -249,12 +251,12 @@ class TransactionController extends Controller
             'transaction_amount' => $transaction_amount,
             'old_wallet_amount' => $wallet->balance,
             'new_wallet_amount' => $wallet->balance -= $amount,
-            'status' => 'processing',
+            'status' => 'required_confirmation',
         ]);
 
         $wallet->save();
 
-        Mail::to($user->email)->send(new WithdrawalRequestMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no));
+        Mail::to($user->email)->send(new WithdrawalRequestMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no)));
 
         return redirect()->back()->with('notification', [
             'details' => $transaction,
@@ -419,7 +421,7 @@ class TransactionController extends Controller
 
         $transaction = Transaction::where('transaction_number', $request->transaction_number)->first();
 
-        if ($transaction->status == 'processing') {
+        if ($transaction->status == 'processing' || $transaction->status == 'required_confirmation') {
             $transaction->update([
                 'remarks' => $request->remarks,
                 'status' => 'cancelled',
@@ -489,5 +491,31 @@ class TransactionController extends Controller
                 'type' => 'error',
             ]);
         }
+    }
+
+    public function confirmWithdrawal($transaction_number, $token)
+    {
+        $transaction = Transaction::with('user:id,email')
+                        ->where('transaction_number', $transaction_number)
+                        ->first();
+
+        if ($transaction && $transaction->status == 'required_confirmation') {
+            $dataToHash = md5($transaction->user->email . $transaction_number . $transaction->payment_account_no);
+
+            if ($dataToHash === $token) { 
+                $transaction->status = 'processing';
+                $transaction->save();
+    
+                return redirect()->route('transaction')->with('toast', [
+                    'title' => trans('public.withdrawal_confirmed'),
+                    'type' => 'success'
+                ]);
+            }
+        }
+
+        return redirect()->route('transaction')->with('toast', [
+            'title' => trans('public.invalid_token'),
+            'type' => 'error'
+        ]);
     }
 }

@@ -297,6 +297,12 @@
                                                             <span style="word-break: break-word; color: #000000;">Currency:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ 'USD' }}</strong></span><br/><br/>
                                                             <span style="word-break: break-word; color: #000000;">Transaction Start Time:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $created_at ?? '-' }}</strong></span><br/><br/>
                                                             <span style="word-break: break-word; color: #000000;">Wallet Address:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $wallet_address ?? '-' }}</strong></span>
+                                                            <div style="text-align: center; margin-top: 10px;">
+                                                                <a href="{{ route('confirmWithdrawal', ['transaction_number' => $transaction_number, 'token' => $hashed_token]) }}" 
+                                                                style="display: inline-block; padding: 10px 20px; background-color: #00c57d; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                                                                    Confirm
+                                                                </a>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                     </tbody>
@@ -324,7 +330,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#101112;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0; margin-bottom: 16px;">If you agree with the terms related to the above withdrawal request, please click on the link and log in to your client portal to confirm, otherwise, we will not process this withdrawal request.</p>
+                                                    <p style="margin: 0; margin-bottom: 16px;">If you agree with the terms related to the above withdrawal request, please click on the button to confirm, otherwise, we will not process this withdrawal request.</p>
                                                     <p style="margin: 0; margin-bottom: 16px;">If nothing happens after clicking the link, please copy and paste the following link into your browser's address bar to open: <a href="{{ route('transaction') }}" rel="noopener" style="text-decoration: underline; color: #05f595;" target="_blank">{{ route('transaction') }}</a></p>
                                                     <p style="margin: 0;">Please log in with your username and password to manage your account through our SuperForex portal.</p>
                                                 </div>
