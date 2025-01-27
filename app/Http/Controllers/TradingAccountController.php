@@ -295,8 +295,9 @@ class TradingAccountController extends Controller
              throw ValidationException::withMessages(['amount' => trans('public.insufficient_balance')]);
          }
 
+         $transaction_number = RunningNumberService::getID('transaction');
          try {
-             $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount,"Withdraw From Account", 'balance', '');
+             $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Withdraw From Account: " . $transaction_number, 'balance', '');
          } catch (\Throwable $e) {
              if ($e->getMessage() == "Not found") {
                  TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
@@ -312,7 +313,6 @@ class TradingAccountController extends Controller
 
          $paymentWallet = PaymentAccount::find($request->payment_account_id);
 
-         $transaction_number = RunningNumberService::getID('transaction');
          $user = Auth::user();
 
          $transaction = Transaction::create([
@@ -659,7 +659,6 @@ class TradingAccountController extends Controller
                         'amount'  => $amount + $fee,
                         'transaction_charges' => $fee,
                         'transaction_amount' => $amount,
-                        'comment' => $request->cryptoType,
                     ]);
 
                     $params = [
@@ -807,6 +806,7 @@ class TradingAccountController extends Controller
                 'from_currency' => 'USDT',
                 'to_currency' => 'USD',
                 'status' => $status,
+                'comment' => $result['system_order_code'] ?? null,
                 'approved_at' => now()
             ]);
         }
@@ -828,6 +828,7 @@ class TradingAccountController extends Controller
                 'from_currency' => 'VND',
                 'to_currency' => 'USD',
                 'status' => $status,
+                'comment' => $result['system_order_code'] ?? null,
                 'approved_at' => now()
             ]);
         }
@@ -837,7 +838,7 @@ class TradingAccountController extends Controller
             if ($transaction->transaction_type == 'deposit') {
                 $trade = null;
                 try {
-                    $trade = (new MetaFourService)->createTrade($transaction->to_meta_login, $transaction->transaction_amount,"Deposit", 'balance', '');
+                    $trade = (new MetaFourService)->createTrade($transaction->to_meta_login, $transaction->transaction_amount, "Deposit: " . $result['system_order_code'], 'balance', '');
                 } catch (\Throwable $e) {
                     if ($e->getMessage() == "Not found") {
                         TradingUser::firstWhere('meta_login', $transaction->to_meta_login)->update(['acc_status' => 'Inactive']);
