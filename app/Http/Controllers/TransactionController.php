@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\WithdrawalRequestMail;
+use App\Mail\WithdrawalRequestUsdtMail;
 use Illuminate\Support\Facades\Mail;
 use App\Models\PaymentAccount;
 use App\Models\TradingAccount;
@@ -251,12 +252,18 @@ class TransactionController extends Controller
             'transaction_amount' => $transaction_amount,
             'old_wallet_amount' => $wallet->balance,
             'new_wallet_amount' => $wallet->balance -= $amount,
-            'status' => 'required_confirmation',
         ]);
 
         $wallet->save();
 
-        Mail::to($user->email)->send(new WithdrawalRequestMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no)));
+        if ($paymentWallet->payment_platform == 'crypto') {
+            $transaction->update(['status' => 'required_confirmation']);
+            Mail::to($user->email)->send(new WithdrawalRequestUsdtMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no)));
+        }
+        else {
+            $transaction->update(['status' => 'processing']);
+            Mail::to($user->email)->send(new WithdrawalRequestMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no, $paymentWallet->payment_account_type));
+        }
 
         return redirect()->back()->with('notification', [
             'details' => $transaction,

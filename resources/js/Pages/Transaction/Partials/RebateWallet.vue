@@ -509,6 +509,6 @@ const exportTransaction = () => {
         :header="$t('public.details')"
         class="dialog-xs md:dialog-sm"
     >
-        <TransactionDetails :data="selectedRow" />
+        <TransactionDetails :data="selectedRow" @update:visible="visible = false"/>
     </Dialog>
 </template>

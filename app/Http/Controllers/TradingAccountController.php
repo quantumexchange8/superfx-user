@@ -6,7 +6,7 @@ use App\Mail\CreateAccountMail;
 use App\Mail\DepositSuccessMail;
 use App\Mail\TransferMoneySuccessMail;
 use App\Mail\WithdrawalRequestMail;
-// use App\Mail\WithdrawalRequestUsdtMail;
+use App\Mail\WithdrawalRequestUsdtMail;
 use App\Models\Term;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
@@ -335,10 +335,16 @@ class TradingAccountController extends Controller
              'amount' => $amount,
              'transaction_charges' => $fee,
              'transaction_amount' => $transaction_amount,
-             'status' => 'required_confirmation',
          ]);
 
-         Mail::to($user->email)->send(new WithdrawalRequestMail($user, $tradingAccount->meta_login, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no)));
+        if ($paymentWallet->payment_platform == 'crypto') {
+            $transaction->update(['status' => 'required_confirmation']);
+            Mail::to($user->email)->send(new WithdrawalRequestUsdtMail($user, $tradingAccount->meta_login, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no)));
+        }
+        else {
+            $transaction->update(['status' => 'processing']);
+            Mail::to($user->email)->send(new WithdrawalRequestMail($user, $tradingAccount->meta_login, $amount, $transaction->created_at, $paymentWallet->account_no, $paymentWallet->payment_account_type));
+        }
         // disable trade
 
         // Set notification data in the session

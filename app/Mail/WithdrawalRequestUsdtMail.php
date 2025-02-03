@@ -15,16 +15,22 @@ class WithdrawalRequestUsdtMail extends Mailable implements ShouldQueue
     use InteractsWithQueue, Queueable, SerializesModels;
 
     private $user;
-    private $from_meta_login;
-    private $to_meta_login;
+    private $meta_login;
     private $amount;
+    private $created_at;
+    private $wallet_address;
+    private $hashed_token;
+    private $transaction_number;
 
-    public function __construct($user, $from_meta_login, $to_meta_login, $amount)
+    public function __construct($user, $meta_login, $amount, $created_at, $wallet_address, $transaction_number, $hashed_token)
     {
         $this->user = $user;
-        $this->from_meta_login = $from_meta_login;
-        $this->to_meta_login = $to_meta_login;
+        $this->meta_login = $meta_login;
         $this->amount = $amount;
+        $this->created_at = $created_at;
+        $this->wallet_address = $wallet_address;
+        $this->transaction_number = $transaction_number;
+        $this->hashed_token = $hashed_token;
 
         // queue
         $this->queue = 'withdrawal_request_usdt_email';
@@ -35,9 +41,12 @@ class WithdrawalRequestUsdtMail extends Mailable implements ShouldQueue
         return $this->view('emails.withdrawal-request-usdt')
             ->with([
                 'user' => $this->user,
-                'from_meta_login' => $this->from_meta_login,
-                'to_meta_login' => $this->to_meta_login,
+                'meta_login' => $this->meta_login,
                 'amount' => $this->amount,
+                'created_at' => $this->created_at,
+                'wallet_address' => $this->wallet_address,
+                'transaction_number' => $this->transaction_number,
+                'hashed_token' => $this->hashed_token,
             ])
             ->from('info@superforexs.com')
             ->subject('Withdrawal Request Confirmation');

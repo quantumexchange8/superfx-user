@@ -18,19 +18,17 @@ class WithdrawalRequestMail extends Mailable implements ShouldQueue
     private $meta_login;
     private $amount;
     private $created_at;
-    private $wallet_address;
-    private $hashed_token;
-    private $transaction_number;
+    private $account_no;
+    private $account_type;
 
-    public function __construct($user, $meta_login, $amount, $created_at, $wallet_address, $transaction_number, $hashed_token)
+    public function __construct($user, $meta_login, $amount, $created_at, $account_no, $account_type)
     {
         $this->user = $user;
         $this->meta_login = $meta_login;
         $this->amount = $amount;
         $this->created_at = $created_at;
-        $this->wallet_address = $wallet_address;
-        $this->transaction_number = $transaction_number;
-        $this->hashed_token = $hashed_token;
+        $this->account_no = $account_no;
+        $this->account_type = $account_type;
 
         // queue
         $this->queue = 'withdrawal_request_email';
@@ -44,9 +42,8 @@ class WithdrawalRequestMail extends Mailable implements ShouldQueue
                 'meta_login' => $this->meta_login,
                 'amount' => $this->amount,
                 'created_at' => $this->created_at,
-                'wallet_address' => $this->wallet_address,
-                'transaction_number' => $this->transaction_number,
-                'hashed_token' => $this->hashed_token,
+                'account_no' => $this->account_no,
+                'account_type' => $this->account_type,
             ])
             ->from('info@superforexs.com')
             ->subject('Withdrawal Request Confirmation');

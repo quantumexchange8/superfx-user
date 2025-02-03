@@ -296,44 +296,11 @@
                                                             <span style="word-break: break-word; color: #000000;">Withdrawal Amount:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $amount }}</strong></span><br/><br/>
                                                             <span style="word-break: break-word; color: #000000;">Currency:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ 'USD' }}</strong></span><br/><br/>
                                                             <span style="word-break: break-word; color: #000000;">Transaction Start Time:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $created_at ?? '-' }}</strong></span><br/><br/>
-                                                            <span style="word-break: break-word; color: #000000;">Wallet Address:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $wallet_address ?? '-' }}</strong></span>
-                                                            <div style="text-align: center; margin-top: 10px;">
-                                                                <a href="{{ route('confirmWithdrawal', ['transaction_number' => $transaction_number, 'token' => $hashed_token]) }}" 
-                                                                style="display: inline-block; padding: 10px 20px; background-color: #00c57d; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                                                                    Confirm
-                                                                </a>
-                                                            </div>
+                                                            <span style="word-break: break-word; color: #000000;">{{ $account_type == 'account' ? 'Bank Account Number' : 'Bank Card Number' }}:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $account_no ?? '-' }}</strong></span>
                                                         </td>
                                                     </tr>
                                                     </tbody>
                                                 </table>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-            <table align="center" border="0" cellpadding="0" cellspacing="0" class="row row-3" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;" width="100%">
-                <tbody>
-                <tr>
-                    <td>
-                        <table align="center" border="0" cellpadding="0" cellspacing="0" class="row-content" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #ffffff; border-radius: 0; color: #000000; width: 715px; margin: 0 auto;" width="715">
-                            <tbody>
-                            <tr>
-                                <td class="column column-1" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 5px; padding-top: 5px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;" width="100%">
-                                    <table border="0" cellpadding="10" cellspacing="0" class="paragraph_block block-1" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;" width="100%">
-                                        <tr>
-                                            <td class="pad">
-                                                <div style="color:#101112;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0; margin-bottom: 16px;">If you agree with the terms related to the above withdrawal request, please click on the button to confirm, otherwise, we will not process this withdrawal request.</p>
-                                                    <p style="margin: 0; margin-bottom: 16px;">If nothing happens after clicking the link, please copy and paste the following link into your browser's address bar to open: <a href="{{ route('transaction') }}" rel="noopener" style="text-decoration: underline; color: #05f595;" target="_blank">{{ route('transaction') }}</a></p>
-                                                    <p style="margin: 0;">Please log in with your username and password to manage your account through our SuperForex portal.</p>
-                                                </div>
                                             </td>
                                         </tr>
                                     </table>
@@ -915,7 +882,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><a href="https://my.superforexs.com" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Dashboard</a></p>
+                                                    <p style="margin: 0;"><a href="{{ route('dashboard') }}" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Dashboard</a></p>
                                                 </div>
                                             </td>
                                         </tr>
