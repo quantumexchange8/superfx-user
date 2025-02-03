@@ -343,7 +343,7 @@ class TradingAccountController extends Controller
         }
         else {
             $transaction->update(['status' => 'processing']);
-            Mail::to($user->email)->send(new WithdrawalRequestMail($user, $tradingAccount->meta_login, $amount, $transaction->created_at, $paymentWallet->account_no, $paymentWallet->payment_account_type));
+            Mail::to($user->email)->send(new WithdrawalRequestMail($user, $tradingAccount->meta_login, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction->payment_account_type));
         }
         // disable trade
 

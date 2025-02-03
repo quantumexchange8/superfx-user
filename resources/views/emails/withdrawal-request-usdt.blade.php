@@ -298,7 +298,7 @@
                                                             <span style="word-break: break-word; color: #000000;">Transaction Start Time:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $created_at ?? '-' }}</strong></span><br/><br/>
                                                             <span style="word-break: break-word; color: #000000;">Wallet Address:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $wallet_address ?? '-' }}</strong></span>
                                                             <div style="text-align: center; margin-top: 10px;">
-                                                                <a href="{{ route('confirmWithdrawal', ['transaction_number' => $transaction_number, 'token' => $hashed_token]) }}" 
+                                                                <a href="{{ route('confirmWithdrawal', ['transaction_number' => $transaction_number, 'token' => $hashed_token]) }}"
                                                                 style="display: inline-block; padding: 10px 20px; background-color: #00c57d; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">
                                                                     Confirm
                                                                 </a>
@@ -915,7 +915,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><a href="{{ route('dashboard') }}" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Dashboard</a></p>
+                                                    <p style="margin: 0;"><a href="https://my.superforex.global" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Dashboard</a></p>
                                                 </div>
                                             </td>
                                         </tr>

@@ -262,7 +262,7 @@ class TransactionController extends Controller
         }
         else {
             $transaction->update(['status' => 'processing']);
-            Mail::to($user->email)->send(new WithdrawalRequestMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no, $paymentWallet->payment_account_type));
+            Mail::to($user->email)->send(new WithdrawalRequestMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction->payment_account_type));
         }
 
         return redirect()->back()->with('notification', [
@@ -509,10 +509,10 @@ class TransactionController extends Controller
         if ($transaction && $transaction->status == 'required_confirmation') {
             $dataToHash = md5($transaction->user->email . $transaction_number . $transaction->payment_account_no);
 
-            if ($dataToHash === $token) { 
+            if ($dataToHash === $token) {
                 $transaction->status = 'processing';
                 $transaction->save();
-    
+
                 return redirect()->route('transaction')->with('toast', [
                     'title' => trans('public.withdrawal_confirmed'),
                     'type' => 'success'
