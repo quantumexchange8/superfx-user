@@ -42,7 +42,6 @@ class CreateAccountMail extends Mailable implements ShouldQueue
                 'meta_login' => $this->meta_login,
                 'server' => $this->server,
             ])
-            ->from('info@superforexs.com')
             ->subject('Welcome to SuperForex');
     }
 
