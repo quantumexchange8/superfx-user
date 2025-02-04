@@ -262,7 +262,7 @@ class TransactionController extends Controller
         }
         else {
             $transaction->update(['status' => 'processing']);
-            Mail::to($user->email)->send(new WithdrawalRequestMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction->payment_account_type));
+            Mail::to($user->email)->send(new WithdrawalRequestMail($user, $transaction));
         }
 
         return redirect()->back()->with('notification', [

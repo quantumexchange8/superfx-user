@@ -15,20 +15,12 @@ class WithdrawalRequestMail extends Mailable implements ShouldQueue
     use InteractsWithQueue, Queueable, SerializesModels;
 
     private $user;
-    private $meta_login;
-    private $amount;
-    private $created_at;
-    private $account_no;
-    private $account_type;
+    private $transaction;
 
-    public function __construct($user, $meta_login, $amount, $created_at, $account_no, $account_type)
+    public function __construct($user, $transaction)
     {
         $this->user = $user;
-        $this->meta_login = $meta_login;
-        $this->amount = $amount;
-        $this->created_at = $created_at;
-        $this->account_no = $account_no;
-        $this->account_type = $account_type;
+        $this->transaction = $transaction;
 
         // queue
         $this->queue = 'withdrawal_request_email';
@@ -39,11 +31,7 @@ class WithdrawalRequestMail extends Mailable implements ShouldQueue
         return $this->view('emails.withdrawal-request')
             ->with([
                 'user' => $this->user,
-                'meta_login' => $this->meta_login,
-                'amount' => $this->amount,
-                'created_at' => $this->created_at,
-                'account_no' => $this->account_no,
-                'account_type' => $this->account_type,
+                'transaction' => $this->transaction,
             ])
             ->subject('Withdrawal Request Confirmation');
     }

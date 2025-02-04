@@ -289,14 +289,14 @@
                                                     <tr>
                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="100%">
                                                             <span style="word-break: break-word; color: #000000;">Full Name:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $user->name }}</strong></span><br/><br/>
-                                                            <span style="word-break: break-word; color: #000000;">{{ !empty($meta_login) ? 'Account Number' : 'Email' }}:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $meta_login ?? $user->email }}</strong></span><br/><br/>
-                                                            @if($meta_login)
+                                                            <span style="word-break: break-word; color: #000000;">{{ !empty($transaction->from_meta_login) ? 'Account Number' : 'Email' }}:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $transaction->from_meta_login ?? $user->email }}</strong></span><br/><br/>
+                                                            @if($transaction->from_meta_login)
                                                             <span style="word-break: break-word; color: #000000;">Account Type:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ 'MT4' }}</strong></span><br/><br/>
                                                             @endif
-                                                            <span style="word-break: break-word; color: #000000;">Withdrawal Amount:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $amount }}</strong></span><br/><br/>
+                                                            <span style="word-break: break-word; color: #000000;">Withdrawal Amount:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $transaction->amount }}</strong></span><br/><br/>
                                                             <span style="word-break: break-word; color: #000000;">Currency:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ 'USD' }}</strong></span><br/><br/>
-                                                            <span style="word-break: break-word; color: #000000;">Transaction Start Time:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $created_at ?? '-' }}</strong></span><br/><br/>
-                                                            <span style="word-break: break-word; color: #000000;">{{ $account_type == 'account' ? 'Bank Account Number' : 'Bank Card Number' }}:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $account_no ?? '-' }}</strong></span>
+                                                            <span style="word-break: break-word; color: #000000;">Transaction Start Time:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ date_format($transaction->created_at, 'Y-m-d H:i:s') ?? '-' }}</strong></span><br/><br/>
+                                                            <span style="word-break: break-word; color: #000000;">{{ $transaction->payment_account_type == 'account' ? 'Bank Account Number' : 'Bank Card Number' }}:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $transaction->payment_account_no ?? '-' }}</strong></span>
                                                         </td>
                                                     </tr>
                                                     </tbody>
