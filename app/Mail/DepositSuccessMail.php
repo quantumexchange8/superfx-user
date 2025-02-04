@@ -39,6 +39,7 @@ class DepositSuccessMail extends Mailable implements ShouldQueue
                 'amount' => $this->amount,
                 'created_at' => $this->created_at,
             ])
+            ->from('info@superforex.global')
             ->subject('Deposit Successful');
     }
 

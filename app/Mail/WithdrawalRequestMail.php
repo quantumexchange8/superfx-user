@@ -33,6 +33,7 @@ class WithdrawalRequestMail extends Mailable implements ShouldQueue
                 'user' => $this->user,
                 'transaction' => $this->transaction,
             ])
+            ->from('info@superforex.global')
             ->subject('Withdrawal Request Confirmation');
     }
 

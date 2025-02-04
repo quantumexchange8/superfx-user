@@ -48,6 +48,7 @@ class WithdrawalRequestUsdtMail extends Mailable implements ShouldQueue
                 'transaction_number' => $this->transaction_number,
                 'hashed_token' => $this->hashed_token,
             ])
+            ->from('info@superforex.global')
             ->subject('Withdrawal Request Confirmation');
     }
 

@@ -39,6 +39,7 @@ class TransferMoneySuccessMail extends Mailable implements ShouldQueue
                 'to_meta_login' => $this->to_meta_login,
                 'amount' => $this->amount,
             ])
+            ->from('info@superforex.global')
             ->subject('Transfer Money Successfully');
     }
 
