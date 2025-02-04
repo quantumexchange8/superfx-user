@@ -489,6 +489,7 @@ return [
     "std10" => "STD10",
     "std15" => "STD15",
     "std20" => "STD20",
+    "prime" => "PRIME",
     "bank" => "銀行",
     "crypto" => "加密貨幣",
     "platform_placeholder" => "選擇平台",

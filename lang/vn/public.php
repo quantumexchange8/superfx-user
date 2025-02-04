@@ -491,6 +491,7 @@ return [
     "std10" => "STD10",
     "std15" => "STD15",
     "std20" => "STD20",
+    "prime" => "PRIME",
     "bank" => "Banco",
     "crypto" => "Cripto",
     "platform_placeholder" => "Seleccionar Plataforma",
