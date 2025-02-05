@@ -26,15 +26,32 @@ class WithdrawalRequestMail extends Mailable implements ShouldQueue
         $this->queue = 'withdrawal_request_email';
     }
 
-    public function build(): WithdrawalRequestMail
+    /**
+     * Get the message envelope.
+     *
+     * @return Envelope
+     */
+    public function envelope(): Envelope
     {
-        return $this->view('emails.withdrawal-request')
-            ->with([
+        return new Envelope(
+            subject: 'Withdrawal Request Confirmation',
+        );
+    }
+
+    /**
+     * Get the message content definition.
+     *
+     * @return Content
+     */
+    public function content(): Content
+    {
+        return new Content(
+            view: 'emails.withdrawal-request',
+            with: [
                 'user' => $this->user,
                 'transaction' => $this->transaction,
-            ])
-            ->from('info@superforex.global')
-            ->subject('Withdrawal Request Confirmation');
+            ],
+        );
     }
 
     public function attachments(): array

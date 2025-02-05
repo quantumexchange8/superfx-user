@@ -36,10 +36,28 @@ class WithdrawalRequestUsdtMail extends Mailable implements ShouldQueue
         $this->queue = 'withdrawal_request_usdt_email';
     }
 
-    public function build(): WithdrawalRequestUsdtMail
+    /**
+     * Get the message envelope.
+     *
+     * @return Envelope
+     */
+    public function envelope(): Envelope
     {
-        return $this->view('emails.withdrawal-request-usdt')
-            ->with([
+        return new Envelope(
+            subject: 'Withdrawal Request Confirmation',
+        );
+    }
+
+    /**
+     * Get the message content definition.
+     *
+     * @return Content
+     */
+    public function content(): Content
+    {
+        return new Content(
+            view: 'emails.withdrawal-request',
+            with: [
                 'user' => $this->user,
                 'meta_login' => $this->meta_login,
                 'amount' => $this->amount,
@@ -47,9 +65,8 @@ class WithdrawalRequestUsdtMail extends Mailable implements ShouldQueue
                 'wallet_address' => $this->wallet_address,
                 'transaction_number' => $this->transaction_number,
                 'hashed_token' => $this->hashed_token,
-            ])
-            ->from('info@superforex.global')
-            ->subject('Withdrawal Request Confirmation');
+            ],
+        );
     }
 
     public function attachments(): array

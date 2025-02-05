@@ -339,10 +339,10 @@ class TradingAccountController extends Controller
 
         if ($paymentWallet->payment_platform == 'crypto') {
             $transaction->update(['status' => 'required_confirmation']);
-            Mail::to($user->email)->send(new WithdrawalRequestUsdtMail($user, $tradingAccount->meta_login, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no)));
+            Mail::to($user->email)->queue(new WithdrawalRequestUsdtMail($user, $tradingAccount->meta_login, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no)));
         } else {
             $transaction->update(['status' => 'processing']);
-            Mail::to($user->email)->send(new WithdrawalRequestMail($user, $transaction));
+            Mail::to($user->email)->queue(new WithdrawalRequestMail($user, $transaction));
         }
 
         // Set notification data in the session
