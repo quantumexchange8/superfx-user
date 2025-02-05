@@ -56,7 +56,7 @@ class WithdrawalRequestUsdtMail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            view: 'emails.withdrawal-request',
+            view: 'emails.withdrawal-request-usdt',
             with: [
                 'user' => $this->user,
                 'meta_login' => $this->meta_login,
