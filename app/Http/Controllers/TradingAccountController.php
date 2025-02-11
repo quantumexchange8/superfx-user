@@ -286,9 +286,8 @@ class TradingAccountController extends Controller
 
         $amount = $request->amount;
         $fee = $request->fee ?? 0;
-        $transaction_amount = $amount - $fee;
 
-         $tradingAccount = TradingAccount::find($request->account_id);
+         $tradingAccount = TradingAccount::find($request->account_id)->load('account_type');
          (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
          if ($tradingAccount->balance < $amount) {
@@ -296,6 +295,10 @@ class TradingAccountController extends Controller
          }
 
          $transaction_number = RunningNumberService::getID('transaction');
+
+        $multiplier = $tradingAccount->account_type->balance_multiplier;
+        $adjusted_amount = $amount / $multiplier;
+        $transaction_amount = $adjusted_amount - $fee;
          try {
              $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Withdraw From Account: " . $transaction_number, 'balance', '');
          } catch (\Throwable $e) {
@@ -332,7 +335,7 @@ class TradingAccountController extends Controller
              'to_currency' => $paymentWallet->currency,
              'to_wallet_address' => $paymentWallet->account_no,
              'ticket' => $trade['ticket'] ?? null,
-             'amount' => $amount,
+             'amount' => $adjusted_amount,
              'transaction_charges' => $fee,
              'transaction_amount' => $transaction_amount,
          ]);
@@ -364,10 +367,9 @@ class TradingAccountController extends Controller
         ]);
         $validator->validate();
 
-         $tradingAccount = TradingAccount::find($request->account_id);
+         $tradingAccount = TradingAccount::find($request->account_id)->load('account_type');
          (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
-         $tradingAccount = TradingAccount::find($request->account_id);
          $amount = $request->input('amount');
          $to_meta_login = $request->input('to_meta_login');
 
@@ -375,9 +377,18 @@ class TradingAccountController extends Controller
              throw ValidationException::withMessages(['wallet' => trans('public.insufficient_balance')]);
          }
 
+        $multiplier = $tradingAccount->account_type->balance_multiplier;
+        $adjusted_amount = $transaction->amount / $multiplier;
+
+        $to_tradingAccount = TradingAccount::with('account_type') 
+            ->where('meta_login', $to_meta_login)
+            ->first();
+        $to_multiplier = $to_tradingAccount->account_type->balance_multiplier;
+        $to_adjusted_amount = $transaction->amount * $to_multiplier;
+
          try {
              $tradeFrom = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Withdraw From Account", 'balance', '');
-             $tradeTo = (new MetaFourService)->createTrade($to_meta_login, $amount, "Deposit To Account", 'balance', '');
+             $tradeTo = (new MetaFourService)->createTrade($to_meta_login, $to_adjusted_amount, "Deposit To Account", 'balance', '');
          } catch (\Throwable $e) {
              if ($e->getMessage() == "Not found") {
                  TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
@@ -399,16 +410,16 @@ class TradingAccountController extends Controller
             'transaction_number' => RunningNumberService::getID('transaction'),
             'from_currency' => 'USD',
             'to_currency' => 'USD',
-            'amount' => $amount,
+            'amount' => $adjusted_amount,
             'transaction_charges' => 0,
-            'transaction_amount' => $amount,
+            'transaction_amount' => $adjusted_amount,
             'status' => 'successful',
             'comment' => 'to ' . $to_meta_login
          ]);
 
          $user = Auth::user();
 
-         Mail::to($user->email)->send(new TransferMoneySuccessMail($user, $tradingAccount->meta_login, $to_meta_login, $amount));
+         Mail::to($user->email)->send(new TransferMoneySuccessMail($user, $tradingAccount->meta_login, $to_meta_login, $adjusted_amount));
 
         return back()->with('toast', [
             'title' => trans('public.toast_internal_transfer_success'),
@@ -841,8 +852,15 @@ class TradingAccountController extends Controller
         if ($transaction->status == 'successful') {
             if ($transaction->transaction_type == 'deposit') {
                 $trade = null;
+
+                $tradingAccount = TradingAccount::with('account_type') 
+                    ->where('meta_login', $transaction->to_meta_login)
+                    ->first();
+                $multiplier = $tradingAccount->account_type->balance_multiplier;
+                $adjusted_amount = $transaction->amount * $multiplier;
+
                 try {
-                    $trade = (new MetaFourService)->createTrade($transaction->to_meta_login, $transaction->transaction_amount, "Deposit: " . $result['system_order_code'], 'balance', '');
+                    $trade = (new MetaFourService)->createTrade($transaction->to_meta_login, $adjusted_amount, "Deposit: " . $result['system_order_code'], 'balance', '');
                 } catch (\Throwable $e) {
                     if ($e->getMessage() == "Not found") {
                         TradingUser::firstWhere('meta_login', $transaction->to_meta_login)->update(['acc_status' => 'Inactive']);

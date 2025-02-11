@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\WithdrawalRequestMail;
 use App\Mail\WithdrawalRequestUsdtMail;
 use Illuminate\Support\Facades\Mail;
+use App\Models\AccountType;
 use App\Models\PaymentAccount;
 use App\Models\TradingAccount;
 use App\Models\TradingUser;
@@ -20,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\View;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
@@ -157,15 +159,19 @@ class TransactionController extends Controller
         $amount = $request->amount;
         $wallet = Wallet::find($request->wallet_id);
 
-        $tradingAccount = TradingAccount::where('meta_login', $request->meta_login)->first();
+        $tradingAccount = TradingAccount::with('account_type')
+                ->where('meta_login', $request->meta_login)
+                ->first();
         (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
         if ($wallet->balance < $amount) {
             throw ValidationException::withMessages(['amount' => trans('public.insufficient_balance')]);
         }
-        Log::debug($tradingAccount->meta_login);
+
+        $multiplier = $tradingAccount->account_type->balance_multiplier;
+        $adjusted_amount = $amount * $multiplier;
         try {
-            $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, $amount, "Rebate to account", 'balance', '');
+            $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, $adjusted_amount, "Rebate to account", 'balance', '');
         } catch (\Throwable $e) {
             if ($e->getMessage() == "Not found") {
                 TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
@@ -460,8 +466,14 @@ class TransactionController extends Controller
             }
 
             if ($transaction->category == 'trading_account') {
+                $tradingAccount = TradingAccount::with('account_type') 
+                    ->where('meta_login', $transaction->from_meta_login)
+                    ->first();
+                $multiplier = $tradingAccount->account_type->balance_multiplier;
+                $adjusted_amount = $transaction->amount * $multiplier;
+
                 try {
-                    $trade = (new MetaFourService)->createTrade($transaction->from_meta_login, $transaction->amount, $transaction->remarks, 'balance', '');
+                    $trade = (new MetaFourService)->createTrade($transaction->from_meta_login, $adjusted_amount, $transaction->remarks, 'balance', '');
 
                     $transaction->update([
                         'ticket' => $trade['ticket'] ?? null,
