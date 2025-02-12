@@ -49,7 +49,7 @@ watch(() => props.totalRebate, (newRebate) => {
                     {{ `${$t('public.total_rebate_earned')}&nbsp;($)` }}
                 </span>
                 <span class="text-gray-950 text-lg font-semibold md:text-xxl">
-                    {{ formatAmount(totalRebate) }}
+                    {{ formatAmount(totalRebate, 3) }}
                 </span>
             </div>
         </div>
@@ -74,7 +74,7 @@ watch(() => props.totalRebate, (newRebate) => {
                     {{ item.volume > 0 ? `${formatAmount(item.volume)}&nbsp;Ł` : '-' }}
                 </span>
                 <span class="w-full truncate text-gray-950 text-right font-semibold md md:font-normal">
-                    {{ item.rebate > 0 ? `$&nbsp;${formatAmount(item.rebate)}` : '-' }}
+                    {{ item.rebate > 0 ? `$&nbsp;${formatAmount(item.rebate, 3)}` : '-' }}
                 </span>
             </div>
         </div>

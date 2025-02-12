@@ -378,13 +378,13 @@ class TradingAccountController extends Controller
          }
 
         $multiplier = $tradingAccount->account_type->balance_multiplier;
-        $adjusted_amount = $transaction->amount / $multiplier;
+        $adjusted_amount = $amount / $multiplier;
 
-        $to_tradingAccount = TradingAccount::with('account_type') 
+        $to_tradingAccount = TradingAccount::with('account_type')
             ->where('meta_login', $to_meta_login)
             ->first();
         $to_multiplier = $to_tradingAccount->account_type->balance_multiplier;
-        $to_adjusted_amount = $transaction->amount * $to_multiplier;
+        $to_adjusted_amount = $amount * $to_multiplier;
 
          try {
              $tradeFrom = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Withdraw From Account", 'balance', '');
@@ -853,7 +853,7 @@ class TradingAccountController extends Controller
             if ($transaction->transaction_type == 'deposit') {
                 $trade = null;
 
-                $tradingAccount = TradingAccount::with('account_type') 
+                $tradingAccount = TradingAccount::with('account_type')
                     ->where('meta_login', $transaction->to_meta_login)
                     ->first();
                 $multiplier = $tradingAccount->account_type->balance_multiplier;

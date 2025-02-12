@@ -63,7 +63,7 @@ watch([selectedUplines], (newUplineId) => {
         // note to self: check a proper usage for multiselect to prevent below solution
         const flatUplineId = Array.isArray(newUplineId[0]) ? newUplineId[0] : newUplineId;
         const uplineIds = flatUplineId.map(upline => upline.value);
-        
+
         filters.value['upline_id'].value = uplineIds;
     }
 });
@@ -188,7 +188,7 @@ watch(selectedCloseDate, (newDateRange) => {
         if (startCloseDate !== null && endCloseDate !== null) {
             loadLazyData();
         }
-    } 
+    }
     else if (newDateRange === null) {
         loadLazyData();
     }
@@ -208,7 +208,7 @@ const clearFilter = () => {
         upline_id: { value: [], matchMode: FilterMatchMode.EQUALS },
         t_type: { value: null, matchMode: FilterMatchMode.EQUALS },
     };
-    
+
     selectedDate.value = [minDate.value, maxDate.value];
     selectedCloseDate.value = null;
     selectedUplines.value = [];
@@ -218,12 +218,12 @@ const clearFilter = () => {
 watch(filters, debounce(() => {
     filterCount.value = Object.values(filters.value).filter(filter => {
         if (Array.isArray(filter)) {
-            return filter.length > 0; 
+            return filter.length > 0;
         }
-        return filter !== null && filter !== '';  
+        return filter !== null && filter !== '';
     }).length;
 
-    loadLazyData(); 
+    loadLazyData();
 }, 500), { deep: true });
 
 const exportHistory = () => {
@@ -233,9 +233,9 @@ const exportHistory = () => {
     lazyParams.value = { ...lazyParams.value, first: event?.first || first.value };
 
     if (filters.value) {
-        lazyParams.value.filters = { ...filters.value }; 
+        lazyParams.value.filters = { ...filters.value };
     } else {
-        lazyParams.value.filters = {}; 
+        lazyParams.value.filters = {};
     }
 
     let params = {
@@ -248,12 +248,12 @@ const exportHistory = () => {
 
     try {
 
-        window.location.href = url; 
+        window.location.href = url;
     } catch (e) {
-        console.error('Error occurred during export:', e);  
+        console.error('Error occurred during export:', e);
     } finally {
-        isLoading.value = false;  
-        exportStatus.value = false; 
+        isLoading.value = false;
+        exportStatus.value = false;
     }
 };
 </script>
@@ -527,7 +527,7 @@ const exportHistory = () => {
                         class="hidden md:table-cell"
                     >
                         <template #body="slotProps">
-                            {{ formatAmount(slotProps.data.revenue) }}
+                            {{ formatAmount(slotProps.data.revenue, 3) }}
                         </template>
                     </Column>
                     <Column
@@ -558,7 +558,7 @@ const exportHistory = () => {
                                     </div>
                                 </div>
                                 <div class="overflow-hidden text-right text-ellipsis font-semibold">
-                                    $&nbsp;{{ formatAmount(slotProps.data.revenue) }}
+                                    $&nbsp;{{ formatAmount(slotProps.data.revenue, 3) }}
                                 </div>
                             </div>
                         </template>
@@ -566,7 +566,7 @@ const exportHistory = () => {
                     <ColumnGroup type="footer">
                         <Row>
                             <Column class="hidden md:table-cell" :footer="$t('public.total') + ':'" :colspan="13" footerStyle="text-align:right" />
-                            <Column class="hidden md:table-cell" :footer="'$' + formatAmount(totalRebateAmount ?? 0)" />
+                            <Column class="hidden md:table-cell" :footer="'$' + formatAmount(totalRebateAmount ?? 0, 3)" />
                         </Row>
                     </ColumnGroup>
                 </template>

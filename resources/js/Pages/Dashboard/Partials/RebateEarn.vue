@@ -55,7 +55,7 @@ const requireConfirmation = () => {
     <div class="bg-white rounded-2xl p-4 md:px-10 md:py-8 flex flex-col gap-2 md:gap-7 items-center self-stretch shadow-toast w-full">
         <span class="text-left w-full text-sm font-medium text-gray-500">{{ $t('public.total_rebate_earned') }}</span>
         <div class="text-left w-full text-xxl font-semibold text-gray-950">
-            $ <vue3-autocounter ref="counter" :startAmount="0" :endAmount="rebateEarn" :duration="1" separator="," decimalSeparator="." :decimals="2" :autoinit="true" />
+            $ <vue3-autocounter ref="counter" :startAmount="0" :endAmount="rebateEarn" :duration="1" separator="," decimalSeparator="." :decimals="3" :autoinit="true" />
         </div>
         <div class="flex flex-col gap-3 items-center self-stretch pt-1 md:pt-0">
             <Button
