@@ -384,7 +384,7 @@ class TradingAccountController extends Controller
             ->where('meta_login', $to_meta_login)
             ->first();
         $to_multiplier = $to_tradingAccount->account_type->balance_multiplier;
-        $to_adjusted_amount = $amount * $to_multiplier;
+        $to_adjusted_amount = $adjusted_amount * $to_multiplier;
 
          try {
              $tradeFrom = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Withdraw From Account", 'balance', '');
