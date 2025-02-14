@@ -586,4 +586,11 @@ return [
     "required_confirmation" => "Yêu cầu xác nhận",
     "withdrawal_confirmed" => "Rút tiền đã được xác nhận",
     "invalid_token" => "Mã xác thực không hợp lệ",
+    "change_password" => "Đổi mật khẩu",
+    "password_type_placeholder" => "Chọn loại mật khẩu",
+    "master" => "Mật khẩu chính",
+    "investor" => "Mật khẩu nhà đầu tư",
+    "password_type" => "Loại mật khẩu",
+    "toast_change_master_password_success" => "Mật khẩu chính của tài khoản đã được thay đổi.",
+    "toast_change_investor_password_success" => "Mật khẩu nhà đầu tư của tài khoản đã được thay đổi.",
 ];

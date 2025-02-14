@@ -225,7 +225,7 @@ class ReportController extends Controller
             $query->whereDate('created_at', '>=', '2024-01-01'); // Default start date
         }
 
-        $transactions = $query->get()
+        $transactions = $query->latest()->get()
             ->map(function ($transaction) {
                 $metaLogin = $transaction->to_meta_login ?: $transaction->from_meta_login;
 

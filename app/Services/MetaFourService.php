@@ -151,6 +151,48 @@ class MetaFourService {
 
         $this->getUserInfo($meta_login);
     }
+
+    public function changeMasterPassword($meta_login, $password): void
+    {
+        $payload = [
+            'meta_login' => $meta_login,
+            'password' => $password,
+        ];
+
+        $jsonPayload = json_encode($payload);
+
+        Http::acceptJson()
+        ->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])
+        ->patch($this->baseURL . "/changemasterpassword", [
+            'meta_login' => $meta_login,
+            'password' => $password,
+        ]);
+
+        $this->getUserInfo($meta_login);
+    }
+
+    public function changeInvestorPassword($meta_login, $password): void
+    {
+        $payload = [
+            'meta_login' => $meta_login,
+            'password' => $password,
+        ];
+
+        $jsonPayload = json_encode($payload);
+
+        Http::acceptJson()
+        ->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])
+        ->patch($this->baseURL . "/changeinvestorpassword", [
+            'meta_login' => $meta_login,
+            'password' => $password,
+        ]);
+
+        $this->getUserInfo($meta_login);
+    }
 }
 
 class dealAction

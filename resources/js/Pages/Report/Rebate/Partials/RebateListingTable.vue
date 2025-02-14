@@ -60,7 +60,7 @@ const exportCSV = () => {
 
 // Clear date selection
 const clearDate = () => {
-    selectedDate.value = [];
+    selectedDate.value = null;
 };
 
 // Define emits
@@ -86,6 +86,9 @@ watch(selectedDate, (newDateRange) => {
             getResults([]);
             emit('update-date', []);
         }
+    } else if (newDateRange == null) {
+        getResults([]);
+        emit('update-date', []);
     } else {
         // Handle unexpected formats or types
         console.warn('Invalid date range format:', newDateRange);
@@ -149,7 +152,6 @@ const openDialog = (rowData) => {
                                 v-model="selectedDate"
                                 selectionMode="range"
                                 :manualInput="false"
-                                :minDate="minDate"
                                 :maxDate="maxDate"
                                 dateFormat="dd/mm/yy"
                                 showIcon

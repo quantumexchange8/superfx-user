@@ -7,6 +7,7 @@ use App\Mail\DepositSuccessMail;
 use App\Mail\TransferMoneySuccessMail;
 use App\Mail\WithdrawalRequestMail;
 use App\Mail\WithdrawalRequestUsdtMail;
+use App\Mail\ChangePasswordMail;
 use App\Models\Term;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
@@ -30,6 +31,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Services\RunningNumberService;
 use App\Services\DropdownOptionService;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\PaymentGateway;
 use App\Models\CurrencyConversionRate;
@@ -454,6 +456,54 @@ class TradingAccountController extends Controller
                 'type' => 'success',
             ]);
         }
+    }
+
+    public function change_password(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'password_type' => ['required'],
+            'password' => ['required', 'confirmed'],
+            'password_confirmation' => ['required', 'same:password'],
+        ])->setAttributeNames([
+            'password_type' => trans('public.password_type'),
+            'password' => trans('public.password'),
+        ]);
+        $validator->validate();
+
+        $account = TradingAccount::find($request->account_id);
+        $user = Auth::user();
+
+        try {
+            if ($account) {
+                if ($request->password_type == 'master') { 
+                    (new MetaFourService)->changeMasterPassword($account->meta_login, $request->password);
+                    Mail::to($user->email)->send(new ChangePasswordMail($user, $request->password_type, $request->password, $account->meta_login));
+
+                    return back()->with('toast', [
+                        'title' => trans('public.toast_change_master_password_success'),
+                        'type' => 'success',
+                    ]);
+
+                }
+                else {
+                    (new MetaFourService)->changeInvestorPassword($account->meta_login, $request->password);
+                    Mail::to($user->email)->send(new ChangePasswordMail($user, $request->password_type, $request->password, $account->meta_login));
+
+                    return back()->with('toast', [
+                        'title' => trans('public.toast_change_investor_password_success'),
+                        'type' => 'success',
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error($e->getMessage());
+            return back()
+                ->with('toast', [
+                    'title' => 'Change Password error',
+                    'type' => 'error'
+                ]);
+        }
+
     }
 
     public function revoke_account(Request $request)

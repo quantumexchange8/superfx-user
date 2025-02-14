@@ -117,6 +117,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->hasMany(TradingAccount::class, 'user_id', 'id');
     }
 
+    public function tradingUsers(): HasMany
+    {
+        return $this->hasMany(TradingUser::class, 'user_id', 'id');
+    }
+
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class, 'user_id', 'id');

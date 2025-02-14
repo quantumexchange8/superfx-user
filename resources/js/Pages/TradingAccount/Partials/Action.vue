@@ -9,7 +9,8 @@ import {
     IconScale,
     IconHistory,
     IconDatabaseMinus,
-    IconTrash
+    IconTrash,
+    IconKey
 } from '@tabler/icons-vue';
 import toast from '@/Composables/toast';
 import AccountReport from '@/Pages/TradingAccount/Partials/AccountReport.vue';
@@ -18,6 +19,7 @@ import { trans } from "laravel-vue-i18n";
 import TieredMenu from "primevue/tieredmenu";
 import AccountWithdrawal from "@/Pages/TradingAccount/Partials/AccountWithdrawal.vue";
 import ChangeLeverage from "@/Pages/TradingAccount/Partials/ChangeLeverage.vue";
+import ChangePassword from "@/Pages/TradingAccount/Partials/ChangePassword.vue";
 
 const props = defineProps({
     account: Object,
@@ -58,6 +60,14 @@ const items = ref([
         },
     },
     {
+        label: 'change_password',
+        icon: h(IconKey),
+        command: () => {
+            visible.value = true;
+            dialogType.value = 'change_password';
+        },
+    },
+    {
         label: 'revoke_pamm',
         icon: h(IconDatabaseMinus),
         command: () => {
@@ -90,7 +100,7 @@ const items = ref([
 const filteredItems = computed(() => {
     return items.value.filter(item => {
         if (props.account.asset_master_id) {
-            return !(item.label === 'withdrawal' || item.label === 'change_leverage' || item.label === 'delete_account' || item.separator);
+            return !(item.label === 'withdrawal' || item.label === 'change_leverage' || item.label === 'change_password' || item.label === 'delete_account' || item.separator);
         }
 
         if (item.account_type) {
@@ -238,6 +248,13 @@ const requireAccountConfirmation = (accountType) => {
 
         <template v-if="dialogType === 'change_leverage'">
             <ChangeLeverage
+                :account="account"
+                @update:visible="visible = false"
+            />
+        </template>
+
+        <template v-if="dialogType === 'change_password'">
+            <ChangePassword
                 :account="account"
                 @update:visible="visible = false"
             />

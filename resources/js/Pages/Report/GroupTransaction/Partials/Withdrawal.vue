@@ -76,7 +76,7 @@ const exportCSV = () => {
 
 // Clear date selection
 const clearDate = () => {
-    selectedDate.value = [];
+    selectedDate.value = null;
 };
 
 // Watch for changes in selectedType
@@ -96,6 +96,8 @@ watch(selectedDate, (newDateRange) => {
         } else {
             getResults([]);
         }
+    } else if (newDateRange == null) {
+        getResults([]);
     } else {
         console.warn('Invalid date range format:', newDateRange);
     }
@@ -163,7 +165,6 @@ const clearFilterGlobal = () => {
                                 v-model="selectedDate"
                                 selectionMode="range"
                                 :manualInput="false"
-                                :minDate="minDate"
                                 :maxDate="maxDate"
                                 dateFormat="dd/mm/yy"
                                 showIcon

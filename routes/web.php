@@ -84,6 +84,7 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::post('/deposit_to_account', [TradingAccountController::class, 'deposit_to_account'])->name('account.deposit_to_account');
         Route::post('/withdrawal_from_account', [TradingAccountController::class, 'withdrawal_from_account'])->name('account.withdrawal_from_account');
         Route::post('/change_leverage', [TradingAccountController::class, 'change_leverage'])->name('account.change_leverage');
+        Route::post('/change_password', [TradingAccountController::class, 'change_password'])->name('account.change_password');
         Route::post('/internal_transfer', [TradingAccountController::class, 'internal_transfer'])->name('account.internal_transfer');
         Route::post('/revoke_account', [TradingAccountController::class, 'revoke_account'])->name('account.revoke_account');
         Route::delete('/delete_account', [TradingAccountController::class, 'delete_account'])->name('account.delete_account');

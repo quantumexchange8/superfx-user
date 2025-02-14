@@ -586,4 +586,11 @@ return [
     "required_confirmation" => "需要確認",
     "withdrawal_confirmed" => "提款已確認",
     "invalid_token" => "無效的令牌",
+    "change_password" => "更改密碼",
+    "password_type_placeholder" => "選擇密碼類型",
+    "master" => "主密碼",
+    "investor" => "投資者密碼",
+    "password_type" => "密碼類型",
+    "toast_change_master_password_success" => "帳戶主密碼已更改。",
+    "toast_change_investor_password_success" => "帳戶投資者密碼已更改。",
 ];

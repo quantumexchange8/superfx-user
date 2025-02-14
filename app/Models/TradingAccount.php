@@ -36,4 +36,9 @@ class TradingAccount extends Model
     {
         return $this->hasMany(AssetSubscription::class, 'meta_login', 'meta_login');
     }
+
+    public function trading_user(): BelongsTo
+    {
+        return $this->belongsTo(TradingUser::class, 'meta_login', 'meta_login');
+    }
 }

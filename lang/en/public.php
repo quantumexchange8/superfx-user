@@ -588,4 +588,11 @@ return [
     "required_confirmation" => "Confirmation Required",
     "withdrawal_confirmed" => "Withdrawal Confirmed",
     "invalid_token" => "Invalid Token",
+    "change_password" => "Change Password",
+    "password_type_placeholder" => "Select Password Type",
+    "master" => "Master",
+    "investor" => "Investor",
+    "password_type" => "Password Type",
+    "toast_change_master_password_success" => "Account master password has been changed.",
+    "toast_change_investor_password_success" => "Account investor password has been changed.",
 ];
