@@ -22,7 +22,7 @@ class SelectOptionController extends Controller
                         $type = explode('_', $setting->slug)[0];
                         return [
                             'type' => strtoupper($type),
-                            'fee' => $setting->value,
+                            'fee' => floatval($setting->value),
                         ];
                     });
 
