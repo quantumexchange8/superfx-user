@@ -132,14 +132,14 @@ const closeDialog = () => {
                     $ {{ formatAmount(data.amount) }}
                 </span>
             </div>
-            <div v-if="data.transaction_type === 'withdrawal' && data.payment_platform === 'crypto'" class="flex items-center gap-1 self-stretch">
+            <div class="flex items-center gap-1 self-stretch">
                 <span class="w-[120px] text-gray-500 text-xs font-medium">{{ $t('public.charged') }}</span>
                 <span class="flex-grow text-gray-950 text-sm font-medium">
-                    $ {{ formatAmount(data.transaction_charges) }}
+                    $ {{ formatAmount(data.transaction_charges ?? 0) }}
                 </span>
             </div>
-            <div v-if="data.transaction_type === 'withdrawal' && data.payment_platform === 'crypto'" class="flex items-center gap-1 self-stretch">
-                <span class="w-[120px] text-gray-500 text-xs font-medium">{{ $t('public.received') }}</span>
+            <div class="flex items-center gap-1 self-stretch">
+                <span class="w-[120px] text-gray-500 text-xs font-medium">{{ $t('public.final_amount') }}</span>
                 <span class="flex-grow text-gray-950 text-sm font-medium">
                     $ {{ formatAmount(data.transaction_amount) }}
                 </span>

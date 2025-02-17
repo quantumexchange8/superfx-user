@@ -366,7 +366,7 @@ const exportTransaction = () => {
                     :header="`${$t('public.amount')} ($)`"
                 >
                     <template #body="slotProps">
-                        $ {{ formatAmount(slotProps.data.amount) }}
+                        $ {{ formatAmount(slotProps.data.transaction_amount ?? slotProps.data.amount) }}
                     </template>
                 </Column>
                 <Column

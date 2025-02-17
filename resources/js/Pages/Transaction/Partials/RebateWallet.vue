@@ -350,10 +350,7 @@ const exportTransaction = () => {
                     :header="`${$t('public.amount')} ($)`"
                 >
                     <template #body="slotProps">
-                        <template v-if="slotProps.data.transaction_amount">
-                            $ {{ formatAmount(slotProps.data.transaction_type === 'withdrawal' ? slotProps.data.amount : slotProps.data.transaction_amount) }}
-                        </template>
-                        <template v-else>-</template>
+                        $ {{ formatAmount(slotProps.data.transaction_amount ?? slotProps.data.amount) }}
                     </template>
                 </Column>
                 <Column
