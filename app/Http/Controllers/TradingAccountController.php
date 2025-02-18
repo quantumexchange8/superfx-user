@@ -734,7 +734,7 @@ class TradingAccountController extends Controller
                         'order_currency' => 0,
                         'order_language' => 'en_ww',
                         'guest_id' => md5('SuperFX' . $user->id),
-                        'amount' => $transaction->transaction_amount,
+                        'amount' => $transaction->amount,
                         'notify_url' => route('depositCallback'),
                         'return_url' => route('depositReturn'),
                     ];
@@ -907,7 +907,7 @@ class TradingAccountController extends Controller
                     ->where('meta_login', $transaction->to_meta_login)
                     ->first();
                 $multiplier = $tradingAccount->account_type->balance_multiplier;
-                $adjusted_amount = $transaction->amount * $multiplier;
+                $adjusted_amount = $transaction->transaction_amount * $multiplier;
 
                 try {
                     $trade = (new MetaFourService)->createTrade($transaction->to_meta_login, $adjusted_amount, "Deposit: " . $result['system_order_code'], 'balance', '');
