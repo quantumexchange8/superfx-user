@@ -31,7 +31,7 @@ const form = ref({
     payment_platform: '',
     cryptoType: '',
     amount: 0,
-    fee: 0,
+    // fee: 0,
 });
 
 const selectedPlatform = ref('');
@@ -52,12 +52,6 @@ const getFee = async () => {
 };
 
 getFee();
-
-// const selectedCryptoOption = ref({ type: 'ERC20', fee: 20 });
-// const cryptoOptions = ref([
-//     { type: 'ERC20', fee: 20 },
-//     { type: 'TRC20', fee: 2 },
-// ]);
 
 const selectCryptoOption = (type) => {
     const selectedOption = cryptoOptions.value.find(option => option.type === type);
@@ -85,9 +79,9 @@ const steps = computed(() => {
      return stepsArray;
 });
 
-const finalAmount = computed(() => {
-    return form.value.amount + selectedCryptoOption.value.fee;
-});
+// const finalAmount = computed(() => {
+//     return form.value.amount + selectedCryptoOption.value.fee;
+// });
 
 const submitForm = async () => {
     isLoading.value = true;
@@ -96,7 +90,7 @@ const submitForm = async () => {
 
         if (form.value.payment_platform === 'crypto') {
             form.value.cryptoType = selectedCryptoOption.value.type;
-            form.value.fee = selectedCryptoOption.value.fee;
+            // form.value.fee = selectedCryptoOption.value.fee;
         } else {
             form.value.cryptoType = null;
         }
@@ -118,7 +112,7 @@ const submitForm = async () => {
                 payment_platform: '',
                 cryptoType: '',
                 amount: 0,
-                fee: 0,
+                // fee: 0,
             };
 
             window.open(response.data.payment_url, '_blank');
@@ -261,7 +255,7 @@ const closeDialog = () => {
                     </div>
                 </div>
             </div>
-            <div
+            <!-- <div
                 v-if="selectedPlatform ==='crypto'"
                 class="flex flex-col items-end justify-end self-stretch pt-5 border-t border-gray-200"
             >
@@ -289,7 +283,7 @@ const closeDialog = () => {
                         ${{ formatAmount(finalAmount) }}
                     </span>
                 </div>
-            </div>
+            </div> -->
         </div>
         <div class="flex justify-end items-center pt-5 gap-4 self-stretch sm:pt-7">
             <Button

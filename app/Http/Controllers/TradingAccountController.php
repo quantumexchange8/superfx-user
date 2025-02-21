@@ -653,7 +653,8 @@ class TradingAccountController extends Controller
 
         $conversion_rate = null;
         $conversion_amount = null;
-        $fee = $request->fee ?? 0;
+        // $fee = $request->fee ?? 0;
+        $fee = 0;
 
         if ($request->payment_platform == 'bank'){
             $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', 'VND')->deposit_rate;
@@ -721,8 +722,8 @@ class TradingAccountController extends Controller
                     $transaction->update([
                         'payment_gateway_id' => $payment_gateway->id,
                         'payment_account_type' => strtolower($request->cryptoType),
-                        'amount'  => $amount + $fee,
-                        'transaction_charges' => $fee,
+                        // 'amount'  => $amount + $fee,
+                        // 'transaction_charges' => $fee,
                         'transaction_amount' => $amount,
                     ]);
 
@@ -862,7 +863,6 @@ class TradingAccountController extends Controller
         $status = $result['status'] == 'success' ? 'successful' : 'failed';
 
         if($transaction->payment_gateway->platform === 'crypto') {
-            $fees = $result['amount'] - $result['fees'];
             $to_wallet_address = $result['erc20address'] ?? $result['trc20address'];
 
             $transaction->update([
@@ -897,7 +897,6 @@ class TradingAccountController extends Controller
                 'approved_at' => now()
             ]);
         }
-        // $final_amount = $transaction->amount - $fees;
 
         if ($transaction->status == 'successful') {
             if ($transaction->transaction_type == 'deposit') {
