@@ -473,7 +473,7 @@ class TransactionController extends Controller
                 $adjusted_amount = $transaction->amount * $multiplier;
 
                 try {
-                    $trade = (new MetaFourService)->createTrade($transaction->from_meta_login, $adjusted_amount, 'Cancelled Withdrawal from ' . $transaction->transaction_number, 'balance', '');
+                    $trade = (new MetaFourService)->createTrade($transaction->from_meta_login, $adjusted_amount, 'Cancelled from ' . $transaction->transaction_number, 'balance', '');
 
                     $transaction->update([
                         'ticket' => $trade['ticket'] ?? null,
