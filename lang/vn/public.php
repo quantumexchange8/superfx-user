@@ -593,4 +593,8 @@ return [
     "password_type" => "Loại mật khẩu",
     "toast_change_master_password_success" => "Mật khẩu chính của tài khoản đã được thay đổi.",
     "toast_change_investor_password_success" => "Mật khẩu nhà đầu tư của tài khoản đã được thay đổi.",
+    "others" => "Khác",
+    "dollar" => "Dollar",
+    "total_trade_volume_in_cent" => "Total Trade Volume in Cent",
+    "total_rebate_earned_in_cent" => "Total Rebate Earned in Cent",
 ];

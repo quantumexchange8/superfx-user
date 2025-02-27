@@ -26,4 +26,9 @@ class TradeRebateSummary extends Model
         return $this->belongsTo(SymbolGroup::class, 'symbol_group', 'id');
     }
 
+    public function accountType(): belongsTo
+    {
+        return $this->belongsTo(AccountType::class, 'account_type_id', 'id');
+    }
+
 }

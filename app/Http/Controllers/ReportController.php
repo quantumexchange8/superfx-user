@@ -32,9 +32,10 @@ class ReportController extends Controller
         // Retrieve date parameters from request
         $startDate = $request->query('startDate');
         $endDate = $request->query('endDate');
+        $group = $request->query('group');
 
         // Initialize query for rebate summary with date filtering
-        $query = TradeRebateSummary::with('symbolGroup')
+        $query = TradeRebateSummary::with('symbolGroup', 'accountType')
             ->where('upline_user_id', $userId);
 
         // Apply date filter based on availability of startDate and/or endDate
@@ -45,6 +46,12 @@ class ReportController extends Controller
         } else {
             // Both startDate and endDate are null, apply default start date
             $query->whereDate('execute_at', '>=', '2024-01-01');
+        }
+
+        if ($group) {
+            $query->whereHas('accountType', function ($q) use ($group) {
+                $q->where('category', $group);
+            });
         }
 
         // Fetch rebate summary data
@@ -96,11 +103,12 @@ class ReportController extends Controller
         // Retrieve query parameters
         $startDate = $request->input('startDate');
         $endDate = $request->input('endDate');
+        $group = $request->query('group');
 
         // Fetch all symbol groups from the database, ordered by the primary key (id)
         $allSymbolGroups = SymbolGroup::pluck('display', 'id')->toArray();
 
-        $query = TradeRebateSummary::with('user')
+        $query = TradeRebateSummary::with('user', 'accountType')
             ->where('upline_user_id', Auth::id());
 
         // Apply date filter based on availability of startDate and/or endDate
@@ -109,6 +117,12 @@ class ReportController extends Controller
                   ->whereDate('execute_at', '<=', $endDate);
         } else {
             $query->whereDate('execute_at', '>=', '2024-01-01');
+        }
+
+        if ($group) {
+            $query->whereHas('accountType', function ($q) use ($group) {
+                $q->where('category', $group);
+            });
         }
 
         // Fetch rebate listing data
@@ -123,6 +137,8 @@ class ReportController extends Controller
                 'volume' => $item->volume,
                 'net_rebate' => $item->net_rebate,
                 'rebate' => $item->rebate,
+                'slug' => $item->accountType->slug,
+                'color' => $item->accountType->color,
             ];
         });
 
@@ -186,6 +202,8 @@ class ReportController extends Controller
                 'volume' => $volume,
                 'rebate' => $rebate,
                 'summary' => $summary,
+                'slug' => $group->first()['slug'],
+                'color' => $group->first()['color'],
             ];
         })->values();
 

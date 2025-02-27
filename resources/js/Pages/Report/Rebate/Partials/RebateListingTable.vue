@@ -7,19 +7,26 @@ import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import DefaultProfilePhoto from "@/Components/DefaultProfilePhoto.vue";
 import {FilterMatchMode} from "primevue/api";
-import { transactionFormat } from '@/Composables/index.js';
+import { transactionFormat, generalFormat } from '@/Composables/index.js';
 import Empty from '@/Components/Empty.vue';
 import Loader from "@/Components/Loader.vue";
 import {IconSearch, IconCircleXFilled, IconX} from '@tabler/icons-vue';
 import Calendar from 'primevue/calendar';
 
+// Define props
+const props = defineProps({
+    selectedGroup: String
+});
+
 const { formatDate, formatDateTime, formatAmount } = transactionFormat();
+const { formatRgbaColor } = generalFormat();
 
 const visible = ref(false);
 const rebateListing = ref();
 const dt = ref();
 const loading = ref(false);
 const expandedRows = ref({});
+const selectedGroup = ref('dollar')
 
 // Get current date
 const today = new Date();
@@ -31,20 +38,24 @@ const maxDate = ref(today);
 // Reactive variable for selected date range
 const selectedDate = ref([minDate.value, maxDate.value]);
 
-const getResults = async (selectedDate = []) => {
+const getResults = async (selectedDate = [], selectedGroup = '') => {
     loading.value = true;
 
     try {
-        let response;
+        const params = new URLSearchParams();
         const [startDate, endDate] = selectedDate;
-        let url = `/report/getRebateListing`;
 
         // Append date range to the URL if it's not null
         if (startDate && endDate) {
-            url += `?startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}`;
+            params.append("startDate", formatDate(startDate));
+            params.append("endDate", formatDate(endDate));
         }
 
-        response = await axios.get(url);
+        if (selectedGroup) {
+            params.append("group", selectedGroup);
+        }
+
+        const response = await axios.get('/report/getRebateListing', { params });
         rebateListing.value = response.data.rebateListing;
 
     } catch (error) {
@@ -68,32 +79,40 @@ const emit = defineEmits(['update-date']);
 
 // Watch for changes in selectedDate
 watch(selectedDate, (newDateRange) => {
-    // Implement logic to handle changes in the selected date range
     if (Array.isArray(newDateRange)) {
         const [startDate, endDate] = newDateRange;
 
-        // Check if both dates are valid
         if (startDate && endDate) {
-            // Both dates are valid, call function with the full range
-            getResults([startDate, endDate]);
+            getResults([startDate, endDate], selectedGroup.value);
             emit('update-date', [startDate, endDate]);
         } else if (startDate || endDate) {
-            // Only one date is provided
-            // Use the same date for both start and end if one is null
-            getResults([startDate || endDate, endDate || startDate]);
+            getResults([startDate || endDate, endDate || startDate],  selectedGroup.value);
             emit('update-date', [startDate || endDate, endDate || startDate]);
         } else if (!(startDate && endDate)) {
-            getResults([]);
+            getResults([],  selectedGroup.value);
             emit('update-date', []);
         }
     } else if (newDateRange == null) {
-        getResults([]);
+        getResults([],  selectedGroup.value);
         emit('update-date', []);
     } else {
-        // Handle unexpected formats or types
         console.warn('Invalid date range format:', newDateRange);
     }
 }, { immediate: true });
+
+watch(() => props.selectedGroup, (newGroup) => {
+    // Whenever uplines change, update the local ref
+    selectedGroup.value = newGroup;
+    if (selectedDate.value == null) {
+        getResults([], newGroup);
+        emit('update-date', []);
+    }
+    else {
+        getResults(selectedDate.value, newGroup);
+        emit('update-date', selectedDate.value);
+    }
+  }, { immediate: true }
+);
 
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -215,7 +234,18 @@ const openDialog = (rowData) => {
                     class="hidden md:table-cell"
                 >
                     <template #body="slotProps">
-                        {{ slotProps.data.meta_login }}
+                        <div class="flex items-center content-center gap-3 flex-grow relative">
+                            <span >{{ slotProps.data.meta_login }}</span>
+                            <div
+                                class="flex px-2 py-1 justify-center items-center text-xs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
+                                :style="{
+                                    backgroundColor: formatRgbaColor(slotProps.data.color, 0.15),
+                                    color: `#${slotProps.data.color}`,
+                                }"
+                            >
+                                {{ $t(`public.${slotProps.data.slug}`) }}
+                            </div>
+                        </div>
                     </template>
                 </Column>
                 <Column

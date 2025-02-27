@@ -13,7 +13,8 @@ const totalRebate = ref(0);
 const props = defineProps({
     rebateSummary: Array,
     totalVolume: Number,
-    totalRebate: Number
+    totalRebate: Number,
+    selectedGroup: String
 });
 
 // Watch for changes in props and update reactive variables
@@ -37,7 +38,7 @@ watch(() => props.totalRebate, (newRebate) => {
         <div class="flex items-center gap-3 self-stretch md:gap-5">
             <div class="flex flex-col items-center py-2 gap-2 flex-grow md:py-3">
                 <span class="self-stretch text-gray-500 text-center text-sm">
-                    {{ `${$t('public.total_trade_volume')}&nbsp;(Ł)` }}
+                    {{ props.selectedGroup === 'dollar' ? `${$t('public.total_trade_volume')}&nbsp;(Ł)` : `${$t('public.total_trade_volume_in_cent')}&nbsp;(Ł)`}}
                 </span>
                 <span class="text-gray-950 text-lg font-semibold md:text-xxl">
                     {{ formatAmount(totalVolume) }}
@@ -46,7 +47,7 @@ watch(() => props.totalRebate, (newRebate) => {
             <div class="w-[1px] h-[52px] rounded-full bg-gray-300"></div>
             <div class="flex flex-col items-center py-2 gap-2 flex-grow md:py-3">
                 <span class="self-stretch text-gray-500 text-center text-sm">
-                    {{ `${$t('public.total_rebate_earned')}&nbsp;($)` }}
+                    {{ props.selectedGroup === 'dollar' ? `${$t('public.total_rebate_earned')}&nbsp;($)` : `${$t('public.total_rebate_earned_in_cent')}&nbsp;($)`}}
                 </span>
                 <span class="text-gray-950 text-lg font-semibold md:text-xxl">
                     {{ formatAmount(totalRebate, 3) }}

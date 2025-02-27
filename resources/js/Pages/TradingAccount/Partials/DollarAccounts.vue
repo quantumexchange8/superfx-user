@@ -8,7 +8,7 @@ import {usePage} from "@inertiajs/vue3";
 
 const isLoading = ref(false);
 const accounts = ref([]);
-const accountType = ref('individual');
+const accountType = ref('dollar');
 const { formatAmount } = transactionFormat();
 const { formatRgbaColor } = generalFormat();
 

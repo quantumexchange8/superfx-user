@@ -595,4 +595,8 @@ return [
     "password_type" => "Password Type",
     "toast_change_master_password_success" => "Account master password has been changed.",
     "toast_change_investor_password_success" => "Account investor password has been changed.",
+    "others" => "Others",
+    "dollar" => "Dollar",
+    "total_trade_volume_in_cent" => "Total Trade Volume in Cent",
+    "total_rebate_earned_in_cent" => "Total Rebate Earned in Cent",
 ];

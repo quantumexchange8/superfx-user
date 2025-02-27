@@ -4,7 +4,8 @@ import Button from "@/Components/Button.vue";
 import {ref, h, watch, computed} from "vue";
 import TabView from 'primevue/tabview';
 import TabPanel from 'primevue/tabpanel';
-import IndividualAccounts from '@/Pages/TradingAccount/Partials/IndividualAccounts.vue';
+import DollarAccounts from '@/Pages/TradingAccount/Partials/DollarAccounts.vue';
+import CentAccounts from '@/Pages/TradingAccount/Partials/CentAccounts.vue';
 import { usePage, useForm } from "@inertiajs/vue3";
 import Dialog from 'primevue/dialog';
 import InputError from '@/Components/InputError.vue';
@@ -35,11 +36,12 @@ const demoAccountForm = useForm({
 });
 
 const tabs = ref([
-    { title: wTrans('public.individual'), component: h(IndividualAccounts), type: 'individual' },
+    { title: wTrans('public.dollar'), component: h(DollarAccounts), type: 'dollar' },
+    { title: wTrans('public.cent'), component: h(CentAccounts), type: 'cent' },
     // { title: wTrans('public.demo'), component: h(DemoAccounts), type: 'demo' },
 ]);
 
-const selectedType = ref('individual');
+const selectedType = ref('dollar');
 const activeIndex = ref(tabs.value.findIndex(tab => tab.type === selectedType.value));
 
 // Watch for changes in selectedType and update the activeIndex accordingly

@@ -593,4 +593,8 @@ return [
     "password_type" => "密碼類型",
     "toast_change_master_password_success" => "帳戶主密碼已更改。",
     "toast_change_investor_password_success" => "帳戶投資者密碼已更改。",
+    "others" => "其他",
+    "dollar" => "Dollar",
+    "total_trade_volume_in_cent" => "Cent 總交易手數量",
+    "total_rebate_earned_in_cent" => "Cent 返傭所得",
 ];
