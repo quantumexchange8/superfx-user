@@ -45,17 +45,18 @@ const groups = ref(['dollar', 'cent']);
 <template>
     <AuthenticatedLayout :title="$t('public.report')">
         <div class="flex flex-col items-center gap-5 self-stretch">
-            <div class="flex items-center self-stretch justify-between">
+            <div class="flex flex-col md:flex-row gap-5 items-center self-stretch justify-between">
                 <TabView class="flex flex-col" :activeIndex="activeIndex" @tab-change="updateType">
                     <TabPanel v-for="(tab, index) in tabs" :key="index" :header="tab.title" />
                 </TabView>
                 <!-- <div v-if="selectedType === 'summary'">test</div> -->
-                <Dropdown 
+                <Dropdown
                     v-if="selectedType === 'summary'"
-                    v-model="selectedGroup" 
-                    :options="groups" 
+                    v-model="selectedGroup"
+                    :options="groups"
                     :placeholder="$t('public.select_group_placeholder')"
-                    class="w-60 font-normal truncate" scroll-height="236px" 
+                    class="w-full md:w-60 font-normal truncate"
+                    scroll-height="236px"
                 >
                     <template #value="slotProps">
                         <div v-if="slotProps.value" class="flex items-center gap-3">
@@ -71,8 +72,8 @@ const groups = ref(['dollar', 'cent']);
                     </template>
                 </Dropdown>
             </div>
-            <component 
-                :is="tabs[activeIndex]?.component" 
+            <component
+                :is="tabs[activeIndex]?.component"
                 v-bind="{
                     ...(selectedType === 'rebate' ? { uplines: props.uplines } : {}),
                     ...(selectedType === 'summary' ? { group: selectedGroup } : {})
