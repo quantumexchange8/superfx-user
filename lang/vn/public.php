@@ -595,6 +595,6 @@ return [
     "toast_change_investor_password_success" => "Mật khẩu nhà đầu tư của tài khoản đã được thay đổi.",
     "others" => "Khác",
     "dollar" => "Dollar",
-    "total_trade_volume_in_cent" => "Total Trade Volume in Cent",
-    "total_rebate_earned_in_cent" => "Total Rebate Earned in Cent",
+    "total_trade_volume_in_cent" => "Tổng khối lượng giao dịch tính bằng Cent",
+    "total_rebate_earned_in_cent" => "Tổng số tiền hoàn lại kiếm được tính bằng Cent",
 ];
