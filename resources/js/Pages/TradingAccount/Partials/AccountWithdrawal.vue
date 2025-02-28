@@ -55,11 +55,11 @@ const form = useForm({
 })
 
 const finalAmount = computed(() => {
-    if (form.amount - Number(selectedCryptoOption.value.fee) < 0) {
-        return 0;
-    }
+    const fee = props.account?.category === 'cent' 
+        ? Number(selectedCryptoOption.value.fee) * props.account.balance_multiplier 
+        : Number(selectedCryptoOption.value.fee);
 
-    return form.amount - Number(selectedCryptoOption.value.fee);
+    return form.amount - fee < 0 ? 0 : form.amount - fee;
 });
 
 const toggleFullAmount = () => {
@@ -122,7 +122,7 @@ const closeDialog = () => {
                             {{ form.amount ? $t('public.clear') : $t('public.full_amount') }}
                         </div>
                     </div>
-                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount(50) }}</span>
+                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount(account.category === 'cent' ? 50 * account.balance_multiplier : 50, 0) }}</span>
                     <InputError :message="form.errors.amount" />
                 </div>
 
@@ -169,7 +169,7 @@ const closeDialog = () => {
                             {{ $t('public.withdrawal_fee') }} :
                         </span>
                         <span class="col-span-1 text-right text-gray-500 text-sm">
-                            ${{ formatAmount(selectedCryptoOption.fee ?? 0) }}
+                            ${{ formatAmount(account.category === 'cent' ? (selectedCryptoOption.fee ?? 0) * account.balance_multiplier : (selectedCryptoOption.fee ?? 0)) }}
                         </span>
                     </div>
                     <div class="flex justify-between items-start gap-1 self-stretch">

@@ -198,6 +198,8 @@ class TradingAccountController extends Controller
                     'account_type' => $account->account_type->slug,
                     'account_type_leverage' => $account->account_type->leverage,
                     'account_type_color' => $account->account_type->color,
+                    'category' => $account->account_type->category,
+                    'balance_multiplier' => $account->account_type->balance_multiplier,
                     'asset_master_id' => $following_master->asset_master->id ?? null,
                     'asset_master_name' => $following_master->asset_master->asset_name ?? null,
                     'remaining_days' => intval($remaining_days),
@@ -275,9 +277,13 @@ class TradingAccountController extends Controller
 
     public function withdrawal_from_account(Request $request)
     {
+        $tradingAccount = TradingAccount::find($request->account_id)->load('account_type');
+
+        $minAmount = $tradingAccount->account_type->category === 'cent' ? 50 * $tradingAccount->account_type->balance_multiplier : 50;
+
         $validator = Validator::make($request->all(), [
             'account_id' => ['required', 'exists:trading_accounts,id'],
-            'amount' => ['required', 'numeric', 'gte:50'],
+            'amount' => ['required', 'numeric', "gte:$minAmount"],
             'payment_account_id' => ['required']
         ])->setAttributeNames([
             'account_id' => trans('public.account'),
@@ -289,7 +295,6 @@ class TradingAccountController extends Controller
         $amount = $request->amount;
         $fee = $request->fee ?? 0;
 
-         $tradingAccount = TradingAccount::find($request->account_id)->load('account_type');
          (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
          if ($tradingAccount->balance < $amount) {
