@@ -111,7 +111,9 @@ class DropdownOptionService
             return [
                 'name' => $trading_account->meta_login,
                 'value' => $trading_account->balance,
+                'group' => $trading_account->account_type->account_group,
                 'category' => $trading_account->account_type->category,
+                'minimum_deposit' => $trading_account->account_type->minimum_deposit,
                 'balance_multiplier' => $trading_account->account_type->balance_multiplier,
             ];
         });

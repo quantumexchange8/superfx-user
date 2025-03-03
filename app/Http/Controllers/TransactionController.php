@@ -145,9 +145,15 @@ class TransactionController extends Controller
 
     public function walletTransfer(Request $request)
     {
+        $tradingAccount = TradingAccount::with('account_type')
+                ->where('meta_login', $request->meta_login)
+                ->first();
+
+        $minAmount = $tradingAccount->account_type->account_group === 'PRIME' ? $tradingAccount->account_type->minimum_deposit : 30;
+
         $validator = Validator::make($request->all(), [
             'wallet_id' => ['required', 'exists:wallets,id'],
-            'amount' => ['required', 'numeric', 'gte:30'],
+            'amount' => ['required', 'numeric', "gte:$minAmount"],
             'meta_login' => ['required']
         ])->setAttributeNames([
             'wallet_id' => trans('public.wallet'),
@@ -159,9 +165,6 @@ class TransactionController extends Controller
         $amount = $request->amount;
         $wallet = Wallet::find($request->wallet_id);
 
-        $tradingAccount = TradingAccount::with('account_type')
-                ->where('meta_login', $request->meta_login)
-                ->first();
         (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
         if ($wallet->balance < $amount) {

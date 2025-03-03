@@ -198,7 +198,9 @@ class TradingAccountController extends Controller
                     'account_type' => $account->account_type->slug,
                     'account_type_leverage' => $account->account_type->leverage,
                     'account_type_color' => $account->account_type->color,
+                    'group' => $account->account_type->account_group,
                     'category' => $account->account_type->category,
+                    'minimum_deposit' => $account->account_type->minimum_deposit,
                     'balance_multiplier' => $account->account_type->balance_multiplier,
                     'asset_master_id' => $following_master->asset_master->id ?? null,
                     'asset_master_name' => $following_master->asset_master->asset_name ?? null,
@@ -365,20 +367,36 @@ class TradingAccountController extends Controller
 
     public function internal_transfer(Request $request)
     {
+        $tradingAccount = TradingAccount::find($request->account_id)->load('account_type');
+
         $validator = Validator::make($request->all(), [
             'account_id' => ['required', 'exists:trading_accounts,id'],
-            'to_meta_login' => ['required']
+            'to_meta_login' => ['required', 'exists:trading_accounts,meta_login'], // Ensure `to_meta_login` exists
         ])->setAttributeNames([
             'account_id' => trans('public.account'),
             'to_meta_login' => trans('public.transfer_to'),
         ]);
         $validator->validate();
 
-         $tradingAccount = TradingAccount::find($request->account_id)->load('account_type');
+        $to_meta_login = $request->input('to_meta_login');
+        $to_tradingAccount = TradingAccount::with('account_type')
+            ->where('meta_login', $to_meta_login)
+            ->first();
+
+        $minAmount = $to_tradingAccount->account_type->account_group === 'PRIME' ? $to_tradingAccount->account_type->minimum_deposit : 0;
+
+        $minAmount = $tradingAccount->account_type->category === 'cent' ? $minAmount * $tradingAccount->account_type->balance_multiplier : $minAmount;
+
+        $validator = Validator::make($request->all(), [
+            'amount' => ['required', 'numeric', "gte:$minAmount"],
+        ])->setAttributeNames([
+            'amount' => trans('public.amount'),
+        ]);
+        $validator->validate();
+
          (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
          $amount = $request->input('amount');
-         $to_meta_login = $request->input('to_meta_login');
 
          if ($tradingAccount->balance < $amount) {
              throw ValidationException::withMessages(['wallet' => trans('public.insufficient_balance')]);
@@ -387,9 +405,6 @@ class TradingAccountController extends Controller
         $multiplier = $tradingAccount->account_type->balance_multiplier;
         $adjusted_amount = $amount / $multiplier;
 
-        $to_tradingAccount = TradingAccount::with('account_type')
-            ->where('meta_login', $to_meta_login)
-            ->first();
         $to_multiplier = $to_tradingAccount->account_type->balance_multiplier;
         $to_adjusted_amount = $adjusted_amount * $to_multiplier;
 
@@ -612,12 +627,18 @@ class TradingAccountController extends Controller
 
     public function deposit_to_account(Request $request)
     {
+        $tradingAccount = TradingAccount::with('account_type')
+                ->where('meta_login', $request->meta_login)
+                ->first();
+
+        $minAmount = $tradingAccount->account_type->account_group === 'PRIME' ? $tradingAccount->account_type->minimum_deposit : 50;
+
         //change cryptoType validation as bank won't work
         Validator::make($request->all(), [
             'meta_login' => ['required', 'exists:trading_accounts,meta_login'],
             'payment_platform' => ['required'],
             'cryptoType' => ['required_if:payment_platform,crypto'],
-            'amount' => ['required', 'numeric', 'gte:50'],
+            'amount' => ['required', 'numeric', "gte:$minAmount"],
         ])->setAttributeNames([
             'meta_login' => trans('public.account'),
             'payment_platform' => trans('public.platform'),

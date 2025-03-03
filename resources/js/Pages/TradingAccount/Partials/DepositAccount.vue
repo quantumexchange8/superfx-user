@@ -242,7 +242,7 @@ const closeDialog = () => {
                         :invalid="!!errors.amount"
                     />
                 </div>
-                <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount(50) }}</span>
+                <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount( account.group === 'PRIME' ? account.minimum_deposit : 50,0) }}</span>
                 <InputError v-if="errors.amount" :message="errors.amount[0]" />
             </div>
             <div class="flex flex-col items-center self-stretch">

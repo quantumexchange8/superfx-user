@@ -21,7 +21,6 @@ const getOptions = async () => {
     try {
         const response = await axios.get('/account/getOptions');
         transferOptions.value = response.data.transferOptions;
-        console.log(transferOptions)
     } catch (error) {
         console.error('Error changing locale:', error);
     }
@@ -110,7 +109,7 @@ const closeDialog = () => {
                             {{ form.amount ? $t('public.clear') : $t('public.full_amount') }}
                         </div>
                     </div>
-                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount(30,0) }}</span>
+                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount( selectedAccount.group === 'PRIME' ? selectedAccount.minimum_deposit : 30,0) }}</span>
                     <InputError :message="form.errors.amount" />
                 </div>
             </div>

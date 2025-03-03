@@ -10,10 +10,13 @@ import Dropdown from "primevue/dropdown";
 import axios from 'axios';
 import InputNumber from "primevue/inputnumber";
 import DepositAccount from "@/Pages/TradingAccount/Partials/DepositAccount.vue";
+import {transactionFormat} from "@/Composables/index.js";
 
 const props = defineProps({
     account: Object,
 });
+
+const {formatAmount} = transactionFormat()
 
 const showTransferDialog = ref(false);
 const transferOptions = ref([]);
@@ -145,6 +148,7 @@ const submitForm = (formType) => {
                             {{ transferForm.amount ? $t('public.clear') : $t('public.full_amount') }}
                         </div>
                     </div>
+                    <span v-if="selectedAccount.group === 'PRIME'" class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount( props.account.category === 'cent' ? selectedAccount.minimum_deposit * props.account.balance_multiplier : selectedAccount.minimum_deposit , 0) }}</span>
                     <InputError :message="transferForm.errors.amount" />
                 </div>
             </div>
