@@ -115,7 +115,7 @@ const submitForm = async () => {
                 // fee: 0,
             };
 
-            window.open(response.data.payment_url, '_blank');
+            window.open(response.data.payment_url);
         } else {
             toast.add({
                 title: response.data.toast_title,
