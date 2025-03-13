@@ -187,6 +187,7 @@ class DropdownOptionService
     {
         return User::whereIn('id', array_merge([Auth::id()],User::find(Auth::id())->getChildrenIds()))
             ->select('id', 'name', 'email', 'id_number')
+            ->whereNot('role', 'member')
             ->get()
             ->map(function ($user) {
                 return [
@@ -199,4 +200,19 @@ class DropdownOptionService
             });
     }
 
+    public function getRebateDownlines(): Collection
+    {
+        return User::whereIn('id', array_merge([Auth::id()],User::find(Auth::id())->getChildrenIds()))
+            ->select('id', 'name', 'email', 'id_number')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'value' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'id_number' => $user->id_number,
+                    // 'profile_photo' => $user->getFirstMediaUrl('profile_photo')
+                ];
+            });
+    }
 }

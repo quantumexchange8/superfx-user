@@ -597,4 +597,7 @@ return [
     "dollar" => "Dollar",
     "total_trade_volume_in_cent" => "Cent 總交易手數量",
     "total_rebate_earned_in_cent" => "Cent 返傭所得",
+    "filter_id" => "篩選 ID",
+    "id_selected" => "已選擇的 ID",
+    "category" => "類別",
 ];

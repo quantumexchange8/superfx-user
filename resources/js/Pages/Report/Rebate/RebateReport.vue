@@ -9,6 +9,7 @@ import { transactionFormat } from '@/Composables/index.js';
 
 const props = defineProps({
     group: String,
+    downlines: Array,
 });
 
 const { formatDate, formatDateTime, formatAmount } = transactionFormat();
@@ -20,13 +21,25 @@ const user = usePage().props.auth.user;
 const rebateSummary = ref([]);
 const totalVolume = ref(0);
 const totalRebate = ref(0);
-const dateRange = ref([]);
+// const dateRange = ref([]);
+const startDate = ref(null);
+const endDate = ref(null);
+const search = ref(null);
+const user_id = ref(null);
 const selectedGroup = ref('dollar');
 
 // Function to fetch rebate summary data
-const getResults = async (dateRange, selectedGroup) => {
-    const [startDate, endDate] = dateRange;
+const getResults = async (search, user_id, startDate, endDate, selectedGroup) => {
+    // const [startDate, endDate] = dateRange;
     const params = new URLSearchParams();
+
+    if (search) {
+        params.append("search", search);
+    }
+
+    if (user_id) {
+        params.append("user_id", user_id);
+    }
 
     // Append date range to the URL if it's not null
     if (startDate && endDate) {
@@ -52,26 +65,42 @@ const getResults = async (dateRange, selectedGroup) => {
 };
 
 // Watch for changes in the dateRange and fetch rebate summary data
-watch(dateRange, (newDateRange) => {
-    if (newDateRange === null || newDateRange === undefined) {
-        // Handle null or undefined newDateRange
-        getResults([], selectedGroup.value);
-    } else {
-        getResults(newDateRange, selectedGroup.value);
-    }
-});
+// watch(dateRange, (newDateRange) => {
+//     if (newDateRange === null || newDateRange === undefined) {
+//         // Handle null or undefined newDateRange
+//         getResults([], selectedGroup.value);
+//     } else {
+//         getResults(newDateRange, selectedGroup.value);
+//     }
+// });
 
 watch(() => props.group, (newGroup) => {
     // Whenever uplines change, update the local ref
     selectedGroup.value = newGroup;
-    getResults(dateRange.value, newGroup);
-  }, { immediate: true }
+    getResults(search.value, user_id.value, startDate.value, endDate.value, newGroup);
+  }
 );
 
 // Handle the update-date event from RebateListingTable
-const handleUpdateDate = (newDateRange) => {
-    // console.log('Date Range Received:', newDateRange);
-    dateRange.value = newDateRange;
+const handleUpdateFilters = (newFilters) => {
+    const newSearch = newFilters['global'].value;
+    const newUserId = newFilters['downline_id'].value;
+    const newStartDate = newFilters['start_date'].value;
+    const newEndDate = newFilters['end_date'].value;
+
+    if (
+        newSearch !== search.value ||
+        newUserId !== user_id.value ||
+        newStartDate !== startDate.value ||
+        newEndDate !== endDate.value
+    ) {
+        search.value = newSearch;
+        user_id.value = newUserId;
+        startDate.value = newStartDate;
+        endDate.value = newEndDate;
+
+        getResults(search.value, user_id.value, startDate.value, endDate.value, selectedGroup.value);
+    }
 };
 
 </script>
@@ -81,5 +110,5 @@ const handleUpdateDate = (newDateRange) => {
         <RebateSummary :rebateSummary="rebateSummary" :totalVolume="totalVolume" :totalRebate="totalRebate" :selectedGroup="selectedGroup"/>
         <RebateSummaryChart :rebateSummary="rebateSummary" :totalVolume="totalVolume" :totalRebate="totalRebate" />
     </div>
-    <RebateListingTable @update-date="handleUpdateDate" :selectedGroup="selectedGroup"/>
+    <RebateListingTable @update-filters="handleUpdateFilters" :selectedGroup="selectedGroup" :downlines="props.downlines"/>
 </template>

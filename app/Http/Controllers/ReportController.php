@@ -13,8 +13,11 @@ use App\Models\TradeRebateSummary;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RebateHistoryExport;
+use App\Exports\RebateListingExport;
 use App\Services\DropdownOptionService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class ReportController extends Controller
 {
@@ -22,6 +25,7 @@ class ReportController extends Controller
     {
         return Inertia::render('Report/Report', [
             'uplines' => (new DropdownOptionService())->getRebateUplines(),
+            'downlines' => (new DropdownOptionService())->getRebateDownlines(),
         ]);
     }
 
@@ -30,14 +34,32 @@ class ReportController extends Controller
         $userId = Auth::id();
 
         // Retrieve date parameters from request
+        $search = $request->query('search');
+        $downline_id = $request->query('user_id');
         $startDate = $request->query('startDate');
         $endDate = $request->query('endDate');
         $group = $request->query('group');
 
         // Initialize query for rebate summary with date filtering
-        $query = TradeRebateSummary::with('symbolGroup', 'accountType')
+        $query = TradeRebateSummary::with('user', 'symbolGroup', 'accountType')
             ->where('upline_user_id', $userId);
 
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($query) use ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%')
+                        ->orWhere('id_number', 'like', '%' . $search . '%');
+                    });
+                })->orWhere('meta_login', 'like', '%' . $search . '%');
+            });
+        }
+        
+        if ($downline_id) {
+            $query->where('user_id', $downline_id);
+
+        }
         // Apply date filter based on availability of startDate and/or endDate
         if ($startDate && $endDate) {
             // Both startDate and endDate are provided
@@ -100,117 +122,169 @@ class ReportController extends Controller
 
     public function getRebateListing(Request $request)
     {
-        // Retrieve query parameters
-        $startDate = $request->input('startDate');
-        $endDate = $request->input('endDate');
-        $group = $request->query('group');
-
-        // Fetch all symbol groups from the database, ordered by the primary key (id)
         $allSymbolGroups = SymbolGroup::pluck('display', 'id')->toArray();
 
-        $query = TradeRebateSummary::with('user', 'accountType')
+        if ($request->has('lazyEvent')) {
+            $data = json_decode($request->only(['lazyEvent'])['lazyEvent'], true);
+
+            $query = TradeRebateSummary::with('user', 'accountType')
             ->where('upline_user_id', Auth::id());
 
-        // Apply date filter based on availability of startDate and/or endDate
-        if ($startDate && $endDate) {
-            $query->whereDate('execute_at', '>=', $startDate)
-                  ->whereDate('execute_at', '<=', $endDate);
-        } else {
-            $query->whereDate('execute_at', '>=', '2024-01-01');
-        }
+            if ($data['filters']['global']['value']) {
+                $keyword = $data['filters']['global']['value'];
 
-        if ($group) {
-            $query->whereHas('accountType', function ($q) use ($group) {
-                $q->where('category', $group);
+                $query->where(function ($q) use ($keyword) {
+                    $q->whereHas('user', function ($query) use ($keyword) {
+                        $query->where(function ($q) use ($keyword) {
+                            $q->where('name', 'like', '%' . $keyword . '%')
+                            ->orWhere('email', 'like', '%' . $keyword . '%')
+                            ->orWhere('id_number', 'like', '%' . $keyword . '%');
+                        });
+                    })->orWhere('meta_login', 'like', '%' . $keyword . '%');
+                });
+            }
+
+            if (!empty($data['filters']['start_date']['value']) && !empty($data['filters']['end_date']['value'])) {
+                $start_date = Carbon::parse($data['filters']['start_date']['value'])->addDay()->startOfDay();
+                $end_date = Carbon::parse($data['filters']['end_date']['value'])->addDay()->endOfDay();
+
+                $query->whereBetween('execute_at', [$start_date, $end_date]);
+            }
+
+            if (!empty($data['filters']['group']['value'])) {
+                $group = $data['filters']['group']['value']; 
+            
+                $query->whereHas('accountType', function ($q) use ($group) {
+                    $q->where('category', $group);
+                });
+            }
+
+            if (!empty($data['filters']['downline_id']['value'])) {
+                $downlineIds = $data['filters']['downline_id']['value'];    
+            
+                $query->whereIn('user_id', $downlineIds);
+            }
+
+            if ($data['sortField'] && $data['sortOrder']) {
+                $order = $data['sortOrder'] == 1 ? 'asc' : 'desc';
+            
+                // Check if sorting by a related field (like "name")
+                if (in_array($data['sortField'], ['name', 'email', 'id_number'])) {
+                    $query->join('users', 'trade_rebate_summaries.user_id', '=', 'users.id')
+                          ->orderBy('users.' . $data['sortField'], $order);
+                } else {
+                    $query->orderBy($data['sortField'], $order);
+                }
+            } else {
+                $query->orderByDesc('id');
+            }
+
+                // Map the listings to include the summary and grouping logic
+            $allRecords = $query->get()->map(function ($item) {
+                return [
+                    'user_id' => $item->user_id,
+                    'name' => $item->user->name,
+                    'email' => $item->user->email,
+                    'id_number' => $item->user->id_number,
+                    'meta_login' => $item->meta_login,
+                    'execute_at' => Carbon::parse($item->execute_at)->format('Y/m/d'),
+                    'symbol_group' => $item->symbol_group,
+                    'volume' => $item->volume,
+                    'net_rebate' => $item->net_rebate,
+                    'rebate' => $item->rebate,
+                    'slug' => $item->accountType->slug,
+                    'color' => $item->accountType->color,
+                ];
             });
-        }
 
-        // Fetch rebate listing data
-        $data = $query->get()->map(function ($item) {
-            return [
-                'user_id' => $item->user_id,
-                'name' => $item->user->name,
-                'email' => $item->user->email,
-                'meta_login' => $item->meta_login,
-                'execute_at' => Carbon::parse($item->execute_at)->format('Y/m/d'),
-                'symbol_group' => $item->symbol_group,
-                'volume' => $item->volume,
-                'net_rebate' => $item->net_rebate,
-                'rebate' => $item->rebate,
-                'slug' => $item->accountType->slug,
-                'color' => $item->accountType->color,
-            ];
-        });
+            // Group and structure the response data
+            $listing = $allRecords->groupBy(function ($item) {
+                return $item['user_id'] . '-' . $item['meta_login'];
+            })->map(function ($group) use ($allSymbolGroups) {
+                $group = collect($group);
 
-        // Group data by user_id and meta_login
-        $rebateListing = $data->groupBy(function ($item) {
-            return $item['user_id'] . '-' . $item['meta_login'];
-        })->map(function ($group) use ($allSymbolGroups) {
-            $group = collect($group);
+                // Calculate overall volume and rebate
+                $volume = $group->sum('volume');
+                $rebate = $group->sum('rebate');
 
-            // Calculate overall volume and rebate for the user
-            $volume = $group->sum('volume');
-            $rebate = $group->sum('rebate');
+                // Group data by execution date and summarize
+                $summary = $group->groupBy('execute_at')->map(function ($executeGroup) use ($allSymbolGroups) {
+                    $executeGroup = collect($executeGroup);
 
-            // Create summary by execute_at
-            $summary = $group->groupBy('execute_at')->map(function ($executeGroup) use ($allSymbolGroups) {
-                $executeGroup = collect($executeGroup);
+                    // Calculate details for each symbol group
+                    $details = $executeGroup->groupBy('symbol_group')->map(function ($symbolGroupItems) use ($allSymbolGroups) {
+                        $symbolGroupId = $symbolGroupItems->first()['symbol_group'];
 
-                // Calculate details for each symbol group
-                $details = $executeGroup->groupBy('symbol_group')->map(function ($symbolGroupItems) use ($allSymbolGroups) {
-                    $symbolGroupId = $symbolGroupItems->first()['symbol_group'];
+                        return [
+                            'id' => $symbolGroupId,
+                            'name' => $allSymbolGroups[$symbolGroupId] ?? 'Unknown',
+                            'volume' => $symbolGroupItems->sum('volume'),
+                            'net_rebate' => $symbolGroupItems->first()['net_rebate'] ?? 0,
+                            'rebate' => $symbolGroupItems->sum('rebate'),
+                        ];
+                    })->values();
+
+                    // Add missing symbol groups as zeroed entries
+                    foreach ($allSymbolGroups as $symbolGroupId => $symbolGroupName) {
+                        if (!$details->pluck('id')->contains($symbolGroupId)) {
+                            $details->push([
+                                'id' => $symbolGroupId,
+                                'name' => $symbolGroupName,
+                                'volume' => 0,
+                                'net_rebate' => 0,
+                                'rebate' => 0,
+                            ]);
+                        }
+                    }
+
+                    // Sort details by symbol group ID
+                    $details = $details->sortBy('id')->values();
 
                     return [
-                        'id' => $symbolGroupId,
-                        'name' => $allSymbolGroups[$symbolGroupId] ?? 'Unknown',
-                        'volume' => $symbolGroupItems->sum('volume'),
-                        'net_rebate' => $symbolGroupItems->first()['net_rebate'] ?? 0,
-                        'rebate' => $symbolGroupItems->sum('rebate'),
+                        'execute_at' => $executeGroup->first()['execute_at'],
+                        'volume' => $executeGroup->sum('volume'),
+                        'rebate' => $executeGroup->sum('rebate'),
+                        'details' => $details,
                     ];
                 })->values();
 
-                // Add missing symbol groups with volume, net_rebate, and rebate as 0
-                foreach ($allSymbolGroups as $symbolGroupId => $symbolGroupName) {
-                    if (!$details->pluck('id')->contains($symbolGroupId)) {
-                        $details->push([
-                            'id' => $symbolGroupId,
-                            'name' => $symbolGroupName,
-                            'volume' => 0,
-                            'net_rebate' => 0,
-                            'rebate' => 0,
-                        ]);
-                    }
-                }
-
-                // Sort the symbol group details array to match the order of symbol groups
-                $details = $details->sortBy('id')->values();
-
+                // Return grouped rebate listing item
                 return [
-                    'execute_at' => $executeGroup->first()['execute_at'],
-                    'volume' => $executeGroup->sum('volume'),
-                    'rebate' => $executeGroup->sum('rebate'),
-                    'details' => $details,
+                    'user_id' => $group->first()['user_id'],
+                    'name' => $group->first()['name'],
+                    'email' => $group->first()['email'],
+                    'id_number' => $group->first()['id_number'],
+                    'meta_login' => $group->first()['meta_login'],
+                    'volume' => $volume,
+                    'rebate' => $rebate,
+                    'summary' => $summary,
+                    'slug' => $group->first()['slug'],
+                    'color' => $group->first()['color'],
                 ];
             })->values();
 
-            // Return rebateListing item with summaries included
-            return [
-                'user_id' => $group->first()['user_id'],
-                'name' => $group->first()['name'],
-                'email' => $group->first()['email'],
-                'meta_login' => $group->first()['meta_login'],
-                'volume' => $volume,
-                'rebate' => $rebate,
-                'summary' => $summary,
-                'slug' => $group->first()['slug'],
-                'color' => $group->first()['color'],
-            ];
-        })->values();
+            if ($request->has(key: 'exportStatus') && $request->exportStatus == true) {
+                return Excel::download(new RebateListingExport($listing), now() . '-rebate-summary.xlsx');
+            };
 
-        // Return JSON response with combined rebateListing and details
-        return response()->json([
-            'rebateListing' => $rebateListing
-        ]);
+            $page = LengthAwarePaginator::resolveCurrentPage();
+            $perPage = $data['rows'] ?? 10;  // Default to 10 rows if not specified
+            $paginatedListing = new LengthAwarePaginator(
+                $listing->slice(($page - 1) * $perPage, $perPage)->values(),
+                $listing->count(),
+                $perPage,
+                $page,
+                ['path' => LengthAwarePaginator::resolveCurrentPath()]
+            );
+
+            // Return the final response with lazy loading and pagination
+            return response()->json([
+                'success' => true,
+                'data' => $paginatedListing,
+            ]);
+        }
+
+        return response()->json(['success' => false, 'data' => []]);
     }
 
     public function getGroupTransaction(Request $request)

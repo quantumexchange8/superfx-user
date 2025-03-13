@@ -14,6 +14,7 @@ import Dropdown from "primevue/dropdown";
 
 const props = defineProps({
   uplines: Array,
+  downlines: Array
 });
 
 const tabs = ref([
@@ -76,7 +77,7 @@ const groups = ref(['dollar', 'cent']);
                 :is="tabs[activeIndex]?.component"
                 v-bind="{
                     ...(selectedType === 'rebate' ? { uplines: props.uplines } : {}),
-                    ...(selectedType === 'summary' ? { group: selectedGroup } : {})
+                    ...(selectedType === 'summary' ? { group: selectedGroup, downlines: props.downlines } : {})
                 }"
             />
         </div>

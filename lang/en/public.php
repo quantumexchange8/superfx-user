@@ -599,4 +599,7 @@ return [
     "dollar" => "Dollar",
     "total_trade_volume_in_cent" => "Total Trade Volume in Cent",
     "total_rebate_earned_in_cent" => "Total Rebate Earned in Cent",
+    "filter_id" => "Filter by IDs",
+    "id_selected" => "IDs Selected",
+    "category" => "Category",
 ];
