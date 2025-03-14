@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Models\RebateAllocation;
 use App\Models\TradeRebateSummary;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RebateHistoryExport;
@@ -35,7 +36,7 @@ class ReportController extends Controller
 
         // Retrieve date parameters from request
         $search = $request->query('search');
-        $downline_id = $request->query('user_id');
+        $downline_ids = array_filter(explode(',', $request->input('user_id', '')));
         $startDate = $request->query('startDate');
         $endDate = $request->query('endDate');
         $group = $request->query('group');
@@ -56,10 +57,16 @@ class ReportController extends Controller
             });
         }
         
-        if ($downline_id) {
-            $query->where('user_id', $downline_id);
+        if (!empty($downline_ids)) {
+            $users = User::whereIn('id', $downline_ids)->get();
 
+            $allDownlineIds = $users->flatMap(function ($user) {
+                return array_merge([$user->id], $user->getChildrenIds());
+            })->unique()->toArray();
+        
+            $query->whereIn('user_id', $allDownlineIds);
         }
+
         // Apply date filter based on availability of startDate and/or endDate
         if ($startDate && $endDate) {
             // Both startDate and endDate are provided
@@ -162,7 +169,14 @@ class ReportController extends Controller
             if (!empty($data['filters']['downline_id']['value'])) {
                 $downlineIds = $data['filters']['downline_id']['value'];    
             
-                $query->whereIn('user_id', $downlineIds);
+                $users = User::whereIn('id', $downlineIds)->get();
+
+                $allDownlineIds = $users->flatMap(function ($user) {
+                    return array_merge([$user->id], $user->getChildrenIds());
+                })->unique()->toArray();
+            
+                $query->whereIn('user_id', $allDownlineIds);
+                // $query->whereIn('user_id', $downlineIds);
             }
 
             if ($data['sortField'] && $data['sortOrder']) {

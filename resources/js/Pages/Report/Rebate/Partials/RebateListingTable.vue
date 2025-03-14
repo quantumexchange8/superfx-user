@@ -65,7 +65,7 @@ watch(selectedDate, (newDateRange) => {
         }
     }
     else {
-        console.warn('Invalid date range format:', newDateRange);
+        // console.warn('Invalid date range format:', newDateRange);
     }
 })
 
@@ -109,7 +109,7 @@ const loadLazyData = (event) => {
 
     lazyParams.value = { ...lazyParams.value, first: event?.first || first.value };
     lazyParams.value.filters = filters.value;
-    console.log(filters.value)
+    // console.log(filters.value)
     try {
         setTimeout(async () => {
             // console.log(lazyParams.value.filters)
@@ -192,6 +192,7 @@ const clearFilter = () => {
         name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
         start_date: { value: null, matchMode: FilterMatchMode.EQUALS },
         end_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+        group: { value: props.selectedGroup, matchMode: FilterMatchMode.EQUALS },
         downline_id: { value: [], matchMode: FilterMatchMode.EQUALS },
     };
 
