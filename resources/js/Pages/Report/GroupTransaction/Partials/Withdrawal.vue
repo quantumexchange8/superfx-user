@@ -14,26 +14,47 @@ import Empty from '@/Components/Empty.vue';
 import Loader from "@/Components/Loader.vue";
 import {IconSearch, IconCircleXFilled, IconAdjustments, IconX} from '@tabler/icons-vue';
 import Calendar from 'primevue/calendar';
+import debounce from "lodash/debounce.js";
+import OverlayPanel from 'primevue/overlaypanel';
+import MultiSelect from 'primevue/multiselect';
 
 const { formatDate, formatDateTime, formatAmount } = transactionFormat();
 
-// Define props
 const props = defineProps({
-    selectedType: String,
+    downlines: Array
 });
 
-const selectedType = ref(props.selectedType);
+const selectedType = ref('deposit');
 const transactions = ref();
 const groupTotalDeposit = ref(0);
 const groupTotalWithdrawal = ref(0);
 const groupTotalNetBalance = ref(0);
 const dt = ref();
 const loading = ref(false);
+const downlines = ref();
+const selectedDownlines = ref([]);
+const totalRecords = ref(0);
+const first = ref(0);
+const exportStatus = ref(false);
 
-// Watch for changes in selectedType and call getResults when it changes
-watch(() => props.selectedType, (newType) => {
-    selectedType.value = newType
-}, { immediate: true });
+// Watch for changes in props.uplines
+watch(() => props.downlines, (newDownlines) => {
+    // Whenever uplines change, update the local ref
+    downlines.value = newDownlines;
+  }, { immediate: true }
+);
+
+// Watch for individual changes in upline_id and apply it to filters
+watch([selectedDownlines], (newDownlineId) => {
+
+    if (newDownlineId !== null) {
+        // note to self: check a proper usage for multiselect to prevent below solution
+        const flatDownlineId = Array.isArray(newDownlineId[0]) ? newDownlineId[0] : newDownlineId;
+        const downlineIds = flatDownlineId.map(downline => downline.value);
+
+        filters.value['downline_id'].value = downlineIds;
+    }
+});
 
 // Get current date
 const today = new Date();
@@ -45,86 +66,178 @@ const maxDate = ref(today);
 // Reactive variable for selected date range
 const selectedDate = ref([minDate.value, maxDate.value]);
 
-const getResults = async (selectedDate = []) => {
-    loading.value = true;
-
-    try {
-        const [startDate, endDate] = selectedDate;
-        let url = `/report/getGroupTransaction?type=${selectedType.value}`;
-
-        // Append date range to the URL if it's not null
-        if (startDate && endDate) {
-            url += `&startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}`;
-        }
-
-        const response = await axios.get(url);
-        transactions.value = response.data.transactions;
-        groupTotalDeposit.value = response.data.groupTotalDeposit;
-        groupTotalWithdrawal.value = response.data.groupTotalWithdrawal;
-        groupTotalNetBalance.value = response.data.groupTotalNetBalance;
-
-    } catch (error) {
-        console.error('Error fetching rebate listing data:', error);
-    } finally {
-        loading.value = false;
-    }
-};
-
-const exportCSV = () => {
-    dt.value.exportCSV();
-};
+const filters = ref({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    start_date: { value: minDate.value, matchMode: FilterMatchMode.EQUALS },
+    end_date: { value: maxDate.value, matchMode: FilterMatchMode.EQUALS },
+    type: { value: 'withdrawal', matchMode: FilterMatchMode.EQUALS },
+    downline_id: { value: [], matchMode: FilterMatchMode.EQUALS },
+});
 
 // Clear date selection
 const clearDate = () => {
     selectedDate.value = null;
+    filters.value['start_date'].value = null;
+    filters.value['end_date'].value = null;
 };
 
-// Watch for changes in selectedType
-watch(() => props.selectedType, (newType) => {
-    selectedType.value = newType;
-    getResults(selectedDate.value); // Fetch results based on new type and current date range
-});
-
-// Watch for changes in selectedDate
 watch(selectedDate, (newDateRange) => {
     if (Array.isArray(newDateRange)) {
         const [startDate, endDate] = newDateRange;
-        if (startDate && endDate) {
-            getResults([startDate, endDate]);
-        } else if (startDate || endDate) {
-            getResults([startDate || endDate, endDate || startDate]);
-        } else {
-            getResults([]);
+        filters.value['start_date'].value = startDate;
+        filters.value['end_date'].value = endDate;
+
+        if (startDate !== null && endDate !== null) {
+            loadLazyData();
         }
-    } else if (newDateRange == null) {
-        getResults([]);
-    } else {
-        console.warn('Invalid date range format:', newDateRange);
     }
-});
+    else {
+        // console.warn('Invalid date range format:', newDateRange);
+    }
+})
 
 const emit = defineEmits(['updateGroupTotals']);
 
-watch([groupTotalDeposit, groupTotalWithdrawal, groupTotalNetBalance], ([deposit, withdrawal, netBalance]) => {
-    emit('updateGroupTotals', {
-        deposit,
-        withdrawal,
-        netBalance
-    });
-});
+const lazyParams = ref({});
+
+const loadLazyData = (event) => {
+    loading.value = true;
+
+    lazyParams.value = { ...lazyParams.value, first: event?.first || first.value };
+    lazyParams.value.filters = filters.value;
+    // console.log(filters.value)
+    try {
+        setTimeout(async () => {
+            // console.log(lazyParams.value.filters)
+            const params = {
+                page: JSON.stringify(event?.page + 1),
+                sortField: event?.sortField,
+                sortOrder: event?.sortOrder,
+                include: [],
+                lazyEvent: JSON.stringify(lazyParams.value)
+            };
+            const url = route('report.getGroupTransaction', params);
+            const response = await fetch(url);
+            const results = await response.json();
+            
+            transactions.value = results?.transactions?.data;
+            totalRecords.value = results?.transactions?.total;
+            groupTotalDeposit.value = results.groupTotalDeposit;
+            groupTotalWithdrawal.value = results.groupTotalWithdrawal;
+            groupTotalNetBalance.value = results.groupTotalNetBalance;
+            emit('updateGroupTotals', {
+                deposit: groupTotalDeposit.value,
+                withdrawal: groupTotalWithdrawal.value,
+                netBalance: groupTotalNetBalance.value
+            });
+            loading.value = false;
+            // console.log(rebateListing)
+            // console.log(results)
+        }, 100);
+    }  catch (e) {
+        rebateListing.value = [];
+        totalRecords.value = 0;
+        loading.value = false;
+    }
+};
+
+const onPage = (event) => {
+    lazyParams.value = event;
+    loadLazyData(event);
+};
+const onSort = (event) => {
+    lazyParams.value = event;
+    loadLazyData(event);
+};
+const onFilter = (event) => {
+    lazyParams.value.filters = filters.value ;
+    loadLazyData(event);
+};
+
+const op = ref();
+const filterCount = ref(0);
+const toggle = (event) => {
+    op.value.toggle(event);
+}
 
 onMounted(() => {
-    getResults(selectedDate.value);
-})
+    lazyParams.value = {
+        first: dt.value.first,
+        rows: dt.value.rows,
+        sortField: null,
+        sortOrder: null,
+        filters: filters.value
+    };
 
-const filters = ref({
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+    // console.log(selectedDate)
+    loadLazyData();
 });
+
+watch(
+    filters.value['global'],
+    debounce(() => {
+        loadLazyData();
+    }, 300)
+);
 
 const clearFilterGlobal = () => {
     filters.value['global'].value = null;
 }
+
+const clearFilter = () => {
+    filters.value = {
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        start_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+        end_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+        type: { value: 'withdrawal', matchMode: FilterMatchMode.EQUALS },
+        downline_id: { value: [], matchMode: FilterMatchMode.EQUALS },
+    };
+
+    selectedDate.value = [minDate.value, maxDate.value];
+    selectedDownlines.value = [];
+};
+
+watch(filters, debounce(() => {
+    filterCount.value = Object.values(filters.value).filter(filter => {
+        if (Array.isArray(filter)) {
+            return filter.length > 0;
+        }
+        return filter !== null && filter !== '';
+    }).length;
+
+    loadLazyData();
+}, 500), { deep: true });
+
+const exportListing = () => {
+    exportStatus.value = true;
+    loading.value = true;
+
+    lazyParams.value = { ...lazyParams.value, first: event?.first || first.value };
+
+    if (filters.value) {
+        lazyParams.value.filters = { ...filters.value };
+    } else {
+        lazyParams.value.filters = {};
+    }
+
+    let params = {
+        include: [],
+        lazyEvent: JSON.stringify(lazyParams.value),
+        exportStatus: true,
+    };
+
+    const url = route('report.getGroupTransaction', params);
+
+    try {
+
+        window.location.href = url;
+    } catch (e) {
+        console.error('Error occurred during export:', e);
+    } finally {
+        loading.value = false;
+        exportStatus.value = false;
+    }
+};
 </script>
 
 <template>
@@ -132,7 +245,9 @@ const clearFilterGlobal = () => {
         <DataTable
             v-model:filters="filters"
             :value="transactions"
-            :paginator="transactions?.length > 0"
+            lazy
+            paginator
+            :totalRecords="totalRecords"
             removableSort
             :rows="10"
             :rowsPerPageOptions="[10, 20, 50, 100]"
@@ -143,6 +258,9 @@ const clearFilterGlobal = () => {
             selectionMode="single"
             ref="dt"
             :loading="loading"
+            @page="onPage($event)"
+            @sort="onSort($event)"
+            @filter="onFilter($event)"
             >
             <template #header>
                 <div class="flex flex-col md:flex-row gap-3 items-center self-stretch">
@@ -160,30 +278,23 @@ const clearFilterGlobal = () => {
                         </div>
                     </div>
                     <div class="w-full flex flex-col gap-3 md:flex-row">
-                        <div class="relative w-full md:w-[272px]">
-                            <Calendar
-                                v-model="selectedDate"
-                                selectionMode="range"
-                                :manualInput="false"
-                                :maxDate="maxDate"
-                                dateFormat="dd/mm/yy"
-                                showIcon
-                                iconDisplay="input"
-                                placeholder="yyyy/mm/dd - yyyy/mm/dd"
-                                class="w-full md:w-[272px]"
-                            />
-                            <div
-                                v-if="selectedDate && selectedDate.length > 0"
-                                class="absolute top-2/4 -mt-2.5 right-4 text-gray-400 select-none cursor-pointer bg-white"
-                                @click="clearDate"
+                        <div class="w-full md:w-[272px]">
+                            <Button
+                                variant="gray-outlined"
+                                @click="toggle"
+                                size="sm"
+                                class="flex gap-3 items-center justify-center py-3 w-full md:w-[130px]"
                             >
-                                <IconX size="20" />
-                            </div>
+                                <IconAdjustments size="20" color="#0C111D" stroke-width="1.25" />
+                                <div class="text-sm text-gray-950 font-medium">
+                                    {{ $t('public.filter') }}
+                                </div>
+                            </Button>
                         </div>
                         <div class="w-full flex justify-end">
                             <Button
                                 variant="primary-outlined"
-                                @click="exportCSV($event)"
+                                @click="exportListing()"
                                 class="w-full md:w-auto"
                             >
                                 {{ $t('public.export') }}
@@ -279,4 +390,75 @@ const clearFilterGlobal = () => {
         </DataTable>
     </div>
 
+    <OverlayPanel ref="op">
+        <div class="flex flex-col gap-8 w-72 py-5 px-4">
+            <div class="flex flex-col gap-2 items-center self-stretch">
+                <div class="flex self-stretch text-xs text-gray-950 font-semibold">
+                    {{ $t('public.filter_date') }}
+                </div>
+                <div class="flex flex-col relative gap-1 self-stretch">
+                    <Calendar
+                        v-model="selectedDate"
+                        selectionMode="range"
+                        :manualInput="false"
+                        :maxDate="maxDate"
+                        dateFormat="dd/mm/yy"
+                        showIcon
+                        iconDisplay="input"
+                        placeholder="yyyy/mm/dd - yyyy/mm/dd"
+                        class="w-full md:w-[272px]"
+                    />
+                    <div
+                        v-if="selectedDate && selectedDate.length > 0"
+                        class="absolute top-2/4 -mt-2.5 right-4 text-gray-400 select-none cursor-pointer bg-white"
+                        @click="clearDate"
+                    >
+                        <IconX size="20" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Upline-->
+            <div class="flex flex-col gap-2 items-center self-stretch">
+                <div class="flex self-stretch text-xs text-gray-950 font-semibold">
+                    {{ $t('public.filter_id') }}
+                </div>
+                <MultiSelect
+                    v-model="selectedDownlines"
+                    :options="downlines"
+                    :placeholder="$t('public.filter_id')"
+                    :maxSelectedLabels="1"
+                    :selectedItemsLabel="`${selectedDownlines.length} ${$t('public.id_selected')}`"
+                    class="w-full md:w-64 font-normal pl-3"
+                    :showToggleAll="false"
+                >
+                    <template #option="{option}">
+                        <span>{{ option.id_number }}</span>
+                    </template>
+                    <template #value>
+                        <div v-if="selectedDownlines.length === 1">
+                            <span>{{ selectedDownlines[0].id_number }}</span>
+                        </div>
+                        <span v-else-if="selectedDownlines.length > 1">
+                            {{ selectedDownlines.length }} {{ $t('public.id_selected') }}
+                        </span>
+                        <span v-else class="text-gray-400">
+                            {{ $t('public.filter_id') }}
+                        </span>
+                    </template>
+                </MultiSelect>
+            </div>
+
+            <div class="flex w-full">
+                <Button
+                    type="button"
+                    variant="primary-outlined"
+                    class="flex justify-center w-full"
+                    @click="clearFilter()"
+                >
+                    {{ $t('public.clear_all') }}
+                </Button>
+            </div>
+        </div>
+    </OverlayPanel>
 </template>

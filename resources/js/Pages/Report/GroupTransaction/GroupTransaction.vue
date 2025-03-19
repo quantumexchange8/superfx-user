@@ -11,6 +11,10 @@ import { transactionFormat } from "@/Composables/index.js";
 
 const { formatAmount } = transactionFormat();
 
+const props = defineProps({
+    downlines: Array,
+});
+
 // Initialize the form with user data
 const user = usePage().props.auth.user;
 
@@ -95,6 +99,6 @@ const handleUpdateGroupTotals = ({ deposit, withdrawal, netBalance }) => {
             </TabView>
         </div>
         
-        <component :is="tabs[activeIndex]?.component" :key="selectedType" :selectedType="selectedType" @updateGroupTotals="handleUpdateGroupTotals" />
+        <component :is="tabs[activeIndex]?.component" :key="selectedType" @updateGroupTotals="handleUpdateGroupTotals" :downlines="props.downlines"/>
     </div>
 </template>

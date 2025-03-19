@@ -189,7 +189,6 @@ const emit = defineEmits(['update-filters']);
 const clearFilter = () => {
     filters.value = {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
         start_date: { value: null, matchMode: FilterMatchMode.EQUALS },
         end_date: { value: null, matchMode: FilterMatchMode.EQUALS },
         group: { value: props.selectedGroup, matchMode: FilterMatchMode.EQUALS },

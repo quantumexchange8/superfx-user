@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RebateHistoryExport;
 use App\Exports\RebateListingExport;
+use App\Exports\GroupTransactionExport;
 use App\Services\DropdownOptionService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -303,39 +304,105 @@ class ReportController extends Controller
 
     public function getGroupTransaction(Request $request)
     {
-        $user = Auth::user();
-        $groupIds = $user->getChildrenIds();
-        $groupIds[] = $user->id;
+        if ($request->has('lazyEvent')) {
+            $user = Auth::user();
+            $groupIds = $user->getChildrenIds();
+            $groupIds[] = $user->id;
 
-        $transactionType = $request->query('type');
-        $startDate = $request->query('startDate');
-        $endDate = $request->query('endDate');
+            $data = json_decode($request->only(['lazyEvent'])['lazyEvent'], true);
 
-        $transactionTypes = match($transactionType) {
-            'deposit' => ['deposit', 'balance_in'],
-            'withdrawal' => ['withdrawal', 'balance_out'],
-            default => []
-        };
+            $transactionType = $data['filters']['type']['value'];
 
-        // Initialize the query for transactions
-        $query = Transaction::whereIn('transaction_type', $transactionTypes)
-            ->where('status', 'successful')
+            $transactionTypes = match($transactionType) {
+                'deposit' => ['deposit', 'balance_in'],
+                'withdrawal' => ['withdrawal', 'balance_out'],
+                default => []
+            };
+
+            $query = Transaction::where('status', 'successful')
             ->whereIn('user_id', $groupIds);
 
-        // Apply date filter based on availability of startDate and/or endDate
-        if ($startDate && $endDate) {
-            $query->whereDate('created_at', '>=', $startDate)
-                  ->whereDate('created_at', '<=', $endDate);
-        } else {
-            // Handle cases where startDate or endDate are not provided
-            $query->whereDate('created_at', '>=', '2024-01-01'); // Default start date
-        }
+            if ($data['filters']['global']['value']) {
+                $keyword = $data['filters']['global']['value'];
 
-        $transactions = $query->latest()->get()
-            ->map(function ($transaction) {
+                $query->where(function ($q) use ($keyword) {
+                    $q->whereHas('user', function ($query) use ($keyword) {
+                        $query->where(function ($q) use ($keyword) {
+                            $q->where('name', 'like', '%' . $keyword . '%')
+                            ->orWhere('email', 'like', '%' . $keyword . '%')
+                            ->orWhere('id_number', 'like', '%' . $keyword . '%');
+                        });
+                    })->orWhere('to_meta_login', 'like', '%' . $keyword . '%');
+                });
+            }
+
+            if (!empty($data['filters']['start_date']['value']) && !empty($data['filters']['end_date']['value'])) {
+                $start_date = Carbon::parse($data['filters']['start_date']['value'])->addDay()->startOfDay();
+                $end_date = Carbon::parse($data['filters']['end_date']['value'])->addDay()->endOfDay();
+
+                $query->whereBetween('created_at', [$start_date, $end_date]);
+            }
+
+            if (!empty($data['filters']['downline_id']['value'])) {
+                $downlineIds = $data['filters']['downline_id']['value'];    
+            
+                $users = User::whereIn('id', $downlineIds)->get();
+
+                $allDownlineIds = $users->flatMap(function ($user) {
+                    return array_merge([$user->id], $user->getChildrenIds());
+                })->unique()->toArray();
+            
+                $query->whereIn('user_id', $allDownlineIds);
+                // $query->whereIn('user_id', $downlineIds);
+            }
+
+            $group_total_deposit = (clone $query)->whereIn('transaction_type', ['deposit', 'balance_in'])->sum('transaction_amount');
+            $group_total_withdrawal = (clone $query)->whereIn('transaction_type', ['withdrawal', 'balance_out'])->sum('transaction_amount');
+
+            $query->whereIn('transaction_type', $transactionTypes);
+
+            if ($data['sortField'] && $data['sortOrder']) {
+                $order = $data['sortOrder'] == 1 ? 'asc' : 'desc';
+                $query->orderBy($data['sortField'], $order);
+            } else {
+                $query->orderByDesc('id');
+            }
+
+            $exportQuery = clone $query;
+
+            if ($request->has('exportStatus') && $request->exportStatus == true) {
+                $transactions = $exportQuery->latest()->get()->map(function ($transaction) {
+                    $metaLogin = $transaction->to_meta_login ?: $transaction->from_meta_login;
+            
+                    if ($transaction->transaction_type === 'withdrawal') {
+                        switch ($transaction->category) {
+                            case 'trading_account':
+                                $metaLogin = $transaction->from_meta_login;
+                                break;
+                            case 'rebate_wallet':
+                                $metaLogin = 'rebate';
+                                break;
+                            case 'bonus_wallet':
+                                $metaLogin = 'bonus';
+                                break;
+                        }
+                    }
+
+                    return [
+                        'created_at' => $transaction->created_at->format('Y-m-d H:i:s'),  // Format the date
+                        'name' => $transaction->user->name,
+                        'email' => $transaction->user->email,
+                        'meta_login' => $metaLogin,
+                        'amount' => (float) $transaction->transaction_amount,
+                    ];
+                });
+            
+                return Excel::download(new GroupTransactionExport($transactions), now() . '-group-transaction-report.xlsx');
+            }
+            
+            $transactions = $query->paginate($data['rows'])->through(function ($transaction) {
                 $metaLogin = $transaction->to_meta_login ?: $transaction->from_meta_login;
-
-                // Check for withdrawal type and modify meta_login based on category
+            
                 if ($transaction->transaction_type === 'withdrawal') {
                     switch ($transaction->category) {
                         case 'trading_account':
@@ -349,8 +416,7 @@ class ReportController extends Controller
                             break;
                     }
                 }
-
-                // Return the formatted transaction data
+            
                 return [
                     'created_at' => $transaction->created_at,
                     'user_id' => $transaction->user_id,
@@ -361,31 +427,16 @@ class ReportController extends Controller
                 ];
             });
 
-        // Calculate total deposit and withdrawal amounts for the given date range
-        $group_total_deposit = Transaction::whereIn('transaction_type', ['deposit', 'balance_in'])
-            ->where('status', 'successful')
-            ->whereIn('user_id', $groupIds)
-            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                $query->whereDate('created_at', '>=', $startDate)
-                      ->whereDate('created_at', '<=', $endDate);
-            })
-            ->sum('transaction_amount');
+            return response()->json([
+                'success' => true,
+                'transactions' => $transactions,
+                'groupTotalDeposit' => $group_total_deposit,
+                'groupTotalWithdrawal' => $group_total_withdrawal,
+                'groupTotalNetBalance' => $group_total_deposit - $group_total_withdrawal,
+            ]);
+        }
 
-        $group_total_withdrawal = Transaction::whereIn('transaction_type', ['withdrawal', 'balance_out'])
-            ->where('status', 'successful')
-            ->whereIn('user_id', $groupIds)
-            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                $query->whereDate('created_at', '>=', $startDate)
-                      ->whereDate('created_at', '<=', $endDate);
-            })
-            ->sum('transaction_amount');
-
-        return response()->json([
-            'transactions' => $transactions,
-            'groupTotalDeposit' => $group_total_deposit,
-            'groupTotalWithdrawal' => $group_total_withdrawal,
-            'groupTotalNetBalance' => $group_total_deposit - $group_total_withdrawal,
-        ]);
+        return response()->json(['success' => false, 'data' => []]);
     }
 
     public function getRebateHistory(Request $request)
