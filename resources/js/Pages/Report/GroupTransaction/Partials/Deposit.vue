@@ -1,30 +1,30 @@
 <script setup>
 import InputText from 'primevue/inputtext';
 import Button from '@/Components/Button.vue';
-import { CalendarIcon } from '@/Components/Icons/outline'
-import { ref, onMounted, watch, watchEffect, computed } from "vue";
-import {usePage} from '@inertiajs/vue3';
-import Dialog from 'primevue/dialog';
+import {onMounted, ref, watch} from "vue";
+import StatusBadge from "@/Components/StatusBadge.vue";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import DefaultProfilePhoto from "@/Components/DefaultProfilePhoto.vue";
 import {FilterMatchMode} from "primevue/api";
-import { transactionFormat } from '@/Composables/index.js';
+import {generalFormat, transactionFormat} from '@/Composables/index.js';
 import Empty from '@/Components/Empty.vue';
 import Loader from "@/Components/Loader.vue";
-import {IconSearch, IconCircleXFilled, IconAdjustments, IconX} from '@tabler/icons-vue';
+import {IconAdjustments, IconCircleXFilled, IconSearch, IconX} from '@tabler/icons-vue';
 import Calendar from 'primevue/calendar';
 import debounce from "lodash/debounce.js";
 import OverlayPanel from 'primevue/overlaypanel';
 import MultiSelect from 'primevue/multiselect';
+import Slider from "primevue/slider";
+import RadioButton from "primevue/radiobutton";
 
-const { formatDate, formatDateTime, formatAmount } = transactionFormat();
+const { formatDate, formatAmount } = transactionFormat();
+const {formatRgbaColor} = generalFormat();
 
 const props = defineProps({
     downlines: Array
 });
 
-const selectedType = ref('deposit');
 const transactions = ref();
 const groupTotalDeposit = ref(0);
 const groupTotalWithdrawal = ref(0);
@@ -36,6 +36,8 @@ const selectedDownlines = ref([]);
 const totalRecords = ref(0);
 const first = ref(0);
 const exportStatus = ref(false);
+const minFilterAmount = ref(0);
+const maxFilterAmount = ref(10000);
 
 // Watch for changes in props.uplines
 watch(() => props.downlines, (newDownlines) => {
@@ -50,9 +52,7 @@ watch([selectedDownlines], (newDownlineId) => {
     if (newDownlineId !== null) {
         // note to self: check a proper usage for multiselect to prevent below solution
         const flatDownlineId = Array.isArray(newDownlineId[0]) ? newDownlineId[0] : newDownlineId;
-        const downlineIds = flatDownlineId.map(downline => downline.value);
-
-        filters.value['downline_id'].value = downlineIds;
+        filters.value['downline_id'].value = flatDownlineId.map(downline => downline.value);
     }
 });
 
@@ -72,6 +72,8 @@ const filters = ref({
     end_date: { value: maxDate.value, matchMode: FilterMatchMode.EQUALS },
     type: { value: 'deposit', matchMode: FilterMatchMode.EQUALS },
     downline_id: { value: [], matchMode: FilterMatchMode.EQUALS },
+    role: { value: null, matchMode: FilterMatchMode.EQUALS },
+    amount: { value: [minFilterAmount.value, maxFilterAmount.value], matchMode: FilterMatchMode.BETWEEN },
 });
 
 // Clear date selection
@@ -199,6 +201,8 @@ const clearFilter = () => {
         end_date: { value: null, matchMode: FilterMatchMode.EQUALS },
         type: { value: 'deposit', matchMode: FilterMatchMode.EQUALS },
         downline_id: { value: [], matchMode: FilterMatchMode.EQUALS },
+        role: { value: null, matchMode: FilterMatchMode.EQUALS },
+        amount: { value: [minFilterAmount.value, maxFilterAmount.value], matchMode: FilterMatchMode.BETWEEN },
     };
 
     selectedDate.value = [minDate.value, maxDate.value];
@@ -206,11 +210,14 @@ const clearFilter = () => {
 };
 
 watch(filters, debounce(() => {
-    filterCount.value = Object.values(filters.value).filter(filter => {
-        if (Array.isArray(filter)) {
-            return filter.length > 0;
+    const amountFilterIsActive = filters.value.amount.value[0] !== minFilterAmount.value || filters.value.amount.value[1] !== maxFilterAmount.value;
+
+    filterCount.value = Object.entries(filters.value).filter(([key, filter]) => {
+        // Exclude amount filter if it covers the entire range
+        if (filter === filters.value.amount) {
+            return amountFilterIsActive;
         }
-        return filter !== null && filter !== '';
+        return filter.value !== null;
     }).length;
 
     loadLazyData();
@@ -341,8 +348,15 @@ const exportListing = () => {
                                 <DefaultProfilePhoto />
                             </div>
                             <div class="flex flex-col items-start">
-                                <div class="font-medium">
-                                    {{ slotProps.data.name }}
+                                <div class="flex gap-1 items-center">
+                                    <div class="font-medium">
+                                        {{ slotProps.data.name }}
+                                    </div>
+                                    <div class="flex py-1.5 items-center flex-1">
+                                        <StatusBadge :value="slotProps.data.role">
+                                            {{ $t(`public.${slotProps.data.role}`) }}
+                                        </StatusBadge>
+                                    </div>
                                 </div>
                                 <div class="text-gray-500 text-xs">
                                     {{ slotProps.data.email }}
@@ -352,22 +366,56 @@ const exportListing = () => {
                     </template>
                 </Column>
                 <Column
+                    field="id_number"
+                    sortable
+                    :header="`${$t('public.id_number')}`"
+                    class="hidden md:table-cell"
+                >
+                    <template #body="slotProps">
+                        {{ slotProps.data.id_number }}
+                    </template>
+                </Column>
+                <Column
                     field="meta_login"
                     :header="`${$t('public.account')}`"
                     class="hidden md:table-cell"
                 >
                     <template #body="slotProps">
-                        {{ slotProps.data.meta_login }}
+                        <div class="flex items-center content-center gap-3 flex-grow relative">
+                            <span >{{ slotProps.data.meta_login }}</span>
+                            <div
+                                class="flex px-2 py-1 justify-center items-center text-xs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
+                                :style="{
+                                    backgroundColor: formatRgbaColor(slotProps.data.account_type.color, 0.15),
+                                    color: `#${slotProps.data.account_type.color}`,
+                                }"
+                            >
+                                {{ $t(`public.${slotProps.data.account_type.slug}`) }}
+                            </div>
+                        </div>
                     </template>
                 </Column>
                 <Column
                     field="transaction_amount"
                     sortable
-                    :header="`${$t('public.amount')}`"
+                    :header="`${$t('public.amount')} ($)`"
                     class="hidden md:table-cell"
                 >
                     <template #body="slotProps">
                         {{ formatAmount(slotProps.data.transaction_amount) }}
+                    </template>
+                </Column>
+                <Column
+                    field="status"
+                    :header="`${$t('public.status')}`"
+                    class="hidden md:table-cell"
+                >
+                    <template #body="slotProps">
+                        <div class="flex py-1.5 items-center flex-1">
+                            <StatusBadge :value="slotProps.data.status">
+                                {{ $t(`public.${slotProps.data.status}`) }}
+                            </StatusBadge>
+                        </div>
                     </template>
                 </Column>
                 <Column class="md:hidden">
@@ -453,6 +501,39 @@ const exportListing = () => {
                         </span>
                     </template>
                 </MultiSelect>
+            </div>
+
+            <!-- Filter Role-->
+            <div class="flex flex-col gap-2 items-center self-stretch">
+                <div class="flex self-stretch text-xs text-gray-950 font-semibold">
+                    {{ $t('public.filter_role_header') }}
+                </div>
+                <div class="flex flex-col gap-1 self-stretch">
+                    <div class="flex items-center gap-2 text-sm text-gray-950">
+                        <RadioButton v-model="filters['role'].value" inputId="role_member" value="member" class="w-4 h-4" />
+                        <label for="role_member">{{ $t('public.member') }}</label>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-gray-950">
+                        <RadioButton v-model="filters['role'].value" inputId="role_agent" value="ib" class="w-4 h-4" />
+                        <label for="role_agent">{{ $t('public.ib') }}</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Amount-->
+            <div class="flex flex-col gap-2 items-center self-stretch">
+                <div class="flex self-stretch text-xs text-gray-950 font-semibold">
+                    {{ $t('public.filter_amount_header') }}
+                </div>
+                <div class="flex flex-col items-center gap-1 self-stretch">
+                    <div class="h-4 self-stretch">
+                        <Slider v-model="filters['amount'].value" :min="minFilterAmount" :max="maxFilterAmount" range />
+                    </div>
+                    <div class="flex justify-between items-center self-stretch">
+                        <span class="text-gray-950 text-sm">${{ minFilterAmount }}</span>
+                        <span class="text-gray-950 text-sm">${{ maxFilterAmount }}</span>
+                    </div>
+                </div>
             </div>
 
             <div class="flex w-full">

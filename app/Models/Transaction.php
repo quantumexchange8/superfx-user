@@ -69,12 +69,12 @@ class Transaction extends Model
         return $this->belongsTo(Wallet::class, 'to_wallet_id', 'id');
     }
 
-    public function from_meta_login(): BelongsTo
+    public function from_account(): BelongsTo
     {
         return $this->belongsTo(TradingAccount::class, 'from_meta_login', 'meta_login');
     }
 
-    public function to_meta_login(): BelongsTo
+    public function to_account(): BelongsTo
     {
         return $this->belongsTo(TradingAccount::class, 'to_meta_login', 'meta_login');
     }

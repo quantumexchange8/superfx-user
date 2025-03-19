@@ -57,14 +57,14 @@ class ReportController extends Controller
                 })->orWhere('meta_login', 'like', '%' . $search . '%');
             });
         }
-        
+
         if (!empty($downline_ids)) {
             $users = User::whereIn('id', $downline_ids)->get();
 
             $allDownlineIds = $users->flatMap(function ($user) {
                 return array_merge([$user->id], $user->getChildrenIds());
             })->unique()->toArray();
-        
+
             $query->whereIn('user_id', $allDownlineIds);
         }
 
@@ -160,29 +160,29 @@ class ReportController extends Controller
             }
 
             if (!empty($data['filters']['group']['value'])) {
-                $group = $data['filters']['group']['value']; 
-            
+                $group = $data['filters']['group']['value'];
+
                 $query->whereHas('accountType', function ($q) use ($group) {
                     $q->where('category', $group);
                 });
             }
 
             if (!empty($data['filters']['downline_id']['value'])) {
-                $downlineIds = $data['filters']['downline_id']['value'];    
-            
+                $downlineIds = $data['filters']['downline_id']['value'];
+
                 $users = User::whereIn('id', $downlineIds)->get();
 
                 $allDownlineIds = $users->flatMap(function ($user) {
                     return array_merge([$user->id], $user->getChildrenIds());
                 })->unique()->toArray();
-            
+
                 $query->whereIn('user_id', $allDownlineIds);
                 // $query->whereIn('user_id', $downlineIds);
             }
 
             if ($data['sortField'] && $data['sortOrder']) {
                 $order = $data['sortOrder'] == 1 ? 'asc' : 'desc';
-            
+
                 // Check if sorting by a related field (like "name")
                 if (in_array($data['sortField'], ['name', 'email', 'id_number'])) {
                     $query->join('users', 'trade_rebate_summaries.user_id', '=', 'users.id')
@@ -319,8 +319,14 @@ class ReportController extends Controller
                 default => []
             };
 
-            $query = Transaction::where('status', 'successful')
-            ->whereIn('user_id', $groupIds);
+            $query = Transaction::with([
+                'to_account',
+                'from_account',
+                'to_account.account_type',
+                'from_account.account_type',
+            ])
+                ->where('status', 'successful')
+                ->whereIn('user_id', $groupIds);
 
             if ($data['filters']['global']['value']) {
                 $keyword = $data['filters']['global']['value'];
@@ -344,16 +350,28 @@ class ReportController extends Controller
             }
 
             if (!empty($data['filters']['downline_id']['value'])) {
-                $downlineIds = $data['filters']['downline_id']['value'];    
-            
+                $downlineIds = $data['filters']['downline_id']['value'];
+
                 $users = User::whereIn('id', $downlineIds)->get();
 
                 $allDownlineIds = $users->flatMap(function ($user) {
                     return array_merge([$user->id], $user->getChildrenIds());
                 })->unique()->toArray();
-            
+
                 $query->whereIn('user_id', $allDownlineIds);
-                // $query->whereIn('user_id', $downlineIds);
+            }
+
+            if (!empty($data['filters']['role']['value'])) {
+                $query->whereHas('user', function ($query) use ($data) {
+                    $query->where('role', $data['filters']['role']['value']);
+                });
+            }
+
+            if (isset($data['filters']['amount']['value'][0], $data['filters']['amount']['value'][1])) {
+                $minAmount = $data['filters']['amount']['value'][0];
+                $maxAmount = $data['filters']['amount']['value'][1];
+
+                $query->whereBetween('amount', [$minAmount, $maxAmount]);
             }
 
             $group_total_deposit = (clone $query)->whereIn('transaction_type', ['deposit', 'balance_in'])->sum('transaction_amount');
@@ -373,11 +391,13 @@ class ReportController extends Controller
             if ($request->has('exportStatus') && $request->exportStatus == true) {
                 $transactions = $exportQuery->latest()->get()->map(function ($transaction) {
                     $metaLogin = $transaction->to_meta_login ?: $transaction->from_meta_login;
-            
+                    $account_type = $transaction->to_account->account_type->name;
+
                     if ($transaction->transaction_type === 'withdrawal') {
                         switch ($transaction->category) {
                             case 'trading_account':
                                 $metaLogin = $transaction->from_meta_login;
+                                $account_type = $transaction->from_account->account_type->name;
                                 break;
                             case 'rebate_wallet':
                                 $metaLogin = 'rebate';
@@ -392,38 +412,51 @@ class ReportController extends Controller
                         'created_at' => $transaction->created_at->format('Y-m-d H:i:s'),  // Format the date
                         'name' => $transaction->user->name,
                         'email' => $transaction->user->email,
+                        'id_number' => $transaction->user->id_number,
+                        'role' => $transaction->user->role,
                         'meta_login' => $metaLogin,
+                        'account_type' => $account_type,
                         'amount' => (float) $transaction->transaction_amount,
                     ];
                 });
-            
+
                 return Excel::download(new GroupTransactionExport($transactions), now() . '-group-transaction-report.xlsx');
             }
-            
+
             $transactions = $query->paginate($data['rows'])->through(function ($transaction) {
                 $metaLogin = $transaction->to_meta_login ?: $transaction->from_meta_login;
-            
+
                 if ($transaction->transaction_type === 'withdrawal') {
+                    $account_type = '';
                     switch ($transaction->category) {
                         case 'trading_account':
                             $metaLogin = $transaction->from_meta_login;
+                            $account_type = $transaction->from_account->account_type;
                             break;
                         case 'rebate_wallet':
                             $metaLogin = 'rebate';
+                            $account_type = '';
                             break;
                         case 'bonus_wallet':
                             $metaLogin = 'bonus';
+                            $account_type = '';
                             break;
                     }
+                } else {
+                    $account_type = $transaction->to_account->account_type;
                 }
-            
+
                 return [
                     'created_at' => $transaction->created_at,
                     'user_id' => $transaction->user_id,
                     'name' => $transaction->user->name,
                     'email' => $transaction->user->email,
+                    'id_number' => $transaction->user->id_number,
+                    'role' => $transaction->user->role,
                     'meta_login' => $metaLogin,
+                    'account_type' => $account_type,
                     'transaction_amount' => $transaction->transaction_amount,
+                    'status' => $transaction->status,
                 ];
             });
 
@@ -482,9 +515,9 @@ class ReportController extends Controller
             }
 
             if (!empty($data['filters']['upline_id']['value'])) {
-                $uplineIds = $data['filters']['upline_id']['value'];    
+                $uplineIds = $data['filters']['upline_id']['value'];
                 Log::debug('Upline IDs:', $uplineIds); // Log the extracted IDs
-            
+
                 $query->whereIn('upline_user_id', $uplineIds);
             }
 

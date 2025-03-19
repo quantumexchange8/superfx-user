@@ -25,7 +25,10 @@ class GroupTransactionExport implements FromCollection, WithHeadings
             trans('public.date'),
             trans('public.name'),
             trans('public.email'),
+            trans('public.id_number'),
+            trans('public.role'),
             trans('public.account'),
+            trans('public.account_type'),
             trans('public.amount') . ' ($)',
         ];
     }
