@@ -37,7 +37,7 @@ const totalRecords = ref(0);
 const first = ref(0);
 const exportStatus = ref(false);
 const minFilterAmount = ref(0);
-const maxFilterAmount = ref(10000);
+const maxFilterAmount = ref(100000);
 
 // Watch for changes in props.uplines
 watch(() => props.downlines, (newDownlines) => {
@@ -338,7 +338,6 @@ const exportListing = () => {
                 </Column>
                 <Column
                     field="name"
-                    sortable
                     :header="$t('public.name')"
                     class="hidden md:table-cell"
                 >
@@ -367,7 +366,6 @@ const exportListing = () => {
                 </Column>
                 <Column
                     field="id_number"
-                    sortable
                     :header="`${$t('public.id_number')}`"
                     class="hidden md:table-cell"
                 >
@@ -396,7 +394,7 @@ const exportListing = () => {
                     </template>
                 </Column>
                 <Column
-                    field="transaction_amount"
+                    field="amount"
                     sortable
                     :header="`${$t('public.amount')} ($)`"
                     class="hidden md:table-cell"
