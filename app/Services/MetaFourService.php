@@ -17,7 +17,7 @@ class MetaFourService {
     private string $login = "10012";
     private string $password = "Test1234.";
     private string $baseURL = "https://superfin-live.currenttech.pro/api";
-    // private string $demoURL = "https://superfin-demo.currenttech.pro/api";
+     private string $demoURL = "https://superfin-demo.currenttech.pro/api";
 
     private string $environmentName = "live";
 
@@ -26,10 +26,6 @@ class MetaFourService {
     public function __construct()
     {
         $token2 = "SuperFin-Live^" . Carbon::now('Asia/Riyadh')->toDateString() . "&SuperGlobal";
-
-        // $this->baseURL = app()->environment('production')
-        //     ? 'https://superfin-live.currenttech.pro/api'
-        //     : 'https://superfin-demo.currenttech.pro/api';
 
         $this->token = hash('sha256', $token2);
     }
@@ -192,6 +188,52 @@ class MetaFourService {
         ]);
 
         $this->getUserInfo($meta_login);
+    }
+
+    public function createDemoUser(UserModel $user, $group, $leverage, $mainPassword, $investorPassword)
+    {
+        $payload = [
+            'master_password' => $mainPassword,
+            'investor_password' => $investorPassword,
+            'name' => $user->name,
+            'group' => $group,
+            'leverage' => $leverage,
+            'email' => $user->email,
+        ];
+
+        $jsonPayload = json_encode($payload);
+
+        return Http::acceptJson()
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $this->token,
+            ])
+            ->withBody($jsonPayload, 'application/json')
+            ->post($this->demoURL . "/createuser");
+    }
+
+    public function createDemoTrade($meta_login, $amount, $comment, $type, $expire_date)
+    {
+        $payload = [
+            'meta_login' => $meta_login,
+            'type' => $type,
+            'amount' => (float) $amount,
+            'expiration_date' => $expire_date,
+            'comment' => $comment,
+        ];
+
+        $jsonPayload = json_encode($payload);
+
+        $dealResponse = Http::acceptJson()
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $this->token,
+            ])
+            ->withBody($jsonPayload, 'application/json')
+            ->post($this->demoURL . "/transaction");
+
+        $dealResponse = $dealResponse->json();
+        Log::debug($dealResponse);
+
+        return $dealResponse;
     }
 }
 

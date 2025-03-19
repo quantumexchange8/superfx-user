@@ -15,6 +15,7 @@ import IconField from 'primevue/iconfield';
 import Dropdown from "primevue/dropdown";
 import {IconCircleCheckFilled, IconInfoOctagonFilled, IconX} from '@tabler/icons-vue';
 import { wTrans } from "laravel-vue-i18n";
+import OpenDemoAccount from "@/Pages/TradingAccount/Partials/OpenDemoAccount.vue";
 
 const props = defineProps({
     terms: Object
@@ -123,17 +124,6 @@ const openLiveAccount = () => {
     });
 };
 
-const openDemoAccount = () => {
-    demoAccountForm.post(route('account.create_demo_account'), {
-        onSuccess: () => {
-            closeDialog('demo', demoAccountForm);
-        },
-        onError: (error) => {
-            console.error('Failed to open live account.', error);
-        },
-    });
-};
-
 const buttonSize = computed(() => {
     return window.innerWidth < 768 ? 'sm' : 'base';
 })
@@ -193,22 +183,14 @@ const noticeVisible = ref(true);
                             <Button
                                 type="button"
                                 variant="primary-flat"
-                                class="w-[142px] md:w-1/2"
+                                class="w-[142px] md:w-full"
                                 :size="buttonSize"
                                 @click="openDialog('live', liveAccountForm)"
                                 :disabled="!accountOptions.length"
                             >
                                 {{ $t('public.live_account') }}
                             </Button>
-                            <!-- <Button
-                                type="button"
-                                variant="primary-outlined"
-                                class="w-[142px] md:w-full"
-                                :size="buttonSize"
-                                @click="openDialog('demo', demoAccountForm)"
-                            >
-                                {{ $t('public.demo_account') }}
-                            </Button> -->
+                            <OpenDemoAccount />
                         </div>
                     </div>
                 </div>
@@ -291,59 +273,6 @@ const noticeVisible = ref(true);
         </div>
         <div class="flex justify-end items-center pt-5 gap-4 self-stretch md:pt-7">
             <Button variant="primary-flat" type="button" :class="{ 'opacity-25': liveAccountForm.processing }" :disabled="liveAccountForm.processing" @click.prevent="openLiveAccount">{{ $t('public.open_live_account') }}</Button>
-        </div>
-    </Dialog>
-
-    <Dialog v-model:visible="showDemoAccountDialog" modal :header="$t('public.open_demo_account')" class="dialog-xs sm:dialog-sm">
-        <div class="flex flex-col items-center gap-8 self-stretch sm:gap-10">
-            <div class="flex flex-col items-center gap-5 self-stretch">
-                <div class="flex flex-col items-start gap-2 self-stretch">
-                    <InputLabel for="amount" :value="$t('public.amount')" />
-                    <IconField iconPosition="left" class="w-full">
-                        <div class="text-gray-950 text-sm">$</div>
-                        <InputText
-                            id="amount"
-                            type="number"
-                            class="block w-full"
-                            v-model="demoAccountForm.amount"
-                            :placeholder="$t('public.amount_placeholder')"
-                            :invalid="!!demoAccountForm.errors.amount"
-                        />
-                    </IconField>
-                    <InputError :message="demoAccountForm.errors.amount" />
-                </div>
-                <div class="flex flex-col items-start gap-1 self-stretch">
-                    <InputLabel for="leverage" :value="$t('public.leverage')" />
-                    <Dropdown
-                        v-model="demoAccountForm.leverage"
-                        :options="leverages"
-                        optionLabel="name"
-                        optionValue="value"
-                        class="w-full"
-                        scroll-height="236px"
-                        :invalid="!!demoAccountForm.errors.leverage"
-                    >
-                    <template #value="slotProps">
-                        <span :class="{
-                            'text-gray-400': !!accountOptions.find(account => account.account_group === selectedAccountType)?.leverage
-                        }">
-                            {{ leverages.find(option => option.value === slotProps.value)?.name || slotProps.value || $t('public.leverages_placeholder') }}
-                        </span>
-                    </template>
-                    </Dropdown>
-                </div>
-            </div>
-            <!-- <div class="self-stretch">
-                <div class="text-gray-500 text-xs">{{ $t('public.agreement_text') }}
-                    <TermsAndCondition
-                        :termsLabel="$t('public.trading_account_agreement')"
-                        :terms="terms"
-                    />.
-                </div>
-            </div> -->
-        </div>
-        <div class="flex justify-end items-center pt-5 gap-4 self-stretch md:pt-7">
-            <Button variant="primary-flat" type="button" :class="{ 'opacity-25': demoAccountForm.processing }" :disabled="demoAccountForm.processing" @click.prevent="openDemoAccount">{{ $t('public.open_demo_account') }}</Button>
         </div>
     </Dialog>
 </template>

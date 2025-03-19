@@ -130,13 +130,23 @@ class TradingAccountController extends Controller
 
     public function create_demo_account(Request $request)
     {
-        // Validate the request data
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'amount' => 'required|numeric',
-            'leverage' => 'required|integer|min:1',
-        ]);
+        Validator::make($request->all(), [
+            'amount' => ['required'],
+            'leverage' => ['required'],
+        ])->setAttributeNames([
+            'amount' => trans('public.amount'),
+            'leverage' => trans('public.leverage'),
+        ])->validate();
 
+        $user = $request->user();
+
+        $mainPassword = Str::random(8);
+        $investorPassword = Str::random(8);
+        $data = (new MetaFourService)->createDemoUser($user, 'Standard', $request->leverage, $mainPassword, $investorPassword);
+
+        (new MetaFourService)->createDemoTrade($data['meta_login'], $request->amount, "Demo Deposit #" . $data['meta_login'], 'balance', '');
+
+        Mail::to($user->email)->send(new CreateAccountMail($user, $mainPassword, $investorPassword, $data['meta_login'], 'SuperFin-Demo'));
 
         return back()->with('toast', [
             'title' => trans("public.toast_open_demo_account_success"),
@@ -495,7 +505,7 @@ class TradingAccountController extends Controller
 
         try {
             if ($account) {
-                if ($request->password_type == 'master') { 
+                if ($request->password_type == 'master') {
                     (new MetaFourService)->changeMasterPassword($account->meta_login, $request->password);
                     Mail::to($user->email)->send(new ChangePasswordMail($user, $request->password_type, $request->password, $account->meta_login));
 
