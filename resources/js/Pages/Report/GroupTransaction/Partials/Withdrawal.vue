@@ -25,7 +25,7 @@ const props = defineProps({
     downlines: Array
 });
 
-const selectedType = ref('deposit');
+const selectedType = ref('withdrawal');
 const transactions = ref();
 const groupTotalDeposit = ref(0);
 const groupTotalWithdrawal = ref(0);
@@ -65,12 +65,15 @@ const minDate = ref(new Date(today.getFullYear(), today.getMonth(), 1));
 const maxDate = ref(today);
 
 // Reactive variable for selected date range
-const selectedDate = ref([minDate.value, maxDate.value]);
+const selectedDate = ref(null);
+const selectedApproveDate = ref([minDate.value, maxDate.value]);
 
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    start_date: { value: minDate.value, matchMode: FilterMatchMode.EQUALS },
-    end_date: { value: maxDate.value, matchMode: FilterMatchMode.EQUALS },
+    start_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+    end_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+    approve_start_date: { value: minDate.value, matchMode: FilterMatchMode.EQUALS },
+    approve_end_date: { value: maxDate.value, matchMode: FilterMatchMode.EQUALS },
     type: { value: 'withdrawal', matchMode: FilterMatchMode.EQUALS },
     downline_id: { value: [], matchMode: FilterMatchMode.EQUALS },
     role: { value: null, matchMode: FilterMatchMode.EQUALS },
@@ -84,11 +87,32 @@ const clearDate = () => {
     filters.value['end_date'].value = null;
 };
 
+const clearApproveDate = () => {
+    selectedApproveDate.value = null;
+    filters.value['approve_start_date'].value = null;
+    filters.value['approve_end_date'].value = null;
+};
+
 watch(selectedDate, (newDateRange) => {
     if (Array.isArray(newDateRange)) {
         const [startDate, endDate] = newDateRange;
         filters.value['start_date'].value = startDate;
         filters.value['end_date'].value = endDate;
+
+        if (startDate !== null && endDate !== null) {
+            loadLazyData();
+        }
+    }
+    else {
+        // console.warn('Invalid date range format:', newDateRange);
+    }
+})
+
+watch(selectedApproveDate, (newDateRange) => {
+    if (Array.isArray(newDateRange)) {
+        const [startDate, endDate] = newDateRange;
+        filters.value['approve_start_date'].value = startDate;
+        filters.value['approve_end_date'].value = endDate;
 
         if (startDate !== null && endDate !== null) {
             loadLazyData();
@@ -192,13 +216,16 @@ const clearFilter = () => {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
         start_date: { value: null, matchMode: FilterMatchMode.EQUALS },
         end_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+        approve_start_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+        approve_end_date: { value: null, matchMode: FilterMatchMode.EQUALS },
         type: { value: 'withdrawal', matchMode: FilterMatchMode.EQUALS },
         downline_id: { value: [], matchMode: FilterMatchMode.EQUALS },
         role: { value: null, matchMode: FilterMatchMode.EQUALS },
         amount: { value: [minFilterAmount.value, maxFilterAmount.value], matchMode: FilterMatchMode.BETWEEN },
     };
 
-    selectedDate.value = [minDate.value, maxDate.value];
+    selectedDate.value = null;
+    selectedApproveDate.value = [minDate.value, maxDate.value];
     selectedDownlines.value = [];
 };
 
@@ -411,6 +438,15 @@ const exportListing = () => {
                         </div>
                     </template>
                 </Column>
+                <Column
+                    field="approved_at"
+                    :header="`${$t('public.approve_date')}`"
+                    class="hidden md:table-cell"
+                >
+                    <template #body="slotProps">
+                        {{ formatDate(slotProps.data.approved_at) }}
+                    </template>
+                </Column>
                 <Column class="md:hidden">
                     <template #body="slotProps">
                         <div class="flex items-center justify-between">
@@ -423,7 +459,7 @@ const exportListing = () => {
                                         {{ slotProps.data.name }}
                                     </div>
                                     <div class="text-gray-500 text-sm">
-                                        {{ `${formatDate(slotProps.data.created_at)}&nbsp;|&nbsp;${slotProps.data.meta_login}` }}
+                                        {{ `${formatDate(slotProps.data.approved_at)}&nbsp;|&nbsp;${slotProps.data.meta_login}` }}
                                     </div>
                                 </div>
                             </div>
@@ -459,6 +495,32 @@ const exportListing = () => {
                         v-if="selectedDate && selectedDate.length > 0"
                         class="absolute top-2/4 -mt-2.5 right-4 text-gray-400 select-none cursor-pointer bg-white"
                         @click="clearDate"
+                    >
+                        <IconX size="20" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2 items-center self-stretch">
+                <div class="flex self-stretch text-xs text-gray-950 font-semibold">
+                    {{ $t('public.filter_approve_date') }}
+                </div>
+                <div class="flex flex-col relative gap-1 self-stretch">
+                    <Calendar
+                        v-model="selectedApproveDate"
+                        selectionMode="range"
+                        :manualInput="false"
+                        :maxDate="maxDate"
+                        dateFormat="dd/mm/yy"
+                        showIcon
+                        iconDisplay="input"
+                        placeholder="yyyy/mm/dd - yyyy/mm/dd"
+                        class="w-full md:w-[272px]"
+                    />
+                    <div
+                        v-if="selectedApproveDate && selectedApproveDate.length > 0"
+                        class="absolute top-2/4 -mt-2.5 right-4 text-gray-400 select-none cursor-pointer bg-white"
+                        @click="clearApproveDate"
                     >
                         <IconX size="20" />
                     </div>

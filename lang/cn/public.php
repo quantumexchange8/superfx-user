@@ -607,4 +607,6 @@ return [
     "link_placeholder" => "在这里获取账户链接...",
     "link_activated" => "账户类型已成功激活.",
     "invalid_link" => "无效的账户类型分享链接.",
+    "approve_date" => "批准日期",
+    "filter_approve_date" => "按批准日期筛选",
 ];

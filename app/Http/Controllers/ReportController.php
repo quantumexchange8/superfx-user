@@ -349,6 +349,13 @@ class ReportController extends Controller
                 $query->whereBetween('created_at', [$start_date, $end_date]);
             }
 
+            if (!empty($data['filters']['approve_start_date']['value']) && !empty($data['filters']['approve_end_date']['value'])) {
+                $approve_start_date = Carbon::parse($data['filters']['approve_start_date']['value'])->addDay()->startOfDay();
+                $approve_end_date = Carbon::parse($data['filters']['approve_end_date']['value'])->addDay()->endOfDay();
+
+                $query->whereBetween('approved_at', [$approve_start_date, $approve_end_date]);
+            }
+
             if (!empty($data['filters']['downline_id']['value'])) {
                 $downlineIds = $data['filters']['downline_id']['value'];
 
@@ -389,11 +396,11 @@ class ReportController extends Controller
             $exportQuery = clone $query;
 
             if ($request->has('exportStatus') && $request->exportStatus == true) {
-                $transactions = $exportQuery->latest()->get()->map(function ($transaction) {
+                $transactions = $exportQuery->latest()->get()->map(function ($transaction) use ($transactionType    ) {
                     $metaLogin = $transaction->to_meta_login ?: $transaction->from_meta_login;
-                    $account_type = $transaction->to_account->account_type->name;
 
                     if ($transaction->transaction_type === 'withdrawal') {
+                        $account_type = '';
                         switch ($transaction->category) {
                             case 'trading_account':
                                 $metaLogin = $transaction->from_meta_login;
@@ -401,14 +408,18 @@ class ReportController extends Controller
                                 break;
                             case 'rebate_wallet':
                                 $metaLogin = 'rebate';
+                                $account_type = '';
                                 break;
                             case 'bonus_wallet':
                                 $metaLogin = 'bonus';
+                                $account_type = '';
                                 break;
                         }
+                    } else {
+                        $account_type = $transaction->to_account->account_type->name;
                     }
 
-                    return [
+                    $data = [
                         'created_at' => $transaction->created_at->format('Y-m-d H:i:s'),  // Format the date
                         'name' => $transaction->user->name,
                         'email' => $transaction->user->email,
@@ -418,9 +429,15 @@ class ReportController extends Controller
                         'account_type' => $account_type,
                         'amount' => (float) $transaction->transaction_amount,
                     ];
+
+                    if ($transactionType === 'withdrawal') {
+                        $data['approved_at'] = $transaction->approved_at ?? null;
+                    }
+
+                    return $data;
                 });
 
-                return Excel::download(new GroupTransactionExport($transactions), now() . '-group-transaction-report.xlsx');
+                return Excel::download(new GroupTransactionExport($transactions, $transactionType), now() . "-group-{$transactionType}-report.xlsx");
             }
 
             $transactions = $query->paginate($data['rows'])->through(function ($transaction) {
@@ -457,6 +474,7 @@ class ReportController extends Controller
                     'account_type' => $account_type,
                     'transaction_amount' => $transaction->transaction_amount,
                     'status' => $transaction->status,
+                    'approved_at' => $transaction->approved_at ?? null,
                 ];
             });
 

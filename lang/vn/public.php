@@ -607,4 +607,6 @@ return [
     "link_placeholder" => "Nhận liên kết tài khoản tại đây...",
     "link_activated" => "Loại tài khoản đã được kích hoạt thành công.",
     "invalid_link" => "Liên kết chia sẻ loại tài khoản không hợp lệ.",
+    "approve_date" => "Ngày phê duyệt",
+    "filter_approve_date" => "Lọc theo ngày phê duyệt",
 ];

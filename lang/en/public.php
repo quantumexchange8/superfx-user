@@ -609,4 +609,6 @@ return [
     "link_placeholder" => "Get account link here...",
     "link_activated" => "Account Type has been activated!.",
     "invalid_link" => "Invalid Account Type Access Link.",
+    "approve_date" => "Approve Date",
+    "filter_approve_date" => "Filter by Approve Date",
 ];

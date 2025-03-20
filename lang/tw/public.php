@@ -607,4 +607,6 @@ return [
     "link_placeholder" => "在這裡獲取帳戶連結...",
     "link_activated" => "帳戶類型已成功啟用.",
     "invalid_link" => "無效的帳戶類型分享連結.",
+    "approve_date" => "批准日期",
+    "filter_approve_date" => "按批准日期篩選",
 ];
