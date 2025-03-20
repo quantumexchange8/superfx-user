@@ -600,4 +600,11 @@ return [
     "filter_id" => "筛选 ID",
     "id_selected" => "已选择的 ID",
     "category" => "类别",
+    "generate_account_link" => "生成账户链接",
+    "generate" => "生成",
+    "downline" => "下线",
+    "downline_placeholder" => "选择下线",
+    "link_placeholder" => "在这里获取账户链接...",
+    "link_activated" => "账户类型已成功激活.",
+    "invalid_link" => "无效的账户类型分享链接.",
 ];

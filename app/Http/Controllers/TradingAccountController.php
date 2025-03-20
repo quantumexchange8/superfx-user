@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use App\Models\AccountType;
+use App\Models\AccountTypeAccess;
 use App\Models\AssetRevoke;
 use App\Models\TradingUser;
 use App\Models\Transaction;
@@ -36,6 +37,8 @@ use Illuminate\Validation\ValidationException;
 use App\Models\PaymentGateway;
 use App\Models\CurrencyConversionRate;
 use function Symfony\Component\Translation\t;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 
 class TradingAccountController extends Controller
 {
@@ -58,11 +61,36 @@ class TradingAccountController extends Controller
         ]);
     }
 
+    public function access($account_link = null): RedirectResponse
+    {
+        $accountTypeAccess = AccountTypeAccess::where('user_id', Auth::id())->where('status', 'inactive')->get();
+
+        foreach ($accountTypeAccess as $access) {
+            $generatedLink = md5(Auth::user()->email . $access->accountType->account_group);
+
+            if ($generatedLink === $account_link) {
+                $access->update(['status' => 'active']); 
+
+                return redirect()->route('account')->with('toast', [
+                    'title' => trans("public.link_activated"),
+                    'type' => 'success',
+                ]);
+            }
+        }
+
+        return redirect()->route('account')->with('toast', [
+            'title' => trans("public.invalid_link"),
+            'type' => 'error',
+        ]);
+    }
+
     public function getOptions()
     {
         $locale = app()->getLocale();
+        $user = Auth::user();
 
-        $accountOptions = AccountType::whereNot('account_group', 'Demo Account')
+        if ($user->id_number == 'IB00000') {
+            $accountOptions = AccountType::whereNot('account_group', 'Demo Account')
             ->where('status', 'active')
             ->get()
             ->map(function ($accountType) use ($locale) {
@@ -76,6 +104,29 @@ class TradingAccountController extends Controller
                     // 'descriptions' => $translations[$locale],
                 ];
             });
+        } else {
+            $accountOptions = AccountType::whereNot('account_group', 'Demo Account')
+                ->where('status', 'active')
+                ->where(function ($query) {
+                    $query->where('account_group', 'Standard')
+                        ->orWhereHas('accountTypeAccess', function ($subQuery) {
+                            $subQuery->where('status', 'active')
+                                    ->where('user_id', Auth::id());
+                        });
+                })
+                ->get()
+                ->map(function ($accountType) use ($locale) {
+                    // $translations = json_decode($accountType->descriptions, true);
+                    return [
+                        'id' => $accountType->id,
+                        'name' => $accountType->name,
+                        'slug' => $accountType->slug,
+                        'account_group' => $accountType->account_group,
+                        'leverage' => $accountType->leverage,
+                        // 'descriptions' => $translations[$locale],
+                    ];
+                });
+        }
 
         $conversionRate = CurrencyConversionRate::firstWhere('base_currency', 'VND')->deposit_rate;
 
@@ -83,6 +134,7 @@ class TradingAccountController extends Controller
             'leverages' => (new DropdownOptionService())->getLeveragesOptions(),
             'transferOptions' => (new DropdownOptionService())->getInternalTransferOptions(),
             'walletOptions' => (new DropdownOptionService())->getWalletOptions(),
+            'downlineOptions' => (new DropdownOptionService())->getDownlines(),
             'accountOptions' => $accountOptions,
             'conversionRate' => $conversionRate,
         ]);
@@ -972,5 +1024,36 @@ class TradingAccountController extends Controller
     public function depositReturn(Request $request)
     {
         return to_route('dashboard');
+    }
+
+    public function generate_link(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'accountType' => ['required', 'exists:account_types,account_group'],
+            'downline_id' => ['required']
+        ])->setAttributeNames([
+            'accountType' => trans('public.account_type'),
+            'downline_id' => trans('public.downline'),
+        ]);
+        $validator->validate();
+
+        // Retrieve the account type by account_group
+        $accountType = AccountType::where('account_group', $request->accountType)->first();
+        $user = User::where('id', $request->downline_id)->first();
+
+        $access = AccountTypeAccess::firstOrCreate([
+            'account_type_id' => $accountType->id,
+            'user_id' => $request->downline_id,
+        ]);
+
+        $link = md5($user->email . $accountType->account_group);
+
+        return redirect()->back()->with([
+            'success' => true,
+            'message' => 'Link generated successfully.',
+            'notification' => [
+                'link' => $link,
+            ],
+        ]);
     }
 }

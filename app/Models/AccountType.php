@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AccountType extends Model
 {
@@ -24,4 +25,9 @@ class AccountType extends Model
         'descriptions',
         'edited_by',
     ];
+
+    public function accountTypeAccess(): HasMany
+    {
+        return $this->hasMany(AccountTypeAccess::class, 'account_type_id', 'id');
+    }
 }

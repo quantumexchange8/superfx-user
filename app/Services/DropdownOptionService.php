@@ -215,4 +215,20 @@ class DropdownOptionService
                 ];
             });
     }
+
+    public function getDownlines(): Collection
+    {
+        return User::where('upline_id', Auth::id())
+            ->select('id', 'name', 'email', 'id_number')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'value' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'id_number' => $user->id_number,
+                    // 'profile_photo' => $user->getFirstMediaUrl('profile_photo')
+                ];
+            });
+    }
 }

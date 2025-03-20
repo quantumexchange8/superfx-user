@@ -600,4 +600,11 @@ return [
     "filter_id" => "篩選 ID",
     "id_selected" => "已選擇的 ID",
     "category" => "類別",
+    "generate_account_link" => "生成帳戶連結",
+    "generate" => "生成",
+    "downline" => "下線",
+    "downline_placeholder" => "選擇下線",
+    "link_placeholder" => "在這裡獲取帳戶連結...",
+    "link_activated" => "帳戶類型已成功啟用.",
+    "invalid_link" => "無效的帳戶類型分享連結.",
 ];

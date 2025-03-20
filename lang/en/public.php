@@ -602,4 +602,9 @@ return [
     "filter_id" => "Filter by IDs",
     "id_selected" => "IDs Selected",
     "category" => "Category",
+    "generate_account_link" => "Generate Account Link",
+    "generate" => "Generate",
+    "downline" => "Downline",
+    "downline_placeholder" => "Select Downline",
+    "link_placeholder" => "Get account link here...",
 ];

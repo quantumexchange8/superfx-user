@@ -137,6 +137,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->belongsTo(Country::class, 'country_id', 'id');
     }
 
+    public function accountTypeAccess(): HasMany
+    {
+        return $this->hasMany(AccountTypeAccess::class, 'user_id', 'id');
+    }
+
     // Logs
     public function getActivitylogOptions(): LogOptions
     {

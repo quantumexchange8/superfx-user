@@ -76,6 +76,7 @@ Route::middleware(['auth','verified'])->group(function () {
      */
     Route::prefix('account')->group(function () {
         Route::get('/', [TradingAccountController::class, 'index'])->name('account');
+        Route::get('/access/{account_link?}', [TradingAccountController::class, 'access'])->name('account.access');
         Route::get('/getOptions', [TradingAccountController::class, 'getOptions'])->name('account.getOptions');
         Route::get('/getAccountReport', [TradingAccountController::class, 'getAccountReport'])->name('account.getAccountReport');
         Route::get('/getLiveAccount', [TradingAccountController::class, 'getLiveAccount'])->name('account.getLiveAccount');
@@ -88,6 +89,7 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::post('/internal_transfer', [TradingAccountController::class, 'internal_transfer'])->name('account.internal_transfer');
         Route::post('/revoke_account', [TradingAccountController::class, 'revoke_account'])->name('account.revoke_account');
         Route::delete('/delete_account', [TradingAccountController::class, 'delete_account'])->name('account.delete_account');
+        Route::post('/generate_link', [TradingAccountController::class, 'generate_link'])->name('account.generate_link');
     });
 
     /**
