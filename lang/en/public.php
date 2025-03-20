@@ -607,4 +607,6 @@ return [
     "downline" => "Downline",
     "downline_placeholder" => "Select Downline",
     "link_placeholder" => "Get account link here...",
+    "link_activated" => "Account Type has been activated!.",
+    "invalid_link" => "Invalid Account Type Access Link.",
 ];
