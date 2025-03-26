@@ -23,10 +23,11 @@ class PasswordController extends Controller
             'current_password' => trans('public.current_password'),
             'password' => trans('public.password'),
         ]);
-        $validator->validate();
+
+        $validated = $validator->validate();
 
         $request->user()->update([
-            'password' => Hash::make($validator['password']),
+            'password' => Hash::make($validated['password']),
         ]);
 
         return back()->with('toast', [
