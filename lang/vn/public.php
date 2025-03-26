@@ -273,8 +273,8 @@ return [
     "paginator_caption" => "Hiển thị {first} đến {last} trong tổng số {totalRecords} mục",
     "standard_account" => "Tài khoản tiêu chuẩn",
     "premium_account" => "Tài khoản quản lý đầu tư",
-    "referral_qr_code" => "Mã QR giới thiệu",
-    "referral_caption" => "Quét mã QR này để đăng ký tài khoản mới.",
+    "referral_code": "Mã giới thiệu",
+    "referral_caption": "Chia sẻ những liên kết này để người khác đăng ký tài khoản mới."
     "download_qr_to_invite_friends" => "Tải mã QR xuống và gửi để mời bạn bè!",
     "or_access_the_link_below" => "Hoặc truy cập liên kết bên dưới",
     "search_agent" => "Tìm kiếm đại lý",

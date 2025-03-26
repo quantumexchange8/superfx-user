@@ -6,7 +6,6 @@ import TabView from 'primevue/tabview';
 import TabPanel from 'primevue/tabpanel';
 import DollarAccounts from '@/Pages/TradingAccount/Partials/DollarAccounts.vue';
 import CentAccounts from '@/Pages/TradingAccount/Partials/CentAccounts.vue';
-import GenerateLink from '@/Pages/TradingAccount/Partials/GenerateLink.vue';
 import { usePage, useForm } from "@inertiajs/vue3";
 import Dialog from 'primevue/dialog';
 import InputError from '@/Components/InputError.vue';
@@ -14,7 +13,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import InputText from 'primevue/inputtext';
 import IconField from 'primevue/iconfield';
 import Dropdown from "primevue/dropdown";
-import {IconCircleCheckFilled, IconInfoOctagonFilled, IconX, IconLink} from '@tabler/icons-vue';
+import {IconCircleCheckFilled, IconInfoOctagonFilled, IconX} from '@tabler/icons-vue';
 import { wTrans } from "laravel-vue-i18n";
 import OpenDemoAccount from "@/Pages/TradingAccount/Partials/OpenDemoAccount.vue";
 
@@ -93,7 +92,6 @@ const getOptions = async () => {
         const response = await axios.get('/account/getOptions');
         leverages.value = response.data.leverages;
         accountOptions.value = response.data.accountOptions;
-        // console.log(usePage().props.toast)
     } catch (error) {
         console.error('Error changing locale:', error);
     }
@@ -203,16 +201,6 @@ const noticeVisible = ref(true);
                         <TabPanel v-for="(tab, index) in tabs" :key="index" :header="tab.title" />
                     </TabView>
 
-                    <!-- <Button
-                        type="button"
-                        variant="primary-flat"
-
-                        class="w-full md:w-auto"
-                    >
-                        <IconLink size="20" />
-                        Generate Account Link  
-                    </Button> -->
-                    <GenerateLink />
                 </div>
 
                 <component :is="tabs[activeIndex]?.component" />

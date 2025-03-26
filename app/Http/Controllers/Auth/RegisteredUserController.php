@@ -6,6 +6,8 @@ use App\Models\Country;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\RebateAllocation;
+use App\Models\MarkupProfileToAccountType;
+use App\Models\UserToMarkupProfile;
 use App\Services\DropdownOptionService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -108,13 +110,15 @@ class RegisteredUserController extends Controller
         ];
 
         $check_referral_code = null;
+        $markup_profile_id = 1;
         if ($request->referral_code) {
             $referral_code = $request->input('referral_code');
-            $check_referral_code = User::where('referral_code', $referral_code)->first();
+            $check_referral_code = UserToMarkupProfile::where('referral_code', $referral_code)->first();
 
             if ($check_referral_code) {
-                $upline_id = $check_referral_code->id;
-                $hierarchyList = empty($check_referral_code['hierarchyList']) ? "-" . $upline_id . "-" : $check_referral_code['hierarchyList'] . $upline_id . "-";
+                $upline_id = $check_referral_code->user_id;
+                $markup_profile_id = $check_referral_code->markup_profile_id;
+                $hierarchyList = empty($check_referral_code->user['hierarchyList']) ? "-" . $upline_id . "-" : $check_referral_code->user['hierarchyList'] . $upline_id . "-";
 
                 $userData['upline_id'] = $upline_id;
                 $userData['hierarchyList'] = $hierarchyList;
@@ -131,8 +135,12 @@ class RegisteredUserController extends Controller
         }
 
         $user = User::create($userData);
+        $user_markup_profile = UserToMarkupProfile::create([
+            'user_id' => $user->id,
+            'markup_profile_id' => $markup_profile_id,
+        ]);
 
-        $user->setReferralId();
+        // $user->setReferralId();
 
         $id_no = ($user->role == 'ib' ? 'IB' : 'MB') . Str::padLeft($user->id - 2, 5, "0");
         $user->id_number = $id_no;
@@ -144,11 +152,17 @@ class RegisteredUserController extends Controller
         }
         $user->save();
 
-        if ($check_referral_code && $check_referral_code->groupHasUser) {
-            $user->assignedGroup($check_referral_code->groupHasUser->group_id);
+        if ($check_referral_code && $check_referral_code->user->groupHasUser) {
+            $user->assignedGroup($check_referral_code->user->groupHasUser->group_id);
         }
 
         if ($user->role == 'ib') {
+            do {
+                $referralCode = Str::random(10);
+            } while (UserToMarkupProfile::where('referral_code', $referralCode)->exists());
+
+            $user_markup_profile->update(['referral_code' => $referralCode]);
+
             Wallet::create([
                 'user_id' => $user->id,
                 'type' => 'rebate_wallet',

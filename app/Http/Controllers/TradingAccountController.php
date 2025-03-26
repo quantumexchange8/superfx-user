@@ -13,7 +13,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use App\Models\AccountType;
-use App\Models\AccountTypeAccess;
 use App\Models\AssetRevoke;
 use App\Models\TradingUser;
 use App\Models\Transaction;
@@ -36,9 +35,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\PaymentGateway;
 use App\Models\CurrencyConversionRate;
+use App\Models\UserToMarkupProfile;
 use function Symfony\Component\Translation\t;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Response;
 
 class TradingAccountController extends Controller
 {
@@ -61,72 +59,26 @@ class TradingAccountController extends Controller
         ]);
     }
 
-    public function access($account_link = null): RedirectResponse
-    {
-        $accountTypeAccess = AccountTypeAccess::where('user_id', Auth::id())->where('status', 'inactive')->get();
-
-        foreach ($accountTypeAccess as $access) {
-            $generatedLink = md5(Auth::user()->email . $access->accountType->account_group);
-
-            if ($generatedLink === $account_link) {
-                $access->update(['status' => 'active']); 
-
-                return redirect()->route('account')->with('toast', [
-                    'title' => trans("public.link_activated"),
-                    'type' => 'success',
-                ]);
-            }
-        }
-
-        return redirect()->route('account')->with('toast', [
-            'title' => trans("public.invalid_link"),
-            'type' => 'error',
-        ]);
-    }
-
     public function getOptions()
     {
         $locale = app()->getLocale();
         $user = Auth::user();
 
-        if ($user->id_number == 'IB00000') {
-            $accountOptions = AccountType::whereNot('account_group', 'Demo Account')
-            ->where('status', 'active')
-            ->get()
-            ->map(function ($accountType) use ($locale) {
-                // $translations = json_decode($accountType->descriptions, true);
-                return [
-                    'id' => $accountType->id,
-                    'name' => $accountType->name,
-                    'slug' => $accountType->slug,
-                    'account_group' => $accountType->account_group,
-                    'leverage' => $accountType->leverage,
-                    // 'descriptions' => $translations[$locale],
-                ];
-            });
-        } else {
-            $accountOptions = AccountType::whereNot('account_group', 'Demo Account')
-                ->where('status', 'active')
-                ->where(function ($query) {
-                    $query->where('account_group', 'Standard')
-                        ->orWhereHas('accountTypeAccess', function ($subQuery) {
-                            $subQuery->where('status', 'active')
-                                    ->where('user_id', Auth::id());
-                        });
-                })
-                ->get()
-                ->map(function ($accountType) use ($locale) {
-                    // $translations = json_decode($accountType->descriptions, true);
-                    return [
-                        'id' => $accountType->id,
-                        'name' => $accountType->name,
-                        'slug' => $accountType->slug,
-                        'account_group' => $accountType->account_group,
-                        'leverage' => $accountType->leverage,
-                        // 'descriptions' => $translations[$locale],
-                    ];
-                });
-        }
+        $accountOptions = AccountType::whereNot('account_group', 'Demo Account')
+        ->where('status', 'active')
+        ->whereHas('markupProfileToAccountTypes.markupProfile.userToMarkupProfiles', function ($query) {
+            $query->where('user_id', Auth::id()); // Filter for the authenticated user's markup profiles
+        })
+        ->get()
+        ->map(function ($accountType) use ($locale) {
+            return [
+                'id' => $accountType->id,
+                'name' => $accountType->name,
+                'slug' => $accountType->slug,
+                'account_group' => $accountType->account_group,
+                'leverage' => $accountType->leverage,
+            ];
+        });
 
         $conversionRate = CurrencyConversionRate::firstWhere('base_currency', 'VND')->deposit_rate;
 

@@ -51,20 +51,20 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         ];
     }
 
-    public function setReferralId(): void
-    {
-        $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        $randomString = 'SFXx';
+    // public function setReferralId(): void
+    // {
+    //     $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    //     $randomString = 'SFXx';
 
-        $length = 10 - strlen($randomString);
+    //     $length = 10 - strlen($randomString);
 
-        for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[rand(0, strlen($characters) - 1)];
-        }
+    //     for ($i = 0; $i < $length; $i++) {
+    //         $randomString .= $characters[rand(0, strlen($characters) - 1)];
+    //     }
 
-        $this->referral_code = $randomString;
-        $this->save();
-    }
+    //     $this->referral_code = $randomString;
+    //     $this->save();
+    // }
 
     public function getChildrenIds(): array
     {
@@ -137,9 +137,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->belongsTo(Country::class, 'country_id', 'id');
     }
 
-    public function accountTypeAccess(): HasMany
+    public function user_markup_profile(): HasMany
     {
-        return $this->hasMany(AccountTypeAccess::class, 'user_id', 'id');
+        return $this->hasMany(UserToMarkupProfile::class, 'user_id', 'id');
     }
 
     // Logs

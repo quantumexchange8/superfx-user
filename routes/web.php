@@ -15,6 +15,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\DownloadCenterController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TradingAccountController;
+use App\Http\Controllers\GeneralController;
 
 Route::get('locale/{locale}', function ($locale) {
     App::setLocale($locale);
@@ -35,6 +36,7 @@ Route::get('/confirmWithdrawal/{transaction_number}/{token}', [TransactionContro
 Route::middleware(['auth','verified'])->group(function () {
     Route::get('deposit_return', [TradingAccountController::class, 'depositReturn'])->name('depositReturn');
 
+    Route::get('/getUserMarkupProfiles', [GeneralController::class, 'getUserMarkupProfiles'])->name('getUserMarkupProfiles');
     // Select Option
     Route::get('getPaymentAccounts', [SelectOptionController::class, 'getPaymentAccounts'])->name('getPaymentAccounts');
 
@@ -76,7 +78,6 @@ Route::middleware(['auth','verified'])->group(function () {
      */
     Route::prefix('account')->group(function () {
         Route::get('/', [TradingAccountController::class, 'index'])->name('account');
-        Route::get('/access/{account_link?}', [TradingAccountController::class, 'access'])->name('account.access');
         Route::get('/getOptions', [TradingAccountController::class, 'getOptions'])->name('account.getOptions');
         Route::get('/getAccountReport', [TradingAccountController::class, 'getAccountReport'])->name('account.getAccountReport');
         Route::get('/getLiveAccount', [TradingAccountController::class, 'getLiveAccount'])->name('account.getLiveAccount');
@@ -89,7 +90,6 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::post('/internal_transfer', [TradingAccountController::class, 'internal_transfer'])->name('account.internal_transfer');
         Route::post('/revoke_account', [TradingAccountController::class, 'revoke_account'])->name('account.revoke_account');
         Route::delete('/delete_account', [TradingAccountController::class, 'delete_account'])->name('account.delete_account');
-        Route::post('/generate_link', [TradingAccountController::class, 'generate_link'])->name('account.generate_link');
     });
 
     /**

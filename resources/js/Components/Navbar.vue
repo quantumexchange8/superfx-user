@@ -5,7 +5,8 @@ import {
     IconLogout,
     IconMenu2,
     IconQrcode,
-    IconCopy
+    IconCopy,
+    IconDots
 } from '@tabler/icons-vue';
 import QrcodeVue from 'qrcode.vue'
 import {Link, usePage} from "@inertiajs/vue3";
@@ -25,6 +26,7 @@ const op = ref();
 const visible = ref(false);
 const registerLink = ref(`${window.location.origin}/register/${usePage().props.auth.user.referral_code}`);
 const tooltipText = ref('copy')
+const copiedText = ref('')
 const qrcodeContainer = ref();
 
 const toggle = (event) => {
@@ -50,8 +52,30 @@ const changeLanguage = async (langVal) => {
     }
 };
 
+const markupProfiles = ref([]);
+
+const getUserMarkupProfiles = async () => {
+    if (usePage().props.auth.user.role != 'member') {
+        try {
+            const response = await axios.get('/getUserMarkupProfiles');
+            markupProfiles.value = response.data.user_markup_profiles;
+            // console.log(markupProfiles)
+        } catch (error) {
+            console.error('Error getting markups:', error);
+        }
+    }
+
+};
+
+getUserMarkupProfiles();
+
+const getRegisterLink = (referralCode) => {
+    return `${window.location.origin}/register/${referralCode}`;
+};
+
 const copyToClipboard = (text) => {
     const textToCopy = text;
+    copiedText.value = text;
 
     const textArea = document.createElement('textarea');
     document.body.appendChild(textArea);
@@ -73,19 +97,12 @@ const copyToClipboard = (text) => {
     document.body.removeChild(textArea);
 }
 
-const downloadQrCode = () => {
-    const canvas = qrcodeContainer.value.querySelector("canvas");
-    const link = document.createElement("a");
-    link.download = "qr-code.png";
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-}
 </script>
 
 <template>
     <nav
         aria-label="secondary"
-        class="sticky top-0 z-10 py-2 px-3 md:px-5 bg-gray-25 flex items-center gap-3"
+        class="sticky top-0 z-20 py-2 px-3 md:px-5 bg-gray-25 flex items-center gap-3"
     >
         <div
             class="inline-flex justify-center items-center rounded-full hover:bg-gray-100 w-12 h-12 shrink-0 grow-0 hover:select-none hover:cursor-pointer"
@@ -100,6 +117,7 @@ const downloadQrCode = () => {
         </div>
         <div class="flex items-center">
             <div
+                v-if="usePage().props.auth.user.role != 'member'"
                 class="w-12 h-12 p-3.5 flex items-center justify-center rounded-full hover:cursor-pointer hover:bg-gray-100 text-gray-800"
                 @click="visible = true"
             >
@@ -122,8 +140,8 @@ const downloadQrCode = () => {
         </div>
     </nav>
 
-    <OverlayPanel ref="op">
-        <div class="py-2 flex flex-col items-center w-[120px]">
+    <OverlayPanel ref="op" >
+        <div class="py-2 flex flex-col items-center w-[100px]">
             <div
                 v-for="locale in locales"
                 class="p-3 flex items-center gap-3 self-stretch text-sm hover:bg-gray-100 hover:cursor-pointer"
@@ -144,59 +162,54 @@ const downloadQrCode = () => {
     >
         <div class="flex flex-col gap-5 md:gap-8 items-center self-stretch">
             <div class="flex flex-col gap-1 items-center self-stretch">
-                <span class="md:text-xl font-bold text-gray-950">{{ $t('public.referral_qr_code') }}</span>
+                <span class="md:text-xl font-bold text-gray-950">{{ $t('public.referral_code') }}</span>
                 <span class="text-xs md:text-base text-gray-500">{{ $t('public.referral_caption') }}</span>
             </div>
 
-            <!-- qr code -->
-            <div class="flex flex-col items-center gap-5 self-stretch">
+            <div
+                class="grid grid-cols-1 gap-3 md:gap-4 w-full"
+            >
                 <div
-                    ref="qrcodeContainer">
-                    <qrcode-vue
-                        ref="qrcode"
-                        :value="registerLink"
-                        :margin="2"
-                        :size="200"
-                    />
+                    v-for="markupProfile in markupProfiles"
+                    class="flex flex-col gap-3 border border-gray-300 rounded-md p-3 md:p-4 w-full"
+                >
+                    <div class="flex gap-2 items-center self-stretch justify-between">
+                        <span class="font-semibold text-gray-950">{{ markupProfile.name }}</span>
+                    </div>
+                    <div class="flex gap-2 flex-wrap">
+                        <Tag
+                            v-for="account_type in markupProfile.account_types"
+                            severity="primary"
+                            :value="account_type.name"
+                        ></Tag>
+                    </div>
+                    <div class="flex gap-2 items-center self-stretch relative">
+                        <InputText
+                            :value="getRegisterLink(markupProfile.referral_code)"
+                            class="truncate w-full"
+                            readonly
+                        />
+                        <Tag
+                            v-if="tooltipText === 'copied'  && copiedText === getRegisterLink(markupProfile.referral_code)"
+                            class="absolute -top-7 -right-3"
+                            severity="contrast"
+                            :value="$t(`public.${tooltipText}`)"
+                        ></Tag>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="gray-text"
+                            iconOnly
+                            pill
+                            @click="copyToClipboard(getRegisterLink(markupProfile.referral_code))"
+                        >
+                            <IconCopy size="20" color="#667085" stroke-width="1.25" />
+                        </Button>
+                    </div>
                 </div>
-                <Button
-                    type="button"
-                    variant="primary-flat"
-                    size="lg"
-                    @click="downloadQrCode"
-                >
-                    {{ $t('public.download_qr_to_invite_friends') }}
-                </Button>
-            </div>
-
-            <div class="flex gap-3 items-center self-stretch">
-                <div class="h-[1px] bg-gray-200 rounded-[5px] w-full"></div>
-                <div class="text-xs md:text-sm text-gray-500 text-center min-w-[145px] md:w-full">{{ $t('public.or_access_the_link_below') }}</div>
-                <div class="h-[1px] bg-gray-200 rounded-[5px] w-full"></div>
-            </div>
-
-            <div class="flex gap-3 items-center self-stretch relative">
-                <InputText
-                    v-model="registerLink"
-                    class="truncate w-full"
-                    readonly
-                />
-                <Tag
-                    v-if="tooltipText === 'copied'"
-                    class="absolute -top-7 -right-3"
-                    severity="contrast"
-                    :value="$t(`public.${tooltipText}`)"
-                ></Tag>
-                <Button
-                    type="button"
-                    variant="gray-text"
-                    iconOnly
-                    pill
-                    @click="copyToClipboard(registerLink)"
-                >
-                    <IconCopy size="20" color="#667085" stroke-width="1.25" />
-                </Button>
+                
             </div>
         </div>
     </Dialog>
+
 </template>

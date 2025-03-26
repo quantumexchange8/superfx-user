@@ -273,8 +273,8 @@ return [
     "paginator_caption" => "显示 {first} 至 {last} 的 {totalRecords} 条目",
     "standard_account" => "标准交易账户",
     "premium_account" => "优投管理帐户",
-    "referral_qr_code" => "推荐二维码",
-    "referral_caption" => "扫描此二维码以注册新帐户.",
+    "referral_code": "推荐代码",
+    "referral_caption": "分享这些链接让其他人注册新账户."
     "download_qr_to_invite_friends" => "下载二维码发送并邀请朋友！",
     "or_access_the_link_below" => "或访问下方连结",
     "search_agent" => "搜索代理",

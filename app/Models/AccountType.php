@@ -26,8 +26,8 @@ class AccountType extends Model
         'edited_by',
     ];
 
-    public function accountTypeAccess(): HasMany
+    public function markupProfileToAccountTypes(): HasMany
     {
-        return $this->hasMany(AccountTypeAccess::class, 'account_type_id', 'id');
+        return $this->hasMany(MarkupProfileToAccountType::class, 'account_type_id', 'id');
     }
 }
