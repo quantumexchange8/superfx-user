@@ -273,8 +273,8 @@ return [
     "paginator_caption" => "顯示 {first} 至 {last} 的 {totalRecords} 條目",
     "standard_account" => "標準交易賬戶",
     "premium_account" => "優投管理帳戶",
-    "referral_code": "推薦代碼",
-    "referral_caption": "分享這些連結讓其他人註冊新帳戶."
+    "referral_code" => "推薦代碼",
+    "referral_caption" => "分享這些連結讓其他人註冊新帳戶.",
     "download_qr_to_invite_friends" => "下載二維碼發送並邀請朋友！",
     "or_access_the_link_below" => "或訪問下方連結",
     "search_agent" => "搜索代理",
