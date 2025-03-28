@@ -6,6 +6,7 @@ use App\Models\Country;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\RebateAllocation;
+use App\Models\MarkupProfile;
 use App\Models\MarkupProfileToAccountType;
 use App\Models\UserToMarkupProfile;
 use App\Services\DropdownOptionService;
@@ -110,7 +111,9 @@ class RegisteredUserController extends Controller
         ];
 
         $check_referral_code = null;
-        $markup_profile_id = 1;
+        $default_markup_profile = MarkupProfile::where('slug', 'markup0')->first();
+
+        $markup_profile_id = $default_markup_profile->id;
         if ($request->referral_code) {
             $referral_code = $request->input('referral_code');
             $check_referral_code = UserToMarkupProfile::where('referral_code', $referral_code)->first();

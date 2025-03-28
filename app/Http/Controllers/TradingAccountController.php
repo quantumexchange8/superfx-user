@@ -75,6 +75,7 @@ class TradingAccountController extends Controller
                 'id' => $accountType->id,
                 'name' => $accountType->name,
                 'slug' => $accountType->slug,
+                'member_display_name' => $accountType->member_display_name ?? null,
                 'account_group' => $accountType->account_group,
                 'leverage' => $accountType->leverage,
             ];
@@ -210,6 +211,8 @@ class TradingAccountController extends Controller
                     'leverage' => $account->margin_leverage,
                     'equity' => $account->equity,
                     'account_type' => $account->account_type->slug,
+                    'account_type_name' => $account->account_type->name,
+                    'member_display_name' => $account->account_type->member_display_name ?? null,
                     'account_type_leverage' => $account->account_type->leverage,
                     'account_type_color' => $account->account_type->color,
                     'group' => $account->account_type->account_group,

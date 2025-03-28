@@ -203,7 +203,7 @@ const noticeVisible = ref(true);
 
                 </div>
 
-                <component :is="tabs[activeIndex]?.component" />
+                <component :is="tabs[activeIndex]?.component" :user="user"/>
             </div>
 
         </div>
@@ -234,7 +234,7 @@ const noticeVisible = ref(true);
                                         'text-gray-950': selectedAccountType !== account.account_group
                                     }"
                                 >
-                                    {{ $t(`public.${account.slug}`) }}
+                                    {{ user.role == 'member' ? (account.member_display_name ?? account.name) : account.name }}
                                 </span>
                                 <IconCircleCheckFilled v-if="selectedAccountType === account.account_group" size="20" stroke-width="1.25" color="#2970FF" />
                             </div>

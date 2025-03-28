@@ -6,6 +6,10 @@ import Empty from '@/Components/Empty.vue';
 import {generalFormat, transactionFormat} from "@/Composables/index.js";
 import {usePage} from "@inertiajs/vue3";
 
+const props = defineProps({
+    user: Object
+})
+
 const isLoading = ref(false);
 const accounts = ref([]);
 const accountType = ref('cent');
@@ -88,7 +92,7 @@ watchEffect(() => {
                             color: `#${account.account_type_color}`,
                         }"
                     >
-                        {{ $t(`public.${account.account_type}`) }}
+                        {{ props.user?.role == 'member' ? (account.member_display_name ?? account.account_type_name) : account.account_type_name }}
                     </div>
                 </div>
                 <Action :account="account" :type="accountType" />
