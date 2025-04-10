@@ -612,6 +612,11 @@ class ReportController extends Controller
         }
 
         $split = explode('-'.Auth::id().'-', $hierarchyList);
+
+        if (!isset($split[1])) {
+            return 1; 
+        }
+        
         return substr_count($split[1], '-') + 1;
     }
 
