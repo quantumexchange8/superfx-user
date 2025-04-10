@@ -100,10 +100,18 @@ class StructureController extends Controller
             ->latest()
             ->get()
             ->map(function ($user) {
+                $level = $this->calculateLevel($user->hierarchyList);
+
+                $email = $user->email;
+
+                if ($level > 1) {
+                    $email = substr($email, 0, 2) . '*******' . strstr($email, '@');
+                }
+
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'email' => $user->email,
+                    'email' => $email,
                     'profile_photo' => $user->getFirstMediaUrl('profile_photo'),
                     'upline_id' => $user->upline_id,
                     'upline_name' => $user->upline->name,
@@ -111,7 +119,7 @@ class StructureController extends Controller
                     'role' => $user->role,
                     'id_number' => $user->id_number,
                     'joined_date' => $user->created_at,
-                    'level' => $this->calculateLevel($user->hierarchyList),
+                    'level' => $level,
                 ];
             });
 
@@ -161,14 +169,25 @@ class StructureController extends Controller
     {
         $user = User::where('id', $request->id)->where('hierarchyList', 'like', '%-' . Auth::id() . '-%')->first();
 
+        $level = $this->calculateLevel($user->hierarchyList);
+
+        $email = $user->email;
+        $phone = $user->phone;
+
+        if ($level > 1) {
+            $email = substr($email, 0, 2) . '*******' . strstr($email, '@');
+            $last3 = substr($phone, -3);
+            $phone = '*******' . $last3;
+        }
+
         $user_data = [
             'id' => $user->id,
             'profile_photo' => $user->getFirstMediaUrl('profile_photo'),
             'name' => $user->name,
             'id_number' => $user->id_number,
-            'email' => $user->email,
+            'email' => $email,
             'dial_code' => $user->dial_code,
-            'phone' => $user->phone,
+            'phone' => $phone,
             'role' => $user->role,
             'upline_profile_photo' => $user->upline->getFirstMediaUrl('profile_photo'),
             'upline_name' => $user->upline->name,

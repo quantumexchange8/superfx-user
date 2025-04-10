@@ -196,10 +196,18 @@ class ReportController extends Controller
 
                 // Map the listings to include the summary and grouping logic
             $allRecords = $query->get()->map(function ($item) {
+                $level = $this->calculateLevel($item->user->hierarchyList);
+
+                $email = $item->user->email;
+
+                if ($level > 1) {
+                    $email = substr($email, 0, 2) . '*******' . strstr($email, '@');
+                }
+
                 return [
                     'user_id' => $item->user_id,
                     'name' => $item->user->name,
-                    'email' => $item->user->email,
+                    'email' => $email,
                     'id_number' => $item->user->id_number,
                     'meta_login' => $item->meta_login,
                     'execute_at' => Carbon::parse($item->execute_at)->format('Y/m/d'),
@@ -419,10 +427,18 @@ class ReportController extends Controller
                         $account_type = $transaction->to_account->account_type->name;
                     }
 
+                    $level = $this->calculateLevel($transaction->user->hierarchyList);
+
+                    $email = $transaction->user->email;
+
+                    if ($level > 1) {
+                        $email = substr($email, 0, 2) . '*******' . strstr($email, '@');
+                    }
+
                     $data = [
                         'created_at' => $transaction->created_at->format('Y-m-d H:i:s'),  // Format the date
                         'name' => $transaction->user->name,
-                        'email' => $transaction->user->email,
+                        'email' => $email,
                         'id_number' => $transaction->user->id_number,
                         'role' => $transaction->user->role,
                         'meta_login' => $metaLogin,
@@ -463,11 +479,19 @@ class ReportController extends Controller
                     $account_type = $transaction->to_account->account_type;
                 }
 
+                $level = $this->calculateLevel($transaction->user->hierarchyList);
+
+                $email = $transaction->user->email;
+
+                if ($level > 1) {
+                    $email = substr($email, 0, 2) . '*******' . strstr($email, '@');
+                }
+
                 return [
                     'created_at' => $transaction->created_at,
                     'user_id' => $transaction->user_id,
                     'name' => $transaction->user->name,
-                    'email' => $transaction->user->email,
+                    'email' => $email,
                     'id_number' => $transaction->user->id_number,
                     'role' => $transaction->user->role,
                     'meta_login' => $metaLogin,
@@ -496,8 +520,8 @@ class ReportController extends Controller
             $data = json_decode($request->only(['lazyEvent'])['lazyEvent'], true);
 
             $query = TradeRebateHistory::with([
-                'upline:id,name,email,id_number',
-                'downline:id,name,email,id_number',
+                'upline:id,name,email,id_number,hierarchyList',
+                'downline:id,name,email,id_number,hierarchyList',
                 'of_account_type'
             ])
                 ->whereIn('upline_user_id', array_merge([Auth::id()], Auth::user()->getChildrenIds()))
@@ -557,7 +581,19 @@ class ReportController extends Controller
 
             $totalRebateAmount = (clone $query)->sum('revenue');
 
-            $histories = $query->paginate($data['rows']);
+            $histories = $query->paginate($data['rows'])->through(function ($item) {
+                $maskEmail = fn($email) => substr($email, 0, 2) . '*******' . strstr($email, '@');
+
+                if ($this->calculateLevel($item->upline->hierarchyList) > 1) {
+                    $item->upline->email = $maskEmail($item->upline->email);
+                }
+
+                if ($this->calculateLevel($item->downline->hierarchyList) > 1) {
+                    $item->downline->email = $maskEmail($item->downline->email);
+                }
+
+                return $item;
+            });
 
             return response()->json([
                 'success' => true,
@@ -568,4 +604,15 @@ class ReportController extends Controller
 
         return response()->json(['success' => false, 'data' => []]);
     }
+
+    private function calculateLevel($hierarchyList)
+    {
+        if (is_null($hierarchyList) || $hierarchyList === '') {
+            return 0;
+        }
+
+        $split = explode('-'.Auth::id().'-', $hierarchyList);
+        return substr_count($split[1], '-') + 1;
+    }
+
 }
