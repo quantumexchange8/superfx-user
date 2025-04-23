@@ -407,7 +407,7 @@ class ReportController extends Controller
                 $transactions = $exportQuery->latest()->get()->map(function ($transaction) use ($transactionType    ) {
                     $metaLogin = $transaction->to_meta_login ?: $transaction->from_meta_login;
 
-                    if ($transaction->transaction_type === 'withdrawal') {
+                    if ($transaction->transaction_type === 'withdrawal' || $transaction->transaction_type === 'balance_out') {
                         $account_type = '';
                         switch ($transaction->category) {
                             case 'trading_account':
@@ -459,12 +459,12 @@ class ReportController extends Controller
             $transactions = $query->paginate($data['rows'])->through(function ($transaction) {
                 $metaLogin = $transaction->to_meta_login ?: $transaction->from_meta_login;
 
-                if ($transaction->transaction_type === 'withdrawal') {
+                if ($transaction->transaction_type === 'withdrawal' || $transaction->transaction_type === 'balance_out') {
                     $account_type = '';
                     switch ($transaction->category) {
                         case 'trading_account':
                             $metaLogin = $transaction->from_meta_login;
-                            $account_type = $transaction->from_account->account_type;
+                            $account_type = $transaction->from_account->account_type->name;
                             break;
                         case 'rebate_wallet':
                             $metaLogin = 'rebate';
@@ -476,7 +476,7 @@ class ReportController extends Controller
                             break;
                     }
                 } else {
-                    $account_type = $transaction->to_account->account_type;
+                    $account_type = $transaction->to_account->account_type->name;
                 }
 
                 $level = $this->calculateLevel($transaction->user->hierarchyList);
