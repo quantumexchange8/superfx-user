@@ -28,13 +28,22 @@ class StructureController extends Controller
 
         if ($request->filled('search')) {
             $search = '%' . $request->input('search') . '%';
+
+            $authId = Auth::id();
+            $needle = "%-$authId-%";
+
             $parent = User::whereIn('role', ['ib', 'member'])
-                ->where('id_number', 'LIKE', $search)
-                ->orWhere('email', 'LIKE', $search)
+                ->where(function ($query) use ($search) {
+                    $query->where('id_number', 'LIKE', $search)
+                        ->orWhere('email', 'LIKE', $search);
+                })
+                ->where('hierarchyList', 'LIKE', $needle)
                 ->first();
 
-            $parent_id = $parent->id;
-            $upline_id = $parent->upline_id;
+            if ($parent) {
+                $parent_id = $parent->id;
+                $upline_id = $parent->upline_id;
+            }
         }
 
         $parent = User::with(['directChildren:id,name,id_number,upline_id,role,hierarchyList'])
@@ -43,7 +52,7 @@ class StructureController extends Controller
             ->find($parent_id);
 
         $upline = $upline_id && $upline_id != Auth::user()->upline_id ? User::select('id', 'name', 'id_number', 'upline_id', 'role', 'hierarchyList')->find($upline_id) : null;
-
+        
         $parent_data = $this->formatUserData($parent);
         $upline_data = $upline ? $this->formatUserData($upline) : null;
 
