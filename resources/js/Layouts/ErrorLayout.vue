@@ -46,7 +46,7 @@ const changeLanguage = async (langVal) => {
             </div>
             <div class="flex flex-1 flex-col justify-between md:gap-[60px] md:justify-center items-center px-4 pb-8 md:py-12 md:px-24">
                 <slot />
-                <div class="text-center text-gray-500 text-xs">© {{ dayjs().year() }} SuperForex. All rights reserved.</div>
+                <div class="text-center text-gray-500 text-xs">© {{ dayjs().year() }} SuperFin. All rights reserved.</div>
             </div>
         </div>
     </div>

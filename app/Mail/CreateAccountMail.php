@@ -42,7 +42,7 @@ class CreateAccountMail extends Mailable implements ShouldQueue
                 'meta_login' => $this->meta_login,
                 'server' => $this->server,
             ])
-            ->subject('Welcome to SuperForex');
+            ->subject('Welcome to SuperFin');
     }
 
     public function attachments(): array

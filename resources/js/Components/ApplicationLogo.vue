@@ -1,3 +1,3 @@
 <template>
-    <img src="/img/superforex-logo.png" alt="superforex-logo">
+    <img src="/img/SuperFin-logo.png" alt="SuperFin-logo">
 </template>

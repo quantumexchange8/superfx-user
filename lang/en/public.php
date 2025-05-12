@@ -221,7 +221,7 @@ return [
     "toast_revoke_account_success" => "PAMM has been revoked!",
     "toast_delete_account_success" => "Account has been deleted!",
     "toast_delete_demo_account_success" => "Demo account has been deleted!",
-    "trading_account_agreement_welcome_text" => "Welcome to SuperForex! Before you open a trading account with us, please carefully review and acknowledge the following terms and conditions. These points ensure that you understand our policies, your responsibilities, and the nature of the services we provide. Your agreement is necessary for the safety and transparency of your trading experience with SuperForex. Thank you for choosing SuperForex as your trusted trading partner.",
+    "trading_account_agreement_welcome_text" => "Welcome to SuperFin! Before you open a trading account with us, please carefully review and acknowledge the following terms and conditions. These points ensure that you understand our policies, your responsibilities, and the nature of the services we provide. Your agreement is necessary for the safety and transparency of your trading experience with SuperFin. Thank you for choosing SuperFin as your trusted trading partner.",
     "empty_live_acccount_title" => "No Trading Accounts Found",
     "empty_live_acccount_message" => "Looks like you don't have any trading accounts yet. Create one to start trading!",
     "empty_managed_acccount_title" => "No Managed Accounts Found",

@@ -221,7 +221,7 @@ return [
     "toast_revoke_account_success" => "Hủy liên kết Quản lý tài sản thành công!",
     "toast_delete_account_success" => "Tài khoản đã bị xóa!",
     "toast_delete_demo_account_success" => "Tài khoản demo đã bị xóa!",
-    "trading_account_agreement_welcome_text" => "Chào mừng bạn đến với SuperForex! Trước khi mở tài khoản giao dịch với chúng tôi, vui lòng đọc kỹ và xác nhận các điều khoản và điều kiện sau. Những điểm này đảm bảo rằng bạn hiểu rõ chính sách, trách nhiệm của mình và bản chất của các dịch vụ mà chúng tôi cung cấp. Việc đồng ý là cần thiết để đảm bảo an toàn và minh bạch cho trải nghiệm giao dịch của bạn tại SuperForex. Cảm ơn bạn đã chọn SuperForex là đối tác giao dịch đáng tin cậy của bạn.",
+    "trading_account_agreement_welcome_text" => "Chào mừng bạn đến với SuperFin! Trước khi mở tài khoản giao dịch với chúng tôi, vui lòng đọc kỹ và xác nhận các điều khoản và điều kiện sau. Những điểm này đảm bảo rằng bạn hiểu rõ chính sách, trách nhiệm của mình và bản chất của các dịch vụ mà chúng tôi cung cấp. Việc đồng ý là cần thiết để đảm bảo an toàn và minh bạch cho trải nghiệm giao dịch của bạn tại SuperFin. Cảm ơn bạn đã chọn SuperFin là đối tác giao dịch đáng tin cậy của bạn.",
     "empty_live_acccount_title" => "Không tìm thấy tài khoản giao dịch",
     "empty_live_acccount_message" => "Có vẻ như bạn chưa có tài khoản giao dịch nào. Hãy tạo một tài khoản cá nhân để bắt đầu giao dịch ngay!",
     "empty_managed_acccount_title" => "Không tìm thấy tài khoản quản lý đầu tư",

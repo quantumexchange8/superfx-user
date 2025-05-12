@@ -236,7 +236,7 @@ watch(selectedCountry, (newCountry) => {
                         <div
                             class="text-lg font-bold text-gray-800 w-full"
                         >
-                            SuperForex
+                            SuperFin
                         </div>
                     </div>
                 </Link>
@@ -595,7 +595,7 @@ watch(selectedCountry, (newCountry) => {
                             </div>
                         </form>
                     </div>
-                    <div class="text-center text-gray-500 text-xs mt-auto">© {{ dayjs().year() }} SuperForex. All rights reserved.</div>
+                    <div class="text-center text-gray-500 text-xs mt-auto">© {{ dayjs().year() }} SuperFin. All rights reserved.</div>
                 </div>
             </div>
         </div>

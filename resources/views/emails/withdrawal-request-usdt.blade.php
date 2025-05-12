@@ -255,7 +255,7 @@
                                             <td class="pad">
                                                 <div style="color:#101112;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
                                                     <p style="margin: 0; margin-bottom: 16px;"><strong>Dear {{ $user->name }},</strong></p>
-                                                    <p style="margin: 0;">We are pleased to inform you via this email that you have successfully initiated a withdrawal request from your SuperForex trading account.</p>
+                                                    <p style="margin: 0;">We are pleased to inform you via this email that you have successfully initiated a withdrawal request from your SuperFin trading account.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -332,7 +332,7 @@
                                                 <div style="color:#101112;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
                                                     <p style="margin: 0; margin-bottom: 16px;">If you agree with the terms related to the above withdrawal request, please click on the button to confirm, otherwise, we will not process this withdrawal request.</p>
                                                     <p style="margin: 0; margin-bottom: 16px;">If nothing happens after clicking the link, please copy and paste the following link into your browser's address bar to open: <a href="{{ route('transaction') }}" rel="noopener" style="text-decoration: underline; color: #05f595;" target="_blank">{{ route('transaction') }}</a></p>
-                                                    <p style="margin: 0;">Please log in with your username and password to manage your account through our SuperForex portal.</p>
+                                                    <p style="margin: 0;">Please log in with your username and password to manage your account through our SuperFin portal.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -374,7 +374,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#101112;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;">Best regards,<br/>SuperForex.</p>
+                                                    <p style="margin: 0;">Best regards,<br/>SuperFin.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -506,7 +506,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#3b455b;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;">Are you trading with more than $5000 deposit? Join the SuperForex Membership Club now to get special benefits.I'm a new paragraph block.</p>
+                                                    <p style="margin: 0;">Are you trading with more than $5000 deposit? Join the SuperFin Membership Club now to get special benefits.I'm a new paragraph block.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -531,11 +531,11 @@
                                         <tr>
                                             <td class="pad">
                                                 <div align="center" class="alignment"><!--[if mso]>
-                                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://superforexglobal.com/welcome-bonus" style="height:42px;width:127px;v-text-anchor:middle;" arcsize="10%" stroke="false" fillcolor="#00e288">
+                                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://SuperFinglobal.com/welcome-bonus" style="height:42px;width:127px;v-text-anchor:middle;" arcsize="10%" stroke="false" fillcolor="#00e288">
                                                         <w:anchorlock/>
                                                         <v:textbox inset="0px,0px,0px,0px">
                                                             <center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:16px">
-                                                    <![endif]--><a class="button" href="https://superforexglobal.com/welcome-bonus" style="background-color:#00e288;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:4px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:inline-block;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:auto;word-break:keep-all;" target="_blank"><span style="word-break: break-word; padding-left: 20px; padding-right: 20px; font-size: 16px; display: inline-block; letter-spacing: normal;"><span style="word-break: break-word; line-height: 32px;"><strong>Learn more</strong></span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
+                                                    <![endif]--><a class="button" href="https://SuperFinglobal.com/welcome-bonus" style="background-color:#00e288;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:4px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:inline-block;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:auto;word-break:keep-all;" target="_blank"><span style="word-break: break-word; padding-left: 20px; padding-right: 20px; font-size: 16px; display: inline-block; letter-spacing: normal;"><span style="word-break: break-word; line-height: 32px;"><strong>Learn more</strong></span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
                                             </td>
                                         </tr>
                                     </table>
@@ -545,11 +545,11 @@
                                         <tr>
                                             <td class="pad">
                                                 <div align="center" class="alignment"><!--[if mso]>
-                                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://superforexglobal.com/partnership-program" style="height:42px;width:127px;v-text-anchor:middle;" arcsize="10%" stroke="false" fillcolor="#00e288">
+                                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://SuperFinglobal.com/partnership-program" style="height:42px;width:127px;v-text-anchor:middle;" arcsize="10%" stroke="false" fillcolor="#00e288">
                                                         <w:anchorlock/>
                                                         <v:textbox inset="0px,0px,0px,0px">
                                                             <center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:16px">
-                                                    <![endif]--><a class="button" href="https://superforexglobal.com/partnership-program" style="background-color:#00e288;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:4px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:inline-block;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:auto;word-break:keep-all;" target="_blank"><span style="word-break: break-word; padding-left: 20px; padding-right: 20px; font-size: 16px; display: inline-block; letter-spacing: normal;"><span style="word-break: break-word; line-height: 32px;"><strong>Learn more</strong></span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
+                                                    <![endif]--><a class="button" href="https://SuperFinglobal.com/partnership-program" style="background-color:#00e288;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:4px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:inline-block;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:auto;word-break:keep-all;" target="_blank"><span style="word-break: break-word; padding-left: 20px; padding-right: 20px; font-size: 16px; display: inline-block; letter-spacing: normal;"><span style="word-break: break-word; line-height: 32px;"><strong>Learn more</strong></span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
                                             </td>
                                         </tr>
                                     </table>
@@ -603,7 +603,7 @@
                                                 <div align="right" class="alignment">
                                                     <table border="0" cellpadding="0" cellspacing="0" class="social-table" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; display: inline-block;" width="180px">
                                                         <tr>
-                                                            <td style="padding:0 0 0 4px;"><a href="https://www.facebook.com/superforexglobal/" target="_blank"><img alt="Facebook" height="auto" src="{{ asset('email/withdrawal_request_usdt/images/facebook2x.png') }}" style="display: block; height: auto; border: 0;" title="facebook" width="32"/></a></td>
+                                                            <td style="padding:0 0 0 4px;"><a href="https://www.facebook.com/SuperFinglobal/" target="_blank"><img alt="Facebook" height="auto" src="{{ asset('email/withdrawal_request_usdt/images/facebook2x.png') }}" style="display: block; height: auto; border: 0;" title="facebook" width="32"/></a></td>
                                                             <td style="padding:0 0 0 4px;"><a href="https://www.linkedin.com/" target="_blank"><img alt="Linkedin" height="auto" src="{{ asset('email/withdrawal_request_usdt/images/linkedin2x.png') }}" style="display: block; height: auto; border: 0;" title="linkedin" width="32"/></a></td>
                                                             <td style="padding:0 0 0 4px;"><a href="https://www.instagram.com/" target="_blank"><img alt="Instagram" height="auto" src="{{ asset('email/withdrawal_request_usdt/images/instagram2x.png') }}" style="display: block; height: auto; border: 0;" title="instagram" width="32"/></a></td>
                                                             <td style="padding:0 0 0 4px;"><a href="https://www.youtube.com/" target="_blank"><img alt="YouTube" height="auto" src="{{ asset('email/withdrawal_request_usdt/images/youtube2x.png') }}" style="display: block; height: auto; border: 0;" title="YouTube" width="32"/></a></td>
@@ -809,7 +809,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:11px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:13.2px;">
-                                                    <p style="margin: 0;">SuperForex is a licensed Forex broker.<br/><br/>Registered office: <u><span style="word-break: break-word; color: #0213b3;">Second Floor No 24, Albert Hoy Avenue, Belize City, Belize.</span></u> The SuperForex services are not available to the residents of the USA.</p>
+                                                    <p style="margin: 0;">SuperFin is a licensed Forex broker.<br/><br/>Registered office: <u><span style="word-break: break-word; color: #0213b3;">Second Floor No 24, Albert Hoy Avenue, Belize City, Belize.</span></u> The SuperFin services are not available to the residents of the USA.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -831,7 +831,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:11px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:13.2px;">
-                                                    <p style="margin: 0;"><strong>REGULATED BY IFSC</strong><br/><br/>International Financial Services Commission<br/><br/>E-Mail: <u>support@superforexglobal.com</u></p>
+                                                    <p style="margin: 0;"><strong>REGULATED BY IFSC</strong><br/><br/>International Financial Services Commission<br/><br/>E-Mail: <u>support@SuperFinglobal.com</u></p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -915,7 +915,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><a href="https://my.superforex.global" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Dashboard</a></p>
+                                                    <p style="margin: 0;"><a href="https://my.SuperFin.global" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Dashboard</a></p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -926,7 +926,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><a href="https://superforexglobal.com/contacts" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Contact Info</a></p>
+                                                    <p style="margin: 0;"><a href="https://SuperFinglobal.com/contacts" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Contact Info</a></p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -937,7 +937,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><a href="https://superforexglobal.com/regulation" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Terms and Conditions</a></p>
+                                                    <p style="margin: 0;"><a href="https://SuperFinglobal.com/regulation" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Terms and Conditions</a></p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -948,7 +948,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><a href="https://superforexglobal.com/#mt4" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Metatrader 4</a></p>
+                                                    <p style="margin: 0;"><a href="https://SuperFinglobal.com/#mt4" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Metatrader 4</a></p>
                                                 </div>
                                             </td>
                                         </tr>
