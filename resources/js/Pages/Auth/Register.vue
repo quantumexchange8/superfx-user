@@ -98,9 +98,6 @@ const handleContinue = () => {
             if (selectedStep.value.step < 3) {
                 // Move to the next step
                 selectStep(selectedStep.value.step + 1);
-            } else {
-                // If validation is successful on step 2, submit the form
-                handleSubmit();
             }
         },
     });
@@ -560,6 +557,17 @@ watch(selectedCountry, (newCountry) => {
                             </template>
 
                             <Button
+                                v-if="selectedStep.step === 3"
+                                variant="primary-flat"
+                                class="w-full"
+                                @click.prevent="handleSubmit"
+                                :disabled="form.processing"
+                            >
+                                {{ $t('public.register') }}
+                            </Button>
+
+                            <Button
+                                v-else
                                 variant="primary-flat"
                                 class="w-full"
                                 @click.prevent="handleContinue"
