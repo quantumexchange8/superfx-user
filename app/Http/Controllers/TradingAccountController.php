@@ -426,8 +426,8 @@ class TradingAccountController extends Controller
         $to_adjusted_amount = $adjusted_amount * $to_multiplier;
 
          try {
-             $tradeFrom = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Withdraw From Account", 'balance', '');
-             $tradeTo = (new MetaFourService)->createTrade($to_meta_login, $to_adjusted_amount, "Deposit To Account", 'balance', '');
+             $tradeFrom = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Transfer from ID (" . $tradingAccount->meta_login . ")", 'balance', '');
+             $tradeTo = (new MetaFourService)->createTrade($to_meta_login, $to_adjusted_amount, "Transfer to ID (" . $to_meta_login . ")", 'balance', '');
          } catch (\Throwable $e) {
              if ($e->getMessage() == "Not found") {
                  TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
@@ -453,7 +453,7 @@ class TradingAccountController extends Controller
             'transaction_charges' => 0,
             'transaction_amount' => $adjusted_amount,
             'status' => 'successful',
-            'comment' => 'to ' . $to_meta_login
+            'comment' => 'Transfer from ' . $tradingAccount->meta_login . ' to ' . $to_meta_login
          ]);
 
          $user = Auth::user();
