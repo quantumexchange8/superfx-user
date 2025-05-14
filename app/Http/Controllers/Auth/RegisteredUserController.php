@@ -25,6 +25,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Auth\Events\Registered;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
 class RegisteredUserController extends Controller
 {
@@ -82,9 +84,8 @@ class RegisteredUserController extends Controller
     }
 
     /**
-     * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws FileDoesNotExist
+     * @throws FileIsTooBig
      */
     public function store(Request $request): RedirectResponse
     {
@@ -147,7 +148,7 @@ class RegisteredUserController extends Controller
 
         $id_no = ($user->role == 'ib' ? 'IB' : 'MB') . Str::padLeft($user->id - 2, 5, "0");
         $user->id_number = $id_no;
-        if ($request->hasFile('kyc_verification')) {
+        if ($request->kyc_verification) {
             foreach ($request->file('kyc_verification') as $image) {
                 $user->addMedia($image)->toMediaCollection('kyc_verification');
             }
