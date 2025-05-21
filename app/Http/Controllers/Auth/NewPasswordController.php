@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
@@ -30,16 +31,19 @@ class NewPasswordController extends Controller
     /**
      * Handle an incoming new password request.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'token' => 'required',
-            'email' => 'required|email',
+        Validator::make($request->all(), [
+            'token' => ['required'],
+            'email' => ['required', 'email'],
             'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->symbols()->numbers()->mixedCase()],
-            'password_confirmation' => ['required', 'same:password'],
-        ]);
+        ])->setAttributeNames([
+            'token' => trans('public.invalid_token'),
+            'email' => trans('public.email'),
+            'password' => trans('public.password'),
+        ])->validate();
 
         // Here we will attempt to reset the user's password. If it is successful we
         // will update the password on an actual user model and persist it to the
@@ -60,7 +64,10 @@ class NewPasswordController extends Controller
         // the application's home authenticated view. If there is an error we can
         // redirect them back to where they came from with their error message.
         if ($status == Password::PASSWORD_RESET) {
-            return redirect()->route('login')->with('status', __($status));
+            return redirect()->route('login')->with('toast', [
+                'title' => trans("public.toast_reset_password_success"),
+                'type' => 'success',
+            ]);
         }
 
         throw ValidationException::withMessages([

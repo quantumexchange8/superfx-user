@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Mail\EmailVerificationMail;
+use App\Mail\ResetPasswordMail;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
@@ -188,5 +192,23 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             })
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $this->id, 'hash' => sha1($this->email)]
+        );
+
+        Mail::to($this->email)->send(new EmailVerificationMail($verificationUrl));
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $resetUrl = url(route('password.reset', ['token' => $token, 'email' => $this->email], false));
+
+        Mail::to($this->email)->send(new ResetPasswordMail($resetUrl));
     }
 }
