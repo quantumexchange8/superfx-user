@@ -611,4 +611,7 @@ return [
     "invalid_link" => "Invalid Account Type Access Link.",
     "approve_date" => "Approve Date",
     "filter_approve_date" => "Filter by Approve Date",
+    'toast_update_rebate_success_message' => 'You’ve successfully updated the rebate details!',
+    "rebate_exceed_upline" => "Rebate is more than upline :name : :value",
+    "rebate_exceed_downline" => "Rebate is less than downline :name : :value",
 ];

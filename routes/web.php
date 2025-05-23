@@ -132,6 +132,12 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('/getRebateAllocateData', [RebateController::class, 'getRebateAllocateData'])->name('rebate_allocate.getRebateAllocateData');
         Route::get('/getAgents', [RebateController::class, 'getAgents'])->name('rebate_allocate.getAgents');
         Route::get('/changeAgents', [RebateController::class, 'changeAgents'])->name('rebate_allocate.changeAgents');
+
+        Route::post('/updateRebateAmount', [RebateController::class, 'updateRebateAmount'])->name('rebate_allocate.updateRebateAmount');
+
+
+
+
     });
 
     /**

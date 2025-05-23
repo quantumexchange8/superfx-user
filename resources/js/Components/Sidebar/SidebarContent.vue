@@ -96,15 +96,15 @@ const user = usePage().props.auth.user;
        </SidebarLink>
 
         <!-- Rebate allocate -->
-<!--        <SidebarLink-->
-<!--            :title="$t('public.rebate_allocate')"-->
-<!--            :href="route('rebate_allocate')"-->
-<!--            :active="route().current('rebate_allocate')"-->
-<!--        >-->
-<!--            <template #icon>-->
-<!--                <IconBusinessplan :size="20" stroke-width="1.25" />-->
-<!--            </template>-->
-<!--        </SidebarLink>-->
+        <SidebarLink
+            :title="$t('public.rebate_allocate')"
+            :href="route('rebate_allocate')"
+            :active="route().current('rebate_allocate')"
+        >
+            <template #icon>
+                <IconBusinessplan :size="20" stroke-width="1.25" />
+            </template>
+        </SidebarLink>
 
         <!-- Billboard -->
 <!--        <SidebarLink-->
