@@ -16,6 +16,7 @@ import {
     IconCircleXFilled,
     IconAdjustments,
     IconCloudDownload,
+    IconCircleCheckFilled
 } from '@tabler/icons-vue';
 import Badge from '@/Components/Badge.vue';
 import { trans, wTrans } from "laravel-vue-i18n";
@@ -237,10 +238,13 @@ watchEffect(() => {
                             </div>
                         </div>
                         <div class="flex flex-col items-start">
-                            <div class="w-20 truncate font-medium xl:w-36">
-                                {{ slotProps.data.name }}
+                            <div class="flex items-center gap-2 w-24 xl:w-40">
+                                <div class="max-w-full truncate font-medium">
+                                    {{ slotProps.data.name }}
+                                </div>
+                                <IconCircleCheckFilled v-if="slotProps.data.kyc_status === 'approved'" size="16" stroke-width="1.25" class="text-success-500 grow-0 shrink-0" />
                             </div>
-                            <div class="w-20 truncate text-gray-500 text-xs xl:w-36">
+                            <div class="w-24 truncate text-gray-500 text-xs xl:w-40">
                                 {{ slotProps.data.email }}
                             </div>
                         </div>

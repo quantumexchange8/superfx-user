@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { IconChevronRight } from '@tabler/icons-vue';
+import { IconChevronRight, IconCircleCheckFilled } from '@tabler/icons-vue';
 import Button from '@/Components/Button.vue';
 import DefaultProfilePhoto from "@/Components/DefaultProfilePhoto.vue";
 import StatusBadge from '@/Components/StatusBadge.vue';
@@ -132,15 +132,24 @@ const filteredDataOverviews = computed(() => {
             <div class="p-4 flex flex-col justify-center items-center gap-6 self-stretch rounded-2xl bg-white shadow-toast md:py-6 md:px-8 md:flex-row md:gap-9">
                 <div
                     v-if="userDetail"
-                    class="pb-6 flex items-center gap-4 self-stretch border-b border-solid border-gray-200 md:pb-0 md:flex-col md:border-b-0 md:border-r"
+                    class="pb-6 flex items-center gap-4 self-stretch border-b border-solid border-gray-200 md:pb-0 md:pr-6 md:flex-col md:border-b-0 md:border-r"
                 >
-                    <div class="w-14 h-14 rounded-full overflow-hidden md:w-[60px] md:h-[60px]">
-                        <div v-if="userDetail.profile_photo">
-                            <img :src="userDetail.profile_photo" alt="Profile Photo" />
+                    <div class="relative w-14 h-14 md:w-[60px] md:h-[60px]">
+                        <div class="w-full h-full rounded-full overflow-hidden">
+                            <div v-if="userDetail.profile_photo">
+                                <img :src="userDetail.profile_photo" alt="Profile Photo" class="w-full h-full object-cover" />
+                            </div>
+                            <div v-else>
+                                <DefaultProfilePhoto />
+                            </div>
                         </div>
-                        <div v-else>
-                            <DefaultProfilePhoto />
-                        </div>
+
+                        <IconCircleCheckFilled
+                            v-if="userDetail.kyc_status === 'approved'"
+                            size="16"
+                            stroke-width="1.25"
+                            class="absolute text-success-500 grow-0 shrink-0 -right-0 -bottom-0 bg-white rounded-full"
+                        />
                     </div>
 
                     <div class="flex flex-col items-start gap-1 md:items-center md:self-stretch">
@@ -155,7 +164,7 @@ const filteredDataOverviews = computed(() => {
                 <!-- loading left column -->
                 <div
                     v-else
-                    class="pb-6 flex items-center gap-4 self-stretch border-b border-solid border-gray-200 md:pb-0 md:flex-col md:border-b-0 md:border-r"
+                    class="pb-6 flex items-center gap-4 self-stretch border-b border-solid border-gray-200 md:pb-0 md:pr-6 md:flex-col md:border-b-0 md:border-r"
                 >
                     <div class="animate-pulse w-14 h-14 rounded-full overflow-hidden md:w-[60px] md:h-[60px]">
                         <DefaultProfilePhoto />
