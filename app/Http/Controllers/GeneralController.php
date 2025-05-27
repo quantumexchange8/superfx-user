@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\UserToMarkupProfile;
+use App\Models\User;
+use App\Models\Symbol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -34,4 +36,39 @@ class GeneralController extends Controller
         ]);
     }
 
+    public function getRebateUplines($returnAsArray = false)
+    {
+        $uplines = User::whereIn('role', ['ib'])
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'value' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'id_number' => $user->id_number,
+                    // 'profile_photo' => $user->getFirstMediaUrl('profile_photo')
+                ];
+            });
+
+        if ($returnAsArray) {
+            return $uplines;
+        }
+
+        return response()->json([
+            'uplines' => $uplines,
+        ]);
+    }
+
+    public function getSymbols($returnAsArray = false)
+    {
+        $symbols = Symbol::distinct()->pluck('meta_symbol_name');
+    
+        if ($returnAsArray) {
+            return $symbols;
+        }
+    
+        return response()->json([
+            'symbols' => $symbols,
+        ]);
+    }
 }

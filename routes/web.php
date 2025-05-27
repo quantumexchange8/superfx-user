@@ -16,6 +16,7 @@ use App\Http\Controllers\DownloadCenterController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TradingAccountController;
 use App\Http\Controllers\GeneralController;
+use App\Http\Controllers\TradePositionController;
 
 Route::get('locale/{locale}', function ($locale) {
     App::setLocale($locale);
@@ -165,6 +166,18 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('/getTransactions', [TransactionController::class, 'getTransactions'])->name('transaction.getTransactions');
         Route::get('/getRebateTransactions', [TransactionController::class, 'getRebateTransactions'])->name('transaction.getRebateTransactions');
         Route::post('/cancelWithdrawal', [TransactionController::class, 'cancelWithdrawal'])->name('transaction.cancel_withdrawal');
+    });
+
+    /**
+     * ==============================
+     *         Trade Position
+     * ==============================
+     */
+    Route::prefix('trade_positions')->group(function () {
+        Route::get('/open_positions', [TradePositionController::class, 'open_positions'])->name('trade_positions.open_positions');
+        Route::get('/open_trade', [TradePositionController::class, 'open_trade'])->name('trade_positions.open_trade');
+        Route::get('/closed_positions', [TradePositionController::class, 'closed_positions'])->name('trade_positions.closed_positions');
+        Route::get('/closed_trade', [TradePositionController::class, 'closed_trade'])->name('trade_positions.closed_trade');
     });
 
     /**

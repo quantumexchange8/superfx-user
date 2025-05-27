@@ -83,6 +83,28 @@ const user = usePage().props.auth.user;
             </template>
         </SidebarLink>
 
+        <!-- Open Position -->
+        <SidebarLink
+            :title="$t('public.open_positions')"
+            :href="route('trade_positions.open_positions')"
+            :active="route().current('trade_positions.open_positions')"
+        >
+            <template #icon>
+                <IconFileAnalytics :size="20" stroke-width="1.25" />
+            </template>
+        </SidebarLink>
+
+        <!-- Closed Position -->
+        <SidebarLink
+            :title="$t('public.closed_positions')"
+            :href="route('trade_positions.closed_positions')"
+            :active="route().current('trade_positions.closed_positions')"
+        >
+            <template #icon>
+                <IconFileAnalytics :size="20" stroke-width="1.25" />
+            </template>
+        </SidebarLink>
+
         <!-- Report -->
        <SidebarLink
            v-if="user.role === 'ib'"
