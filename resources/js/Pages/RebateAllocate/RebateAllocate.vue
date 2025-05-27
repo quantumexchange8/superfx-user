@@ -1,7 +1,8 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import {transactionFormat} from "@/Composables/index.js";
-import {computed, ref} from "vue";
+import {usePage} from "@inertiajs/vue3";
+import {computed, ref, watchEffect} from "vue";
 import {
     DepositIcon,
     NetAssetIcon,
@@ -10,6 +11,10 @@ import {
 } from "@/Components/Icons/solid.jsx";
 import {trans} from "laravel-vue-i18n";
 import RebateTable from "@/Pages/RebateAllocate/Partials/RebateTable.vue";
+
+const props = defineProps({
+    accountTypes: Array,
+})
 
 const { formatAmount } = transactionFormat();
 const rebates = ref([]);
@@ -29,6 +34,17 @@ const getRebateAllocateData = async () => {
 }
 
 getRebateAllocateData();
+
+const handleAccountTypeChange = (newType) => {
+    account_type_id.value = newType
+    getRebateAllocateData();
+};
+
+watchEffect(() => {
+    if (usePage().props.toast !== null) {
+        getRebateAllocateData();
+    }
+});
 </script>
 
 <template>
@@ -54,7 +70,7 @@ getRebateAllocateData();
                 </div>
             </div>
 
-            <RebateTable />
+            <RebateTable :accountTypes="accountTypes" @update:accountType="handleAccountTypeChange"/>
         </div>
     </AuthenticatedLayout>
 </template>

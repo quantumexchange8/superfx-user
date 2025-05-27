@@ -22,19 +22,22 @@ import toast from '@/Composables/toast';
 import { transactionFormat } from "@/Composables/index.js";
 const { formatAmount } = transactionFormat()
 
-const dropdownOptions = [
-    {
-        name: wTrans('public.standard_account'),
-        value: '1'
-    },
-    {
-        name: wTrans('public.premium_account'),
-        value: '2'
-    },
-]
+const props = defineProps({
+    accountTypes: Array,
+})
+
+const emit = defineEmits(['update:accountType']);
 
 const editingRows = ref([]);
-const accountType = ref(dropdownOptions[0].value);
+
+const accountTypes = ref();
+watch(() => props.accountTypes, (newAccountTypes) => {
+    accountTypes.value = newAccountTypes;
+}, { immediate: true }); // immediate: true will execute the watcher immediately on component mount
+
+const accountType = ref(accountTypes.value[0].value);
+
+// const accountType = ref(dropdownOptions[0].value);
 const loading = ref(false);
 const dt = ref();
 const agents = ref();
@@ -53,17 +56,18 @@ const getResults = async (type_id = 1) => {
     }
 };
 
-getResults();
+getResults(accountType.value);
 
 watchEffect(() => {
     if (usePage().props.toast !== null) {
-        getResults();
+        getResults(accountType.value);
     }
 });
 
 watch(accountType, (newValue) => {
+    emit('update:accountType', newValue);  // Emit the new value to the parent
     getResults(newValue);
-})
+});
 
 const changeAgent = async (newAgent) => {
     // console.log(newAgent)
@@ -200,7 +204,7 @@ const onRowEditSave = (event) => {
                     </div>
                     <Dropdown
                         v-model="accountType"
-                        :options="dropdownOptions"
+                        :options="accountTypes"
                         optionLabel="name"
                         optionValue="value"
                         class="w-full md:w-52 font-normal"

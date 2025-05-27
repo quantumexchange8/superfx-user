@@ -13,7 +13,9 @@ class RebateController extends Controller
 {
     public function index()
     {
-        return Inertia::render('RebateAllocate/RebateAllocate');
+        return Inertia::render('RebateAllocate/RebateAllocate', [
+            'accountTypes' => (new GeneralController())->getAccountTypes(true),
+        ]);
     }
 
     public function getRebateAllocateData(Request $request)

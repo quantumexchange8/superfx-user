@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use App\Models\AccountType;
 use App\Models\UserToMarkupProfile;
 use App\Models\User;
 use App\Models\Symbol;
@@ -69,6 +70,25 @@ class GeneralController extends Controller
     
         return response()->json([
             'symbols' => $symbols,
+        ]);
+    }
+
+    public function getAccountTypes($returnAsArray = false)
+    {
+        $accountTypes = AccountType::all()
+            ->map(function ($accountType) {
+                return [
+                    'value' => $accountType->id,
+                    'name' => trans('public.' . $accountType->slug),
+                ];
+            });
+
+        if ($returnAsArray) {
+            return $accountTypes;
+        }
+
+        return response()->json([
+            'accountTypes' => $accountTypes,
         ]);
     }
 }
