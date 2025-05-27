@@ -270,47 +270,7 @@ class TransactionController extends Controller
             Mail::to($user->email)->queue(new WithdrawalRequestUsdtMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no)));
         } else {
             $transaction->update(['status' => 'processing']);
-            Mail::to($user->email)->queue(new WithdrawalRequestMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no, $paymentWallet->payment_account_type));
-            $mailContent = View::make('emails.withdrawal-request', [
-                'user' => $user,
-                'meta_login' => null,
-                'amount' => $amount,
-                'created_at' => $transaction->created_at,
-                'account_no' => $paymentWallet->account_no,
-                'account_type' => $paymentWallet->payment_account_type
-            ])->render();
-
-            $mailbox = '{' . env('GMAIL_IMAP_HOST') . ':' . env('GMAIL_IMAP_PORT') . '/' . env('GMAIL_IMAP_ENCRYPTION') . '}[Gmail]/Sent Mail';
-            $username = env('GMAIL_EMAIL');
-            $password = env('GMAIL_PASSWORD');
-            
-            $imapStream = imap_open($mailbox, $username, $password);
-            // if (!$imapStream) {
-            //     return response()->json([
-            //         'message' => 'IMAP connection failed: ' . imap_last_error()
-            //     ], 500);
-            // }
-            $headers = "From: your-email@test.com\r\n";
-            $headers .= "To: recipient@test.com\r\n";
-            $headers .= "Subject: Withdrawal\r\n";
-            $headers .= "Content-Type: text/html; charset=UTF-8\r\n"; // Set content type to HTML
-            $headers .= "MIME-Version: 1.0\r\n"; // Indicate MIME version
-
-            // Append the email with the rendered HTML content
-            $message = $headers . "\r\n\r\n" . $mailContent;
-
-            $result = imap_append($imapStream, $mailbox, $message);
-            imap_close($imapStream);
-
-            // if ($result) {
-            //     return response()->json([
-            //         'message' => 'Email stored successfully in Gmail Sent Mail'
-            //     ]);
-            // } else {
-            //     return response()->json([
-            //         'message' => 'Failed to store email: ' . imap_last_error()
-            //     ], 500);
-            // }
+            Mail::to($user->email)->queue(new WithdrawalRequestMail($user, $transaction));
         }
 
         return redirect()->back()->with('notification', [
