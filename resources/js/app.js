@@ -45,7 +45,7 @@ createInertiaApp({
         iosZoomFix();
     },
     progress: {
-        color: '#2B398C'
+        color: '#3ecf8e'
     }
 })
 
