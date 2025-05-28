@@ -636,4 +636,5 @@ return [
     "commission" => "Commission",
     "swap" => "Swap",
     'ib_rebate_structure' => 'IB’s Rebate Structure',
+    "search_ib" => "Search IB",
 ];

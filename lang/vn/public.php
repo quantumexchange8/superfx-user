@@ -634,4 +634,5 @@ return [
     "commission" => "Hoa hồng",
     "swap" => "Phí Swap",
     "ib_rebate_structure" => "Cấu trúc rebate của IB",
+    "search_ib" => "Tìm kiếm IB",
 ];
