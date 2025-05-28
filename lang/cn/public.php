@@ -633,4 +633,5 @@ return [
     "account_currency" => "账户货币",
     "commission" => "佣金",
     "swap" => "掉期费",
+    "ib_rebate_structure" => "代理返佣架构",
 ];

@@ -635,4 +635,5 @@ return [
     "account_currency" => "Account Currency",
     "commission" => "Commission",
     "swap" => "Swap",
+    'ib_rebate_structure' => 'IB’s Rebate Structure',
 ];

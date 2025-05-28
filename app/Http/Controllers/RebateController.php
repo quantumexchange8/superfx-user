@@ -33,10 +33,20 @@ class RebateController extends Controller
     public function getAgents(Request $request)
     {
         $type_id = $request->type_id;
+        $search = $request->search;
+        
+        $query = User::find(Auth::id())->directChildren()->where('role', 'ib');
+       
+        if (!empty($search)) {
+            $query->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%$search%")
+                    ->orWhere('email', 'like', "%$search%")
+                    ->orWhere('id_number', 'like', "%$search%");
+            });
+        }
 
         //level 1 children
-        $lv1_agents = User::find(Auth::id())->directChildren()->where('role', 'ib')
-            ->get()->map(function($agent) {
+        $lv1_agents = $query->get()->map(function($agent) {
                 return [
                     'id' => $agent->id,
                     'profile_photo' => $agent->getFirstMediaUrl('profile_photo'),

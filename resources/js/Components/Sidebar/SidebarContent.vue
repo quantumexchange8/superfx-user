@@ -12,6 +12,8 @@ import {
     IconCoinMonero,
     IconBusinessplan,
     IconReceipt2,
+    IconFileReport,
+    IconFileTime,
     IconFileAnalytics,
     IconLogout,
     IconDownload,
@@ -90,7 +92,7 @@ const user = usePage().props.auth.user;
             :active="route().current('trade_positions.open_positions')"
         >
             <template #icon>
-                <IconFileAnalytics :size="20" stroke-width="1.25" />
+                <IconFileReport :size="20" stroke-width="1.25" />
             </template>
         </SidebarLink>
 
@@ -101,7 +103,7 @@ const user = usePage().props.auth.user;
             :active="route().current('trade_positions.closed_positions')"
         >
             <template #icon>
-                <IconFileAnalytics :size="20" stroke-width="1.25" />
+                <IconFileTime :size="20" stroke-width="1.25" />
             </template>
         </SidebarLink>
 

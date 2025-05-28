@@ -633,4 +633,5 @@ return [
     "account_currency" => "帳戶貨幣",
     "commission" => "傭金",
     "swap" => "掉期費",
+    "ib_rebate_structure" => "代理返傭架構",
 ];
