@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { HandIcon, CoinsIcon, RocketIcon } from '@/Components/Icons/solid';
+import { HandIcon, CoinsIcon, RocketIcon, NetBalanceIcon } from '@/Components/Icons/solid';
 import {onMounted, ref, computed, watch, watchEffect} from "vue";
 import {generalFormat, transactionFormat} from "@/Composables/index.js";
 import { FilterMatchMode } from 'primevue/api';
@@ -49,6 +49,7 @@ const sortField = ref(null);
 const sortOrder = ref(null);  // (1 for ascending, -1 for descending)
 
 const totalLots = ref();
+const totalCommission = ref();
 const totalSwap = ref();
 const totalProfit = ref();
 const counterDuration = ref(10);
@@ -59,6 +60,11 @@ const dataOverviews = computed(() => [
         icon: HandIcon,
         total: totalLots.value,
         label: 'total_lots',
+    },
+    {
+        icon: NetBalanceIcon,
+        total: totalCommission.value,
+        label: 'total_commission',
     },
     {
         icon: CoinsIcon,
@@ -150,6 +156,7 @@ const loadLazyData = (event) => {
             totalRecords.value = results?.data?.total;
 
             totalLots.value = results?.totalLots;
+            totalCommission.value = results?.totalCommission;
             totalSwap.value = results?.totalSwap;
             totalProfit.value = results?.totalProfit;
             counterDuration.value = 1;
@@ -297,7 +304,7 @@ const clearFilter = () => {
 <template>
     <AuthenticatedLayout :title="$t('public.open_positions')">
         <div class="flex flex-col gap-5 md:gap-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 w-full gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 w-full gap-5">
                 <div
                     v-for="(item, index) in dataOverviews"
                     :key="index"

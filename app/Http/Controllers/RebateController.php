@@ -35,9 +35,13 @@ class RebateController extends Controller
         $type_id = $request->type_id;
         $search = $request->search;
         
-        $query = User::find(Auth::id())->directChildren()->where('role', 'ib');
-       
-        if (!empty($search)) {
+        $query = User::where('role', 'ib')->where('hierarchyList', 'like', '%-' . Auth::id() . '-%');
+
+        // If there is no search term, filter by upline_id
+        if (empty($search)) {
+            $query->where('upline_id', Auth::id());  // Only apply upline_id filter if no search term
+        } else {
+            // If there is a search term, search by name or email
             $query->where(function ($query) use ($search) {
                 $query->where('name', 'like', "%$search%")
                     ->orWhere('email', 'like', "%$search%")
@@ -46,16 +50,18 @@ class RebateController extends Controller
         }
 
         //level 1 children
-        $lv1_agents = $query->get()->map(function($agent) {
+        $lv1_agents = $query->get()->map(function($agent) use ($search) {
+            $level = $search ? $this->calculateLevel($agent->hierarchyList) : 1;
+
                 return [
                     'id' => $agent->id,
                     'profile_photo' => $agent->getFirstMediaUrl('profile_photo'),
                     'name' => $agent->name,
                     'hierarchy_list' => $agent->hierarchyList,
                     'upline_id' => $agent->upline_id,
-                    'level' => 1,
+                    'level' => $level,
                 ];
-            })->toArray();
+        })->toArray();
 
         $agents_array = [];
         $lv1_data = [];
