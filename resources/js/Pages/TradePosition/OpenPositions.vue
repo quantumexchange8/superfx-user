@@ -434,14 +434,14 @@ const clearFilter = () => {
                         </template>
                         <template v-if="openTrades?.length > 0">
                             <Column
-                                field="created_at"
+                                field="trade_deal_id"
                                 sortable
-                                :header="`${$t('public.date')}`"
+                                :header="`${$t('public.ticket')}`"
                                 headerClass="text-nowrap"
                                 class="hidden md:table-cell"
                             >
                                 <template #body="slotProps">
-                                    {{ dayjs(slotProps.data.created_at).format('YYYY/MM/DD') }}
+                                    {{ slotProps.data.trade_deal_id }}
                                 </template>
                             </Column>
                             <Column
@@ -474,17 +474,6 @@ const clearFilter = () => {
                             >
                                 <template #body="slotProps">
                                     {{ slotProps.data.id_number }}
-                                </template>
-                            </Column>
-                            <Column
-                                field="trade_deal_id"
-                                sortable
-                                :header="`${$t('public.ticket')}`"
-                                headerClass="text-nowrap"
-                                class="hidden md:table-cell"
-                            >
-                                <template #body="slotProps">
-                                    {{ slotProps.data.trade_deal_id }}
                                 </template>
                             </Column>
                             <Column
@@ -535,7 +524,9 @@ const clearFilter = () => {
                                 class="hidden md:table-cell"
                             >
                                 <template #body="slotProps">
-                                    {{ $t(`public.${slotProps.data.trade_type}`) }}
+                                    <Tag :severity="slotProps.data.trade_type === 'buy' ? 'success' : 'danger'">
+                                        {{ $t(`public.${slotProps.data.trade_type}`) }}
+                                    </Tag>
                                 </template>
                             </Column>
                             <Column
@@ -699,7 +690,7 @@ const clearFilter = () => {
             <div class="flex flex-col gap-8 w-72 py-5 px-4">
                 <div class="flex flex-col gap-2 items-center self-stretch">
                     <div class="flex self-stretch text-xs text-gray-950 font-semibold">
-                        {{ $t('public.filter_date') }}
+                        {{ $t('public.filter_open_time') }}
                     </div>
                     <div class="flex flex-col relative gap-1 self-stretch">
                         <Calendar
