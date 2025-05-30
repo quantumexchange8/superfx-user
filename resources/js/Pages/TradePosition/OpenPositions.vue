@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { HandIcon, CoinsIcon, RocketIcon, NetBalanceIcon } from '@/Components/Icons/solid';
-import {onMounted, ref, computed, watch, watchEffect} from "vue";
+import {onMounted, ref, computed, watch, watchEffect, onUnmounted} from "vue";
 import {generalFormat, transactionFormat} from "@/Composables/index.js";
 import { FilterMatchMode } from 'primevue/api';
 import debounce from "lodash/debounce.js";
@@ -173,6 +173,8 @@ const loadLazyData = (event) => {
 
 const onPage = (event) => {
     lazyParams.value = event;
+    first.value = event.first;
+    rows.value = event.rows;
     loadLazyData(event);
 };
 
@@ -214,6 +216,8 @@ const exportOpenTrade = async () => {
     }
 };
 
+let intervalId = null;
+
 onMounted(() => {
     // Ensure filters are populated before fetching data
     if (Array.isArray(selectedDate.value)) {
@@ -232,8 +236,17 @@ onMounted(() => {
         filters: filters.value
     };
 
+    intervalId = setInterval(() => {
+        first.value = 0;
+        page.value = 0;
+        loadLazyData();
+    }, 60000);
     // loadLazyData();
 });
+
+onUnmounted(() => {
+  clearInterval(intervalId)
+})
 
 const op = ref();
 const filterCount = ref(0);
