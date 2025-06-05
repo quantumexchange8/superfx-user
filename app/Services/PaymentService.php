@@ -125,7 +125,7 @@ class PaymentService
     {
         ksort($params);
         $concatenatedString = implode('', $params);
-        $hashParams = hash('sha256', $concatenatedString . $merchantKey);
+        $hashParams = hash('sha256', $concatenatedString . $merchantKey, true);
         return base64_encode($hashParams);
     }
 }
