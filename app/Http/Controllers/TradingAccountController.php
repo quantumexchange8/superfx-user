@@ -28,17 +28,14 @@ use App\Services\MetaFourService;
 use App\Models\AssetSubscription;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
 use App\Services\RunningNumberService;
 use App\Services\DropdownOptionService;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\PaymentGateway;
 use App\Models\CurrencyConversionRate;
-use App\Models\UserToMarkupProfile;
-use function Symfony\Component\Translation\t;
+use Throwable;
 
 class TradingAccountController extends Controller
 {
@@ -174,7 +171,7 @@ class TradingAccountController extends Controller
             foreach ($trading_accounts as $trading_account) {
                 (new MetaFourService)->getUserInfo($trading_account->meta_login);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error($e->getMessage());
         }
 
@@ -326,7 +323,7 @@ class TradingAccountController extends Controller
         $transaction_amount = $adjusted_amount - $fee;
          try {
              $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Withdraw From Account: " . $transaction_number, 'balance', '');
-         } catch (\Throwable $e) {
+         } catch (Throwable $e) {
              if ($e->getMessage() == "Not found") {
                  TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
              } else {
@@ -427,7 +424,7 @@ class TradingAccountController extends Controller
          try {
              $tradeFrom = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Transfer from ID (" . $tradingAccount->meta_login . ")", 'balance', '');
              $tradeTo = (new MetaFourService)->createTrade($to_meta_login, $to_adjusted_amount, "Transfer to ID (" . $to_meta_login . ")", 'balance', '');
-         } catch (\Throwable $e) {
+         } catch (Throwable $e) {
              if ($e->getMessage() == "Not found") {
                  TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
              } else {
@@ -475,7 +472,7 @@ class TradingAccountController extends Controller
 
         try {
             (new MetaFourService)->updateLeverage($account->meta_login, $request->leverage);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error($e->getMessage());
             return back()
                 ->with('toast', [
@@ -531,7 +528,7 @@ class TradingAccountController extends Controller
                     ]);
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error($e->getMessage());
             return back()
                 ->with('toast', [
@@ -621,7 +618,7 @@ class TradingAccountController extends Controller
 
             $account->delete();
             $trading_user->delete();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error($e->getMessage());
 
             return back()->with('toast', [
@@ -942,30 +939,7 @@ class TradingAccountController extends Controller
 
         if ($transaction->status == 'successful') {
             if ($transaction->transaction_type == 'deposit') {
-                $trade = null;
-
-                $tradingAccount = TradingAccount::with('account_type')
-                    ->where('meta_login', $transaction->to_meta_login)
-                    ->first();
-                $multiplier = $tradingAccount->account_type->balance_multiplier;
-                $adjusted_amount = $transaction->transaction_amount * $multiplier;
-
-                try {
-                    $trade = (new MetaFourService)->createTrade($transaction->to_meta_login, $adjusted_amount, "Deposit: " . $result['system_order_code'], 'balance', '');
-                } catch (\Throwable $e) {
-                    if ($e->getMessage() == "Not found") {
-                        TradingUser::firstWhere('meta_login', $transaction->to_meta_login)->update(['acc_status' => 'Inactive']);
-                    } else {
-                        Log::error($e->getMessage());
-                    }
-                }
-                $ticket = $trade['ticket'] ?? null;
-                $transaction->ticket = $ticket;
-                $transaction->save();
-
-                $user = User::where('id', $transaction->user_id)->first();
-
-                Mail::to($user->email)->send(new DepositSuccessMail($user, $transaction->to_meta_login, $transaction->amount, $transaction->created_at));
+                $this->proceed_deposit_to_account($transaction);
 
                 return response()->json(['success' => true, 'message' => 'Deposit Success']);
             }
@@ -1029,6 +1003,8 @@ class TradingAccountController extends Controller
         $dataArray = json_decode($bodyContent, true);
         $jsonString = json_encode($dataArray, JSON_UNESCAPED_UNICODE);
 
+        Log::debug("Callback Response: " , $dataArray);
+
         $concatenatedString = $jsonString . $payment_gateway->secondary_key;
         $hashBody = hash('sha256', $concatenatedString);
 
@@ -1036,8 +1012,57 @@ class TradingAccountController extends Controller
             return response()->json(['message' => 'Invalid JSON body'], 400);
         }
 
+        $transaction = Transaction::firstWhere('transaction_number', $dataArray['orderId']);
+        $status = $dataArray['code'] == 'SUCCESS' ? 'successful' : 'failed';
 
+        $transaction->update([
+            'payment_platform_name' => $dataArray['senderBankName'] ?? null,
+            'bank_code' => $dataArray['senderBankId'] ?? null,
+            'txn_hash' => $dataArray['secretSenderBankRefNumber'] ?? null,
+            'transaction_amount' => $transaction->amount,
+            'from_currency' => 'VND',
+            'to_currency' => 'USD',
+            'status' => $status,
+            'comment' => $dataArray['senderBinCode'] ?? null,
+            'approved_at' => now()
+        ]);
 
-        return response()->json(['message' => 'Notification received'], 200);
+        if ($transaction->status == 'successful') {
+            if ($transaction->transaction_type == 'deposit') {
+                $this->proceed_deposit_to_account($transaction);
+
+                return response()->json(['success' => true, 'message' => 'Deposit Success']);
+            }
+        }
+
+        return response()->json(['success' => false, 'message' => 'Deposit Failed']);
+    }
+
+    private function proceed_deposit_to_account($transaction)
+    {
+        $trade = null;
+
+        $tradingAccount = TradingAccount::with('account_type')
+            ->where('meta_login', $transaction->to_meta_login)
+            ->first();
+        $multiplier = $tradingAccount->account_type->balance_multiplier;
+        $adjusted_amount = $transaction->transaction_amount * $multiplier;
+
+        try {
+            $trade = (new MetaFourService)->createTrade($transaction->to_meta_login, $adjusted_amount, "Deposit: " . $transaction->comment, 'balance', '');
+        } catch (Throwable $e) {
+            if ($e->getMessage() == "Not found") {
+                TradingUser::firstWhere('meta_login', $transaction->to_meta_login)->update(['acc_status' => 'Inactive']);
+            } else {
+                Log::error($e->getMessage());
+            }
+        }
+        $ticket = $trade['ticket'] ?? null;
+        $transaction->ticket = $ticket;
+        $transaction->save();
+
+        $user = User::firstWhere('id', $transaction->user_id);
+
+        Mail::to($user->email)->send(new DepositSuccessMail($user, $transaction->to_meta_login, $transaction->amount, $transaction->created_at));
     }
 }
