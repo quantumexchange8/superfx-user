@@ -74,9 +74,7 @@ class TradePositionController extends Controller
                 $start_date = Carbon::parse($startDate)->addDay()->startOfDay();
                 $end_date = Carbon::parse($endDate)->addDay()->endOfDay();
                 
-                $query->whereBetween('created_at', [$start_date, $end_date]);
-            } else {
-                $query->whereDate('created_at', '>=', '2024-01-01');
+                $query->whereBetween('trade_open_time', [$start_date, $end_date]);
             }
         
             if ($data['filters']['upline_id']) {
@@ -112,7 +110,7 @@ class TradePositionController extends Controller
                 $order = $data['sortOrder'] == 1 ? 'asc' : 'desc';
                 $query->orderBy($data['sortField'], $order);
             } else {
-                $query->orderByDesc('created_at')->orderByDesc('id');
+                $query->orderByDesc('trade_open_time')->orderByDesc('id');
             }
 
             // Handle pagination
@@ -244,9 +242,7 @@ class TradePositionController extends Controller
                 $start_date = Carbon::parse($startDate)->addDay()->startOfDay();
                 $end_date = Carbon::parse($endDate)->addDay()->endOfDay();
                 
-                $query->whereBetween('created_at', [$start_date, $end_date]);
-            } else {
-                $query->whereDate('created_at', '>=', '2024-01-01');
+                $query->whereBetween('trade_open_time', [$start_date, $end_date]);
             }
         
             $startClosedDate = $data['filters']['start_close_date'];
@@ -257,8 +253,6 @@ class TradePositionController extends Controller
                 $end_close_date = Carbon::parse($endClosedDate)->addDay()->endOfDay();
 
                 $query->whereBetween('trade_close_time', [$start_close_date, $end_close_date]);
-            } else {
-                $query->whereDate('created_at', '>=', '2024-01-01');
             }
 
             if ($data['filters']['upline_id']) {
@@ -294,7 +288,7 @@ class TradePositionController extends Controller
                 $order = $data['sortOrder'] == 1 ? 'asc' : 'desc';
                 $query->orderBy($data['sortField'], $order);
             } else {
-                $query->orderByDesc('created_at')->orderByDesc('id');
+                $query->orderByDesc('trade_open_time')->orderByDesc('id');
             }
 
             // Handle pagination

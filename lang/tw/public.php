@@ -635,4 +635,5 @@ return [
     "swap" => "掉期費",
     "ib_rebate_structure" => "代理返傭架構",
     "search_ib" => "搜索代理",
+    "filter_open_time" => "按開盤時間篩選",
 ];

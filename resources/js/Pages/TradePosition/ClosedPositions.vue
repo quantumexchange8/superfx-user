@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { HandIcon, NetBalanceIcon, CoinsIcon, RocketIcon } from '@/Components/Icons/solid';
-import {onMounted, ref, computed, watch, watchEffect} from "vue";
+import {onMounted, ref, computed, watch, watchEffect, onUnmounted} from "vue";
 import {generalFormat, transactionFormat} from "@/Composables/index.js";
 import { FilterMatchMode } from 'primevue/api';
 import debounce from "lodash/debounce.js";
@@ -141,7 +141,6 @@ const lazyParams = ref({});
 
 const loadLazyData = (event) => {
     isLoading.value = true;
-
     lazyParams.value = { ...lazyParams.value, first: event?.first || first.value };
     lazyParams.value.filters = filters.value;
 
@@ -180,6 +179,8 @@ const loadLazyData = (event) => {
 
 const onPage = (event) => {
     lazyParams.value = event;
+    first.value = event.first;
+    rows.value = event.rows;
     loadLazyData(event);
 };
 
@@ -221,6 +222,8 @@ const exportClosedTrade = async () => {
     }
 };
 
+let intervalId = null;
+
 onMounted(() => {
     // Ensure filters are populated before fetching data
     if (Array.isArray(selectedDate.value)) {
@@ -239,8 +242,17 @@ onMounted(() => {
         filters: filters.value
     };
 
+    intervalId = setInterval(() => {
+        first.value = 0;
+        page.value = 0;
+        loadLazyData();
+    }, 60000);
     // loadLazyData();
 });
+
+onUnmounted(() => {
+  clearInterval(intervalId);
+})
 
 const op = ref();
 const filterCount = ref(0);
@@ -468,14 +480,14 @@ const clearFilter = () => {
                         </template>
                         <template v-if="openTrades?.length > 0">
                             <Column
-                                field="created_at"
+                                field="trade_deal_id"
                                 sortable
-                                :header="`${$t('public.date')}`"
+                                :header="`${$t('public.ticket')}`"
                                 headerClass="text-nowrap"
                                 class="hidden md:table-cell"
                             >
                                 <template #body="slotProps">
-                                    {{ dayjs(slotProps.data.created_at).format('YYYY/MM/DD') }}
+                                    {{ slotProps.data.trade_deal_id }}
                                 </template>
                             </Column>
                             <Column
@@ -508,17 +520,6 @@ const clearFilter = () => {
                             >
                                 <template #body="slotProps">
                                     {{ slotProps.data.id_number }}
-                                </template>
-                            </Column>
-                            <Column
-                                field="trade_deal_id"
-                                sortable
-                                :header="`${$t('public.ticket')}`"
-                                headerClass="text-nowrap"
-                                class="hidden md:table-cell"
-                            >
-                                <template #body="slotProps">
-                                    {{ slotProps.data.trade_deal_id }}
                                 </template>
                             </Column>
                             <Column
@@ -569,7 +570,9 @@ const clearFilter = () => {
                                 class="hidden md:table-cell"
                             >
                                 <template #body="slotProps">
-                                    {{ $t(`public.${slotProps.data.trade_type}`) }}
+                                    <Tag :severity="slotProps.data.trade_type === 'buy' ? 'success' : 'danger'">
+                                        {{ $t(`public.${slotProps.data.trade_type}`) }}
+                                    </Tag>
                                 </template>
                             </Column>
                             <Column
@@ -756,7 +759,7 @@ const clearFilter = () => {
             <div class="flex flex-col gap-8 w-72 py-5 px-4">
                 <div class="flex flex-col gap-2 items-center self-stretch">
                     <div class="flex self-stretch text-xs text-gray-950 font-semibold">
-                        {{ $t('public.filter_date') }}
+                        {{ $t('public.filter_open_time') }}
                     </div>
                     <div class="flex flex-col relative gap-1 self-stretch">
                         <Calendar
