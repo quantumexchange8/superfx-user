@@ -564,39 +564,6 @@ const clearFilter = () => {
                                 </template>
                             </Column>
                             <Column
-                                field="upline_name"
-                                :header="$t('public.upline')"
-                                headerClass="text-nowrap"
-                                class="hidden md:table-cell"
-                            >
-                                <template #body="slotProps">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex flex-col items-start">
-                                            <div class="font-medium">
-                                                {{ slotProps.data.upline_name }}
-                                            </div>
-                                            <div class="text-gray-500 text-xs">
-                                                {{ slotProps.data.upline_email }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </Column>
-                            <Column
-                                field="upline_id_number"
-                                :header="$t('public.upline_id')"
-                                headerClass="text-nowrap"
-                                class="hidden md:table-cell"
-                            >
-                                <template #body="slotProps">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex flex-col items-start">
-                                            {{ slotProps.data.upline_id_number }}
-                                        </div>
-                                    </div>
-                                </template>
-                            </Column>
-                            <Column
                                 field="trade_open_price"
                                 sortable
                                 :header="`${$t('public.open_price')}&nbsp;($)`"

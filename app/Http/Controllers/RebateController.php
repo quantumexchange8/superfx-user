@@ -13,6 +13,13 @@ class RebateController extends Controller
 {
     public function index()
     {
+        if (Auth::user()->role != 'ib') {
+            return redirect()->route('dashboard')->with('toast', [
+                'title' => trans('public.access_denied'),
+                'type' => 'warning'
+            ]);
+        }
+
         return Inertia::render('RebateAllocate/RebateAllocate', [
             'accountTypes' => (new GeneralController())->getAccountTypes(true),
         ]);
@@ -34,7 +41,7 @@ class RebateController extends Controller
     {
         $type_id = $request->type_id;
         $search = $request->search;
-        
+
         $query = User::where('role', 'ib')->where('hierarchyList', 'like', '%-' . Auth::id() . '-%');
 
         // If there is no search term, filter by upline_id
@@ -304,7 +311,7 @@ class RebateController extends Controller
                 ];
             }
         }
-    
+
         $validator = Validator::make($request->all(), $rules);
         \Log::info('Validation Rules:', $rules);
         $validator->validate();

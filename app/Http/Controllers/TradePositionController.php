@@ -28,9 +28,14 @@ class TradePositionController extends Controller
     {
         if ($request->has('lazyEvent')) {
             $user = Auth::user();
-            $child_ids = $user->getChildrenIds();
-            $child_ids[] = $user->id;
-            
+
+            if ($user->role == 'ib') {
+                $child_ids = $user->getChildrenIds();
+                $child_ids[] = $user->id;
+            } else {
+                $child_ids = [$user->id];
+            }
+
             $data = json_decode($request->only(['lazyEvent'])['lazyEvent'], true); //only() extract parameters in lazyEvent
 
             $query = OpenTrade::with([
@@ -73,10 +78,10 @@ class TradePositionController extends Controller
             if ($startDate && $endDate) {
                 $start_date = Carbon::parse($startDate)->addDay()->startOfDay();
                 $end_date = Carbon::parse($endDate)->addDay()->endOfDay();
-                
+
                 $query->whereBetween('trade_open_time', [$start_date, $end_date]);
             }
-        
+
             if ($data['filters']['upline_id']) {
                 $uplineId = $data['filters']['upline_id'];
 
@@ -84,7 +89,7 @@ class TradePositionController extends Controller
                 $upline = User::find($uplineId);
                 $childrenIds = $upline ? $upline->getChildrenIds() : [];
                 $childrenIds[] = $uplineId;
-            
+
                 // Filter OpenTrade by user.upline_id in childrenIds
                 $query->whereHas('user', function ($q) use ($childrenIds) {
                     $q->whereIn('upline_id', $childrenIds);
@@ -115,7 +120,7 @@ class TradePositionController extends Controller
 
             // Handle pagination
             $rowsPerPage = $data['rows'] ?? 15; // Default to 15 if 'rows' not provided
-                    
+
             // Export logic
             if ($request->has('exportStatus') && $request->exportStatus) {
                 $records = $query->get();
@@ -129,7 +134,7 @@ class TradePositionController extends Controller
             $totalProfit = (clone $query)->sum('trade_profit_usd');
 
             $openTrades = $query->paginate($rowsPerPage);
-            
+
             foreach ($openTrades as $openTrade) {
                 // Flatten user-related fields if user exists
                 $maskEmail = fn($email) => substr($email, 0, 2) . '*******' . strstr($email, '@');
@@ -142,7 +147,7 @@ class TradePositionController extends Controller
                     }
 
                     $openTrade->id_number = $openTrade->user->id_number ?? null;
-            
+
                     // Flatten upline-related fields if upline exists
                     $upline = $openTrade->user->upline;
                     if ($upline) {
@@ -152,11 +157,11 @@ class TradePositionController extends Controller
                         if ($this->calculateLevel($upline->hierarchyList) > 1 && $openTrade->upline_email) {
                             $openTrade->upline_email = $maskEmail($openTrade->upline_email);
                         }
-    
+
                         $openTrade->upline_id_number = $upline->id_number ?? null;
                     }
                 }
-            
+
                 // Flatten trading_account-related fields if trading_account exists
                 if ($openTrade->trading_account) {
                     $accountType = $openTrade->trading_account->account_type;
@@ -167,13 +172,13 @@ class TradePositionController extends Controller
                         $openTrade->account_type_color = $accountType->color ?? null;
                     }
                 }
-            
+
                 // Remove unnecessary nested relationships to keep data clean
                 unset($openTrade->user);
                 unset($openTrade->trading_account);
             }
         }
-        
+
         return response()->json([
             'success' => true,
             'data' => $openTrades,
@@ -198,8 +203,13 @@ class TradePositionController extends Controller
 
         if ($request->has('lazyEvent')) {
             $user = Auth::user();
-            $child_ids = $user->getChildrenIds();
-            $child_ids[] = $user->id;
+
+            if ($user->role == 'ib') {
+                $child_ids = $user->getChildrenIds();
+                $child_ids[] = $user->id;
+            } else {
+                $child_ids = [$user->id];
+            }
 
             $data = json_decode($request->only(['lazyEvent'])['lazyEvent'], true); //only() extract parameters in lazyEvent
 
@@ -241,10 +251,10 @@ class TradePositionController extends Controller
             if ($startDate && $endDate) {
                 $start_date = Carbon::parse($startDate)->addDay()->startOfDay();
                 $end_date = Carbon::parse($endDate)->addDay()->endOfDay();
-                
+
                 $query->whereBetween('trade_open_time', [$start_date, $end_date]);
             }
-        
+
             $startClosedDate = $data['filters']['start_close_date'];
             $endClosedDate = $data['filters']['end_close_date'];
 
@@ -262,7 +272,7 @@ class TradePositionController extends Controller
                 $upline = User::find($uplineId);
                 $childrenIds = $upline ? $upline->getChildrenIds() : [];
                 $childrenIds[] = $uplineId;
-            
+
                 // Filter OpenTrade by user.upline_id in childrenIds
                 $query->whereHas('trading_account.user', function ($q) use ($childrenIds) {
                     $q->whereIn('upline_id', $childrenIds);
@@ -293,7 +303,7 @@ class TradePositionController extends Controller
 
             // Handle pagination
             $rowsPerPage = $data['rows'] ?? 15; // Default to 15 if 'rows' not provided
-                    
+
             // Export logic
             if ($request->has('exportStatus') && $request->exportStatus) {
                 $records = $query->get();
@@ -307,7 +317,7 @@ class TradePositionController extends Controller
             $totalProfit = (clone $query)->sum('trade_profit_usd');
 
             $closeTrades = $query->paginate($rowsPerPage);
-            
+
             foreach ($closeTrades as $closeTrade) {
                 // Flatten user-related fields if user exists
                 if ($closeTrade->user) {
@@ -321,7 +331,7 @@ class TradePositionController extends Controller
                     }
 
                     $closeTrade->id_number = $closeTrade->user->id_number ?? null;
-            
+
                     // Flatten upline-related fields if upline exists
                     $upline = $closeTrade->user->upline;
                     if ($upline) {
@@ -332,11 +342,11 @@ class TradePositionController extends Controller
                         if ($this->calculateLevel($upline->hierarchyList) > 1 && $closeTrade->upline_email) {
                             $closeTrade->upline_email = $maskEmail($closeTrade->upline_email);
                         }
-    
+
                         $closeTrade->upline_id_number = $upline->id_number ?? null;
                     }
                 }
-            
+
                 // Flatten trading_account-related fields if trading_account exists
                 if ($closeTrade->trading_account) {
                     $accountType = $closeTrade->trading_account->account_type;
@@ -347,13 +357,13 @@ class TradePositionController extends Controller
                         $closeTrade->account_type_color = $accountType->color ?? null;
                     }
                 }
-            
+
                 // Remove unnecessary nested relationships to keep data clean
                 unset($closeTrade->user);
                 unset($closeTrade->trading_account);
             }
         }
-        
+
         return response()->json([
             'success' => true,
             'data' => $closeTrades,
@@ -374,9 +384,9 @@ class TradePositionController extends Controller
         $split = explode('-'.Auth::id().'-', $hierarchyList);
 
         if (!isset($split[1])) {
-            return 1; 
+            return 1;
         }
-        
+
         return substr_count($split[1], '-') + 1;
     }
 }

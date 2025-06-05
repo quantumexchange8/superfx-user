@@ -121,6 +121,7 @@ const user = usePage().props.auth.user;
 
         <!-- Rebate allocate -->
         <SidebarLink
+            v-if="user.role === 'ib'"
             :title="$t('public.rebate_allocate')"
             :href="route('rebate_allocate')"
             :active="route().current('rebate_allocate')"
