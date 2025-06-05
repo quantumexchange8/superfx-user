@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PaymentAccount;
+use App\Models\PaymentGateway;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,5 +37,18 @@ class SelectOptionController extends Controller
                 'payment_accounts' => $paymentAccounts,
             ]);
         }
+    }
+
+    public function getPaymentGateways(Request $request)
+    {
+        $payments = PaymentGateway::where([
+            'environment' => app()->environment(),
+            'platform' => $request->platform
+        ])
+            ->get();
+
+        return response()->json([
+            'payment_gateways' => $payments,
+        ]);
     }
 }

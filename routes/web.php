@@ -31,6 +31,7 @@ Route::get('/', function () {
 
 Route::get('/admin_login/{hashedToken}', [DashboardController::class, 'admin_login']);
 Route::post('deposit_callback', [TradingAccountController::class, 'depositCallback'])->name('depositCallback');
+Route::post('payment_hot_callback', [TradingAccountController::class, 'payment_hot_callback'])->name('payment_hot_callback');
 
 Route::get('/confirmWithdrawal/{transaction_number}/{token}', [TransactionController::class, 'confirmWithdrawal'])->name('confirmWithdrawal');
 
@@ -40,6 +41,7 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::get('/getUserMarkupProfiles', [GeneralController::class, 'getUserMarkupProfiles'])->name('getUserMarkupProfiles');
     // Select Option
     Route::get('getPaymentAccounts', [SelectOptionController::class, 'getPaymentAccounts'])->name('getPaymentAccounts');
+    Route::get('getPaymentGateways', [SelectOptionController::class, 'getPaymentGateways'])->name('getPaymentGateways');
 
     /**
      * ==============================

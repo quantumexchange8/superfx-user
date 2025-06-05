@@ -20,7 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'deposit_return',
-            'deposit_callback'
+            'deposit_callback',
+            'payment_hot_callback'
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

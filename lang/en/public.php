@@ -637,4 +637,5 @@ return [
     "swap" => "Swap",
     'ib_rebate_structure' => 'IB’s Rebate Structure',
     "search_ib" => "Search IB",
+    "select_payment" => "Select Payment",
 ];
