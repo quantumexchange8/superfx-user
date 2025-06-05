@@ -994,6 +994,8 @@ class TradingAccountController extends Controller
             'environment' => app()->environment(),
         ]);
 
+        Log::debug("PayHot IPN Sign: " , $signature);
+
         // Check API Key
         if ($apiKey != $payment_gateway->payment_app_key) {
             return response()->json(['message' => 'Invalid key'], 400);
@@ -1006,9 +1008,10 @@ class TradingAccountController extends Controller
         Log::debug("Callback Response: " , $dataArray);
 
         $concatenatedString = $jsonString . $payment_gateway->secondary_key;
-        $hashBody = hash('sha256', $concatenatedString);
+        $hashBody = hash('sha256', $concatenatedString, true);
+        $hashedSign = base64_encode($hashBody);
 
-        if ($signature != $hashBody) {
+        if ($signature != $hashedSign) {
             return response()->json(['message' => 'Invalid JSON body'], 400);
         }
 
