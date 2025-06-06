@@ -974,7 +974,7 @@
                                         <tr>
                                             <td class="pad" style="padding-bottom:5px;padding-left:10px;padding-right:10px;padding-top:5px;width:100%;">
                                                 <div align="center" class="alignment" style="line-height:10px">
-                                                    <div style="max-width: 337.5px;"><img alt="" height="auto" src="{{ asset('email/create_account/images/chi_ngan_4.jpg') }}" style="display: block; height: auto; border: 0; width: 100%; border-radius: 20px 20px 20px 20px;" title="" width="337.5"/></div>
+                                                    <div style="max-width: 337.5px;"><img alt="" height="auto" src="{{ asset('email/create_account/images/30_fn.jpg') }}" style="display: block; height: auto; border: 0; width: 100%; border-radius: 20px 20px 20px 20px;" title="" width="337.5"/></div>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1068,7 +1068,7 @@
                                                         <w:anchorlock/>
                                                         <v:textbox inset="0px,0px,0px,0px">
                                                             <center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:16px">
-                                                    <![endif]--><a class="button" href="https://superfin.global/welcome-bonus" style="background-color:#00e288;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:4px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:inline-block;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:auto;word-break:keep-all;" target="_blank"><span style="word-break: break-word; padding-left: 20px; padding-right: 20px; font-size: 16px; display: inline-block; letter-spacing: normal;"><span style="word-break: break-word; line-height: 32px;"><strong>Learn more</strong></span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
+                                                    <![endif]--><a class="button" href="https://superfin.global/30-bonus" style="background-color:#00e288;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:4px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:inline-block;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:auto;word-break:keep-all;" target="_blank"><span style="word-break: break-word; padding-left: 20px; padding-right: 20px; font-size: 16px; display: inline-block; letter-spacing: normal;"><span style="word-break: break-word; line-height: 32px;"><strong>Learn more</strong></span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
                                             </td>
                                         </tr>
                                     </table>
@@ -1082,7 +1082,7 @@
                                                         <w:anchorlock/>
                                                         <v:textbox inset="0px,0px,0px,0px">
                                                             <center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:16px">
-                                                    <![endif]--><a class="button" href="https://superfin.global/partnership-program" style="background-color:#00e288;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:4px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:inline-block;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:auto;word-break:keep-all;" target="_blank"><span style="word-break: break-word; padding-left: 20px; padding-right: 20px; font-size: 16px; display: inline-block; letter-spacing: normal;"><span style="word-break: break-word; line-height: 32px;"><strong>Learn more</strong></span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
+                                                    <![endif]--><a class="button" href="https://superfin.global/partners" style="background-color:#00e288;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:4px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:inline-block;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:auto;word-break:keep-all;" target="_blank"><span style="word-break: break-word; padding-left: 20px; padding-right: 20px; font-size: 16px; display: inline-block; letter-spacing: normal;"><span style="word-break: break-word; line-height: 32px;"><strong>Learn more</strong></span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
                                             </td>
                                         </tr>
                                     </table>
@@ -1136,7 +1136,7 @@
                                                 <div align="right" class="alignment">
                                                     <table border="0" cellpadding="0" cellspacing="0" class="social-table" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; display: inline-block;" width="180px">
                                                         <tr>
-                                                            <td style="padding:0 0 0 4px;"><a href="https://www.facebook.com/SuperFinglobal/" target="_blank"><img alt="Facebook" height="auto" src="{{ asset('email/create_account/images/facebook2x.png') }}" style="display: block; height: auto; border: 0;" title="facebook" width="32"/></a></td>
+                                                            <td style="padding:0 0 0 4px;"><a href="https://www.facebook.com/superforexglobal/" target="_blank"><img alt="Facebook" height="auto" src="{{ asset('email/create_account/images/facebook2x.png') }}" style="display: block; height: auto; border: 0;" title="facebook" width="32"/></a></td>
                                                             <td style="padding:0 0 0 4px;"><a href="https://www.linkedin.com/" target="_blank"><img alt="Linkedin" height="auto" src="{{ asset('email/create_account/images/linkedin2x.png') }}" style="display: block; height: auto; border: 0;" title="linkedin" width="32"/></a></td>
                                                             <td style="padding:0 0 0 4px;"><a href="https://www.instagram.com/" target="_blank"><img alt="Instagram" height="auto" src="{{ asset('email/create_account/images/instagram2x.png') }}" style="display: block; height: auto; border: 0;" title="instagram" width="32"/></a></td>
                                                             <td style="padding:0 0 0 4px;"><a href="https://www.youtube.com/" target="_blank"><img alt="YouTube" height="auto" src="{{ asset('email/create_account/images/youtube2x.png') }}" style="display: block; height: auto; border: 0;" title="YouTube" width="32"/></a></td>
@@ -1406,7 +1406,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:13px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:15.6px;">
-                                                    <p style="margin: 0;">Finateqs Corp. © All rights reserved.</p>
+                                                    <p style="margin: 0;">SuperFin Corp. © All rights reserved.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1459,7 +1459,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><a href="https://superfin.global/contacts" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Contact Info</a></p>
+                                                    <p style="margin: 0;"><a href="https://superfin.global/contact-us" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Contact Info</a></p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1470,7 +1470,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><a href="https://superfin.global/regulation" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Terms and Conditions</a></p>
+                                                    <p style="margin: 0;"><a href="https://superfin.global/terms-and-conditions" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Terms and Conditions</a></p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1481,7 +1481,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><a href="https://superfin.global/#mt4" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Metatrader 4</a></p>
+                                                    <p style="margin: 0;"><a href="https://superfin.global/mt4" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Metatrader 4</a></p>
                                                 </div>
                                             </td>
                                         </tr>
