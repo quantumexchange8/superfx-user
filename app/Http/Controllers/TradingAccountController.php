@@ -994,7 +994,7 @@ class TradingAccountController extends Controller
             'environment' => app()->environment(),
         ]);
 
-        Log::debug("PayHot IPN Sign: " , $signature);
+        Log::debug("PayHot IPN Sign: " , [$signature]);
 
         // Check API Key
         if ($apiKey != $payment_gateway->payment_app_key) {
