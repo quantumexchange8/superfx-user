@@ -918,7 +918,9 @@ class TradingAccountController extends Controller
             $to_wallet_address = $result['bank_account_no'];
             $fees = round($result['fees'] / $transaction->conversion_rate, 2);
 
-            $payment_platform_name = Bank::where('bank_code', $result['bank_code'])->first();;
+            $payment_platform_name = Bank::where('bank_code', $result['bank_code'])
+                ->orWhere('alias_bank_code', $result['bank_code'])
+                ->first();
 
             $transaction->update([
                 'payment_platform_name' => $payment_platform_name->bank_name ?? null,
@@ -994,6 +996,7 @@ class TradingAccountController extends Controller
             'environment' => app()->environment(),
         ]);
 
+        Log::debug("PayHot IPN API Key: " , [$apiKey]);
         Log::debug("PayHot IPN Sign: " , [$signature]);
 
         // Check API Key
