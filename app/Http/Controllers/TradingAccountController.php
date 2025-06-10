@@ -339,6 +339,14 @@ class TradingAccountController extends Controller
          $paymentWallet = PaymentAccount::find($request->payment_account_id);
 
          $user = Auth::user();
+         $payment_platform_type = $request->payment_platform_type;
+
+         if ($request->payment_platform == 'bank') {
+             $payment_gateway = PaymentGateway::find($payment_platform_type);
+             $pay_method = $payment_gateway->payment_app_name;
+         } else {
+             $pay_method = 'payme-usdt';
+         }
 
          $transaction = Transaction::create([
              'user_id' => $user->id,
@@ -360,6 +368,7 @@ class TradingAccountController extends Controller
              'amount' => $adjusted_amount,
              'transaction_charges' => $fee,
              'transaction_amount' => $transaction_amount,
+             'comment' => $pay_method,
          ]);
 
         if ($paymentWallet->payment_platform == 'crypto') {
@@ -1053,8 +1062,10 @@ class TradingAccountController extends Controller
         $multiplier = $tradingAccount->account_type->balance_multiplier;
         $adjusted_amount = $transaction->transaction_amount * $multiplier;
 
+        Log::debug("Proceed: " , [$tradingAccount, $adjusted_amount]);
+
         try {
-            $trade = (new MetaFourService)->createTrade($transaction->to_meta_login, $adjusted_amount, "Deposit: " . $transaction->comment, 'balance', '');
+            $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, $adjusted_amount, "Deposit: " . $transaction->comment, 'balance', '');
         } catch (Throwable $e) {
             if ($e->getMessage() == "Not found") {
                 TradingUser::firstWhere('meta_login', $transaction->to_meta_login)->update(['acc_status' => 'Inactive']);
