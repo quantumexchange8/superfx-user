@@ -8,6 +8,7 @@ import { DepositIcon, WithdrawalIcon, NetBalanceIcon } from '@/Components/Icons/
 import { usePage } from "@inertiajs/vue3";
 import { trans, wTrans } from "laravel-vue-i18n";
 import { transactionFormat } from "@/Composables/index.js";
+import Avatar from "primevue/avatar";
 
 const { formatAmount } = transactionFormat();
 
@@ -46,19 +47,19 @@ function updateType(event) {
 // data overview
 const dataOverviews = computed(() => [
     {
-        icon: DepositIcon,
+        icon: 'TotalDeposit',
         total: groupTotalDeposit.value,
         label: trans('public.group_total_deposit'),
         borderColor: 'border-green',
     },
     {
-        icon: WithdrawalIcon,
+        icon: 'TotalWithdrawal',
         total: groupTotalWithdrawal.value,
         label: trans('public.group_total_withdrawal'),
         borderColor: 'border-pink',
     },
     {
-        icon: NetBalanceIcon,
+        icon: 'TotalCommission',
         total: groupTotalNetBalance.value,
         label: trans('public.group_total_net_balance'),
         borderColor: 'border-[#FEDC32]',
@@ -83,7 +84,12 @@ const handleUpdateGroupTotals = ({ deposit, withdrawal, netBalance }) => {
                 v-for="(item, index) in dataOverviews"
                 :key="index"
             >
-                <component :is="item.icon" class="w-12 h-12 grow-0 shrink-0 rounded-full" />
+                 <Avatar
+                    :image="`/img/icons/${item.icon}.png`"
+                    size="large"
+                    shape="circle"
+                    style="background-color: #f9fafb;"
+                />
                 <div class="flex flex-col items-center gap-1 w-full">
                     <span class="text-gray-500 text-xs md:text-sm">{{ item.label }}</span>
                     <div class="text-gray-950 text-lg md:text-xl font-semibold">
