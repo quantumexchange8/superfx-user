@@ -9,6 +9,7 @@ import TradingAccounts from '@/Pages/Transaction/Partials/TradingAccounts.vue';
 import RebateWallet from '@/Pages/Transaction/Partials/RebateWallet.vue';
 import { usePage } from '@inertiajs/vue3';
 import {transactionFormat} from "@/Composables/index.js";
+import Avatar from "primevue/avatar";
 
 const { formatAmount } = transactionFormat();
 
@@ -57,7 +58,12 @@ const user = usePage().props.auth.user;
         <div class="flex flex-col items-center gap-5 self-stretch">
             <div class="grid grid-cols-2 gap-5 w-full">
                 <div class="flex flex-col justify-center items-center gap-3 p-6 rounded-2xl border-b-8 w-full shadow-toast border-green">
-                    <DepositIcon />
+                    <Avatar
+                        :image="`/img/icons/TotalDeposit.png`"
+                        size="large"
+                        shape="circle"
+                        style="background-color: #f9fafb;"
+                    />
                     <div class="flex flex-col items-center gap-1 w-full">
                         <span class="text-gray-500 text-xs md:text-sm">{{ $t('public.total_deposit') }}</span>
                         <div
@@ -74,7 +80,12 @@ const user = usePage().props.auth.user;
                     </div>
                 </div>
                 <div class="flex flex-col justify-center items-center gap-3 p-6 rounded-2xl border-b-8 w-full shadow-toast border-pink">
-                    <WithdrawalIcon/>
+                    <Avatar
+                        :image="`/img/icons/TotalWithdrawal.png`"
+                        size="large"
+                        shape="circle"
+                        style="background-color: #f9fafb;"
+                    />
                     <div class="flex flex-col items-center gap-1 w-full">
                         <span class="text-gray-500 text-xs md:text-sm">{{ $t('public.total_withdrawal') }}</span>
                         <div

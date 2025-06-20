@@ -11,6 +11,7 @@ import Empty from "@/Components/Empty.vue";
 import { usePage } from '@inertiajs/vue3';
 import { trans } from 'laravel-vue-i18n';
 import Vue3Autocounter from 'vue3-autocounter';
+import Avatar from "primevue/avatar";
 
 const props = defineProps({
     user: Object,
@@ -58,25 +59,28 @@ watchEffect(() => {
 // data overview
 const dataOverviews = computed(() => [
     {
-        icon: DepositIcon,
+        icon: 'TotalDeposit',
         total: depositAmount.value,
         decimal: 2,
         label: trans('public.total_deposit')+" ($)",
         type: 'member',
+        icon_type: 'avatar',
     },
     {
-        icon: WithdrawalIcon,
+        icon: 'TotalWithdrawal',
         total: withdrawalAmount.value,
         decimal: 2,
         label: trans('public.total_withdrawal')+" ($)",
         type: 'member',
+        icon_type: 'avatar',
     },
     {
-        icon: RebateIcon,
+        icon: 'TotalCommission',
         total: rebateAmount.value,
         decimal: 2,
         label: trans('public.rebate_earned')+" ($)",
         type: 'ib',
+        icon_type: 'avatar',
     },
     {
         icon: MemberIcon,
@@ -84,6 +88,7 @@ const dataOverviews = computed(() => [
         decimal: 0,
         label: trans('public.referred_member'),
         type: 'member',
+        icon_type: 'component',
     },
     {
         icon: AgentIcon,
@@ -91,6 +96,7 @@ const dataOverviews = computed(() => [
         decimal: 0,
         label: trans('public.referred_agent'),
         type: 'ib',
+        icon_type: 'component',
     },
 ]);
 
@@ -275,7 +281,14 @@ const filteredDataOverviews = computed(() => {
                     :key="index"
                     class="flex flex-col justify-center items-center gap-3 w-full last:col-span-2 md:col-span-1 md:last:col-span-1"
                 >
-                    <component :is="item.icon" class="grow-0 shrink-0" />
+                    <Avatar
+                        v-if="item.icon_type === 'avatar'"
+                        :image="`/img/icons/${item.icon}.png`"
+                        size="large"
+                        shape="circle"
+                        style="background-color: #f9fafb;"
+                    />
+                    <component v-else :is="item.icon" class="grow-0 shrink-0" />
                     <div class="flex flex-col items-center gap-1 self-stretch">
                         <span class="text-gray-500 text-xs w-28 truncate sm:w-auto">{{ item.label }}</span>
                         <div class="text-gray-950 text-lg font-semibold">

@@ -16,6 +16,7 @@ import RebateWalletAction from "@/Pages/Dashboard/RebateWalletAction.vue";
 import RebateEarn from "@/Pages/Dashboard/Partials/RebateEarn.vue";
 import Vue3Autocounter from "vue3-autocounter";
 import ForumPost from "@/Pages/Dashboard/ForumPost.vue";
+import Avatar from "primevue/avatar";
 
 const props = defineProps({
     terms: Object,
@@ -34,25 +35,25 @@ const rebateWallet = ref();
 // data overview
 const dataOverviews = computed(() => [
     {
-        icon: DepositIcon,
+        icon: 'TotalDeposit',
         total: groupTotalDeposit.value,
         label: user.role === 'member' ? trans('public.dashboard_total_deposit') : trans('public.group_total_deposit'),
         borderColor: 'border-green',
     },
     {
-        icon: WithdrawalIcon,
+        icon: 'TotalWithdrawal',
         total: groupTotalWithdrawal.value,
         label: user.role === 'member' ? trans('public.total_withdrawal') : trans('public.group_total_withdrawal'),
         borderColor: 'border-pink',
     },
     {
-        icon: NetBalanceIcon,
+        icon: 'TotalCommission',
         total: totalGroupNetBalance.value,
         label: user.role === 'member' ? trans('public.total_net_balance') : trans('public.group_total_net_balance'),
         borderColor: 'border-[#FEDC32]',
     },
     {
-        icon: NetAssetIcon,
+        icon: 'TotalProfit',
         total: total_group_net_asset.value,
         label: user.role === 'member' ? trans('public.total_net_asset') : trans('public.group_total_net_asset'),
         borderColor: 'border-indigo',
@@ -111,7 +112,12 @@ watchEffect(() => {
                             v-for="(item, index) in dataOverviews"
                             :key="index"
                         >
-                            <component :is="item.icon" class="w-12 h-12 grow-0 shrink-0 rounded-full" />
+                            <Avatar
+                                :image="`/img/icons/${item.icon}.png`"
+                                size="large"
+                                shape="circle"
+                                style="background-color: #f9fafb;"
+                            />
                             <div class="flex flex-col items-center gap-1 w-full">
                                 <span class="text-gray-500 text-xs md:text-sm">{{ item.label }}</span>
                                 <div class="text-gray-950 text-lg md:text-xl font-semibold">

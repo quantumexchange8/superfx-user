@@ -40,7 +40,6 @@ class TradePositionController extends Controller
 
             $query = OpenTrade::with([
                     'user:id,name,email,id_number,upline_id,hierarchyList',
-                    'user.upline:id,name,email,id_number,hierarchyList',
                     'trading_account:id,meta_login,account_type_id',
                     'trading_account.account_type:id,name,slug,account_group,currency,color',
                 ])
@@ -52,12 +51,7 @@ class TradePositionController extends Controller
             $search = $data['filters']['global'];
             if ($search) {
                 $query->where(function ($query) use ($search) {
-                    $query->whereHas('user.upline', function ($query) use ($search) {
-                        $query->where('name', 'like', '%' . $search . '%')
-                            ->orWhere('email', 'like', '%' . $search . '%')
-                            ->orWhere('id_number', 'like', '%' . $search . '%');
-                    })
-                    ->orWhereHas('user', function ($query) use ($search) {
+                    $query->whereHas('user', function ($query) use ($search) {
                         $query->where('name', 'like', '%' . $search . '%')
                             ->orWhere('email', 'like', '%' . $search . '%')
                             ->orWhere('id_number', 'like', '%' . $search . '%');
@@ -80,20 +74,6 @@ class TradePositionController extends Controller
                 $end_date = Carbon::parse($endDate)->addDay()->endOfDay();
 
                 $query->whereBetween('trade_open_time', [$start_date, $end_date]);
-            }
-
-            if ($data['filters']['upline_id']) {
-                $uplineId = $data['filters']['upline_id'];
-
-                // Get upline and their children IDs
-                $upline = User::find($uplineId);
-                $childrenIds = $upline ? $upline->getChildrenIds() : [];
-                $childrenIds[] = $uplineId;
-
-                // Filter OpenTrade by user.upline_id in childrenIds
-                $query->whereHas('user', function ($q) use ($childrenIds) {
-                    $q->whereIn('upline_id', $childrenIds);
-                });
             }
 
             if ($data['filters']['symbol']) {
@@ -147,19 +127,6 @@ class TradePositionController extends Controller
                     }
 
                     $openTrade->id_number = $openTrade->user->id_number ?? null;
-
-                    // Flatten upline-related fields if upline exists
-                    $upline = $openTrade->user->upline;
-                    if ($upline) {
-                        $openTrade->upline_id = $upline->id ?? null;
-                        $openTrade->upline_name = $upline->name ?? null;
-                        $openTrade->upline_email = $upline->email ?? null;
-                        if ($this->calculateLevel($upline->hierarchyList) > 1 && $openTrade->upline_email) {
-                            $openTrade->upline_email = $maskEmail($openTrade->upline_email);
-                        }
-
-                        $openTrade->upline_id_number = $upline->id_number ?? null;
-                    }
                 }
 
                 // Flatten trading_account-related fields if trading_account exists
@@ -215,7 +182,6 @@ class TradePositionController extends Controller
 
             $query = TradeBrokerHistory::with([
                     'user:id,name,email,id_number,upline_id,hierarchyList',
-                    'user.upline:id,name,email,id_number,hierarchyList',
                     'trading_account:id,meta_login,account_type_id',
                     'trading_account.account_type:id,name,slug,account_group,currency,color',
                 ])
@@ -225,12 +191,7 @@ class TradePositionController extends Controller
             $search = $data['filters']['global'];
             if ($search) {
                 $query->where(function ($query) use ($search) {
-                    $query->whereHas('user.upline', function ($query) use ($search) {
-                        $query->where('name', 'like', '%' . $search . '%')
-                            ->orWhere('email', 'like', '%' . $search . '%')
-                            ->orWhere('id_number', 'like', '%' . $search . '%');
-                    })
-                    ->orWhereHas('user', function ($query) use ($search) {
+                    $query->whereHas('user', function ($query) use ($search) {
                         $query->where('name', 'like', '%' . $search . '%')
                             ->orWhere('email', 'like', '%' . $search . '%')
                             ->orWhere('id_number', 'like', '%' . $search . '%');
@@ -263,20 +224,6 @@ class TradePositionController extends Controller
                 $end_close_date = Carbon::parse($endClosedDate)->addDay()->endOfDay();
 
                 $query->whereBetween('trade_close_time', [$start_close_date, $end_close_date]);
-            }
-
-            if ($data['filters']['upline_id']) {
-                $uplineId = $data['filters']['upline_id'];
-
-                // Get upline and their children IDs
-                $upline = User::find($uplineId);
-                $childrenIds = $upline ? $upline->getChildrenIds() : [];
-                $childrenIds[] = $uplineId;
-
-                // Filter OpenTrade by user.upline_id in childrenIds
-                $query->whereHas('trading_account.user', function ($q) use ($childrenIds) {
-                    $q->whereIn('upline_id', $childrenIds);
-                });
             }
 
             if ($data['filters']['symbol']) {
@@ -331,20 +278,6 @@ class TradePositionController extends Controller
                     }
 
                     $closeTrade->id_number = $closeTrade->user->id_number ?? null;
-
-                    // Flatten upline-related fields if upline exists
-                    $upline = $closeTrade->user->upline;
-                    if ($upline) {
-                        $closeTrade->upline_id = $upline->id ?? null;
-                        $closeTrade->upline_name = $upline->name ?? null;
-                        $closeTrade->upline_email = $upline->email ?? null;
-
-                        if ($this->calculateLevel($upline->hierarchyList) > 1 && $closeTrade->upline_email) {
-                            $closeTrade->upline_email = $maskEmail($closeTrade->upline_email);
-                        }
-
-                        $closeTrade->upline_id_number = $upline->id_number ?? null;
-                    }
                 }
 
                 // Flatten trading_account-related fields if trading_account exists

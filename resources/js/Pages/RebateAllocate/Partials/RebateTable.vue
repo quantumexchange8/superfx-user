@@ -203,7 +203,7 @@ const submitForm = (submitData) => {
         { key: 3, name: 'commodities' },
         { key: 4, name: 'metals' },
         { key: 5, name: 'cryptocurrency' },
-        { key: 5, name: 'shares' }
+        { key: 6, name: 'shares' }
     ];
 
     // Flag to track if the post should proceed
