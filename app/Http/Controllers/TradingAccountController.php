@@ -1045,7 +1045,7 @@ class TradingAccountController extends Controller
             'from_currency' => 'VND',
             'to_currency' => 'USD',
             'status' => $status,
-            'comment' => $dataArray['senderBinCode'] ?? null,
+            'comment' => $dataArray['txnId'] ?? null,
             'approved_at' => now()
         ]);
 
