@@ -309,6 +309,24 @@ class TradingAccountController extends Controller
 
         $amount = $request->amount;
         $fee = $request->fee ?? 0;
+        $paymentWallet = PaymentAccount::find($request->payment_account_id);
+
+        $payment_platform_type = $request->payment_platform_type;
+        $bank_code = null;
+
+        if ($request->payment_platform == 'bank') {
+            $payment_gateway = PaymentGateway::find($payment_platform_type);
+            if ($payment_gateway->payment_app_name == 'payment-hot') {
+                $bank = Bank::firstWhere('bank_code', $paymentWallet->bank_code);
+                $bank_code = $bank?->alias_bank_code ?? $paymentWallet->bank_code;
+            }
+        } else {
+            $payment_gateway = PaymentGateway::firstWhere('payment_app_name', 'payme-usdt');
+        }
+
+        if ($payment_gateway->payment_app_name && !$paymentWallet->bank_bin_code) {
+            throw ValidationException::withMessages(['payment_account_id' => trans('public.missing_bank_bin_in_account')]);
+        }
 
          (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
@@ -336,17 +354,7 @@ class TradingAccountController extends Controller
                  ]);
          }
 
-         $paymentWallet = PaymentAccount::find($request->payment_account_id);
-
          $user = Auth::user();
-         $payment_platform_type = $request->payment_platform_type;
-
-         if ($request->payment_platform == 'bank') {
-             $payment_gateway = PaymentGateway::find($payment_platform_type);
-             $pay_method = $payment_gateway->payment_app_name;
-         } else {
-             $pay_method = 'payme-usdt';
-         }
 
          $transaction = Transaction::create([
              'user_id' => $user->id,
@@ -360,7 +368,9 @@ class TradingAccountController extends Controller
              'payment_platform_name' => $paymentWallet->payment_platform_name,
              'payment_account_no' => $paymentWallet->account_no,
              'payment_account_type' => $paymentWallet->payment_account_type,
-             'bank_code' => $paymentWallet->bank_code,
+             'bank_code' => $bank_code,
+             'bank_bin_code' => $paymentWallet->bank_bin_code,
+             'payment_gateway_id' => $payment_gateway->id,
              'from_currency' => 'USD',
              'to_currency' => $paymentWallet->currency,
              'to_wallet_address' => $paymentWallet->account_no,
@@ -368,7 +378,7 @@ class TradingAccountController extends Controller
              'amount' => $adjusted_amount,
              'transaction_charges' => $fee,
              'transaction_amount' => $transaction_amount,
-             'comment' => $pay_method,
+             'comment' => $payment_gateway->payment_app_name,
          ]);
 
         if ($paymentWallet->payment_platform == 'crypto') {
@@ -1005,8 +1015,6 @@ class TradingAccountController extends Controller
             'environment' => app()->environment(),
         ]);
 
-        Log::debug("PayHot IPN Sign: " , [$signature]);
-
         // Check API Key
         if ($apiKey != $payment_gateway->payment_api_key) {
             return response()->json(['message' => 'Invalid key'], 400);
@@ -1061,8 +1069,6 @@ class TradingAccountController extends Controller
             ->first();
         $multiplier = $tradingAccount->account_type->balance_multiplier;
         $adjusted_amount = $transaction->transaction_amount * $multiplier;
-
-        Log::debug("Proceed: " , [$tradingAccount, $adjusted_amount]);
 
         try {
             $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, $adjusted_amount, "Deposit: " . $transaction->comment, 'balance', '');

@@ -8,6 +8,7 @@ import InputText from "primevue/inputtext";
 import InputError from '@/Components/InputError.vue';
 import {useForm} from "@inertiajs/vue3";
 import TextArea from "primevue/textarea";
+import {useLangObserver} from "@/Composables/localeObserver.js";
 
 const { formatDateTime, formatAmount } = transactionFormat();
 
@@ -16,6 +17,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:visible']);
 const tooltipText = ref('copy')
+const {locale} = useLangObserver();
 
 function copyToClipboard(text) {
     const textToCopy = text;
@@ -57,6 +59,15 @@ const submitForm = (transaction_number) => {
 
 const closeDialog = () => {
     emit('update:visible', false)
+}
+
+const isJson = (str) => {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
 }
 </script>
 
@@ -153,7 +164,13 @@ const closeDialog = () => {
             <div v-if="data.payment_platform === 'bank'" class="h-[42px] flex flex-col justify-center items-start gap-1 self-stretch md:h-auto md:flex-row md:justify-normal md:items-center">
                 <span class="self-stretch w-[120px] text-gray-500 text-xs font-medium">{{ $t('public.bank') }}</span>
                 <div class="flex flex-col gap-1 w-full max-w-[360px] md:max-w-[220px] overflow-hidden">
-                    <span class=" text-gray-950 text-ellipsis text-sm font-medium">{{ data.payment_platform_name }}</span>
+                    <div class=" text-gray-950 text-ellipsis text-sm font-medium">
+                        {{
+                            isJson(data.payment_platform_name)
+                                ? (JSON.parse(data.payment_platform_name)[locale] ?? JSON.parse(data.payment_platform_name).vn)
+                                : data.payment_platform_name
+                        }}
+                    </div>
                     <span class=" text-gray-600 text-ellipsis text-sm font-medium">( {{ data.bank_code }} )</span>
                 </div>
             </div>
@@ -177,16 +194,16 @@ const closeDialog = () => {
             </div>
             <div v-if="data.transaction_type === 'withdrawal'" class="h-[42px] flex flex-col justify-center items-start gap-1 self-stretch md:h-auto md:flex-row md:justify-normal md:items-center">
                 <span class="self-stretch w-[120px] text-gray-500 text-xs font-medium">
-                    {{ 
+                    {{
                         $t(
                             `public.${
-                                data.payment_account_type === 'account' 
-                                ? 'account_name' 
-                                : data.payment_account_type === 'card' 
-                                ? 'card_name' 
+                                data.payment_account_type === 'account'
+                                ? 'account_name'
+                                : data.payment_account_type === 'card'
+                                ? 'card_name'
                                 : 'wallet_name'
                             }`
-                        ) 
+                        )
                     }}
                 </span>
                 <span class="w-full max-w-[360px] md:max-w-[220px] overflow-hidden text-gray-950 text-ellipsis text-sm font-medium">{{ data.wallet_name }}</span>
@@ -199,16 +216,16 @@ const closeDialog = () => {
                     :value="$t(`public.${tooltipText}`)"
                 ></Tag>
                 <span class="self-stretch w-[120px] text-gray-500 text-xs font-medium">
-                    {{ 
+                    {{
                         $t(
                             `public.${
-                                data.payment_account_type === 'account' 
-                                ? 'account_no' 
-                                : data.payment_account_type === 'card' 
-                                ? 'card_no' 
+                                data.payment_account_type === 'account'
+                                ? 'account_no'
+                                : data.payment_account_type === 'card'
+                                ? 'card_no'
                                 : 'receiving_address'
                             }`
-                        ) 
+                        )
                     }}
                 </span>
                 <div

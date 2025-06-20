@@ -27,6 +27,7 @@ class Transaction extends Model
         'payment_account_no',
         'payment_account_type',
         'bank_code',
+        'bank_bin_code',
         'payment_gateway_id',
         'from_wallet_address',
         'to_wallet_address',

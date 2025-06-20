@@ -18,6 +18,7 @@ class PaymentAccount extends Model
         'payment_account_type',
         'bank_branch_address',
         'bank_swift_code',
+        'bank_bin_code',
         'bank_code',
         'bank_code_type',
         'country_id',

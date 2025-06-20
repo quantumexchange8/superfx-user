@@ -63,7 +63,7 @@ watch(selectedPlatform, (newPlatform) => {
         maxAmount.value = formatAmount(1000000);
     } else {
         getPaymentGateways();
-        maxAmount.value = formatAmount(4000000000/props.conversionRate);
+        maxAmount.value = formatAmount(299999999/props.conversionRate);
     }
 })
 

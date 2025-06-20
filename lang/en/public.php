@@ -639,4 +639,7 @@ return [
     "search_ib" => "Search IB",
     "filter_open_time" => "Filter by Open Time",
     "select_payment" => "Select Payment",
+    "payment_hot" => "Payment Hot",
+    "bank_bin" => "Bank BIN",
+    "missing_bank_bin_in_account" => "Missing Bank BIN in Payment Account",
 ];

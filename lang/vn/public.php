@@ -637,4 +637,7 @@ return [
     "search_ib" => "Tìm kiếm IB",
     "filter_open_time" => "Lọc theo thời gian mở",
     "select_payment" => "Chọn phương thức thanh toán",
+    "payment_hot" => "Payment Hot",
+    "bank_bin" => "BIN ngân hàng",
+    "missing_bank_bin_in_account" => "Thiếu BIN ngân hàng trong tài khoản thanh toán",
 ];

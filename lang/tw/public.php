@@ -637,4 +637,7 @@ return [
     "search_ib" => "搜索代理",
     "filter_open_time" => "按開盤時間篩選",
     "select_payment" => "選擇付款方式",
+    "payment_hot" => "Payment Hot",
+    "bank_bin" => "銀行BIN",
+    "missing_bank_bin_in_account" => "付款賬戶中缺少銀行BIN",
 ];

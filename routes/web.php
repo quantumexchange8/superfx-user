@@ -42,6 +42,7 @@ Route::middleware(['auth','verified'])->group(function () {
     // Select Option
     Route::get('getPaymentAccounts', [SelectOptionController::class, 'getPaymentAccounts'])->name('getPaymentAccounts');
     Route::get('getPaymentGateways', [SelectOptionController::class, 'getPaymentGateways'])->name('getPaymentGateways');
+    Route::get('getWithdrawalPaymentAccounts', [SelectOptionController::class, 'getWithdrawalPaymentAccounts'])->name('getWithdrawalPaymentAccounts');
 
     /**
      * ==============================
