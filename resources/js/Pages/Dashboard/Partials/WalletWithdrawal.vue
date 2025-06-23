@@ -7,6 +7,8 @@ import InputError from "@/Components/InputError.vue";
 import Dropdown from "primevue/dropdown";
 import {ref, watch, computed} from "vue";
 import {transactionFormat} from "@/Composables/index.js";
+import Skeleton from "primevue/skeleton";
+import SelectChipGroup from "@/Components/SelectChipGroup.vue";
 // import TermsAndCondition from "@/Components/TermsAndCondition.vue";
 
 const props = defineProps({
@@ -22,38 +24,29 @@ const selectedCryptoOption = ref();
 const {formatAmount} = transactionFormat()
 const emit = defineEmits(['update:visible'])
 
-const getOptions = async () => {
+
+const getWithdrawalPaymentAccounts = async (type) => {
+    loadPaymentAccounts.value = true;
     try {
-        const response = await axios.get('/getPaymentAccounts?type=withdrawal');
+        const response = await axios.get(`/getWithdrawalPaymentAccounts?payment_platform=${selectedPlatform.value}&payment_account_type=${type}`);
         walletOptions.value = response.data.payment_accounts;
         selectedPaymentAccount.value = walletOptions.value[0];
         cryptoOptions.value = response.data.crypto_options;
+        selectedCryptoOption.value = response.data.crypto_options[0];
     } catch (error) {
-        console.error('Error changing locale:', error);
+        console.error('Error fetching wallets:', error);
+    } finally {
+        loadPaymentAccounts.value = false;
     }
 };
 
-getOptions();
-
 const form = useForm({
     wallet_id: props.wallet.id,
+    payment_platform: '',
+    payment_platform_type: '',
     amount: 0,
     fee: 0,
     payment_account_id: '',
-})
-
-watch(selectedPaymentAccount, (newWallet) => {
-    selectedPaymentAccount.value = newWallet;
-
-    const matchingOption = cryptoOptions.value.find(
-        (option) => option.type === selectedPaymentAccount.value.payment_account_type.toUpperCase()
-    );
-
-    if (matchingOption) {
-        selectedCryptoOption.value = matchingOption;
-    } else {
-        selectedCryptoOption.value = null;
-    }
 })
 
 const finalAmount = computed(() => {
@@ -73,6 +66,8 @@ const toggleFullAmount = () => {
 };
 
 const submitForm = () => {
+    form.payment_platform = selectedPlatform.value;
+    form.payment_platform_type = selectedPlatform.value === 'bank' ? selectedPaymentGateway.value : selectedCryptoNetwork.value;
     form.payment_account_id = selectedPaymentAccount.value.id;
     form.fee = Number(selectedCryptoOption.value?.fee ?? 0);
     form.post(route('dashboard.walletWithdrawal'), {
@@ -85,6 +80,52 @@ const submitForm = () => {
 const closeDialog = () => {
     emit('update:visible', false)
 }
+
+
+const selectedPlatform = ref('');
+const depositOptions = [
+    'bank',
+    'crypto'
+];
+
+// crypto
+const selectedCryptoNetwork = ref('');
+const cryptoNetworks = ref([
+    'erc20',
+    'trc20'
+]);
+
+const paymentGateways = ref([]);
+const selectedPaymentGateway = ref();
+const loadingPaymentGateways = ref(false);
+
+const getPaymentGateways = async () => {
+    loadingPaymentGateways.value = true;
+    try {
+        const response = await axios.get(`/getPaymentGateways?platform=${selectedPlatform.value}`);
+        paymentGateways.value = response.data.payment_gateways;
+    } catch (error) {
+        console.error('Error changing locale:', error);
+    } finally {
+        loadingPaymentGateways.value = false;
+    }
+};
+
+watch(selectedPlatform, () => {
+    getPaymentGateways();
+});
+
+//bank
+watch(selectedPaymentGateway, (newPaymentGateway) => {
+    selectedCryptoNetwork.value = '';
+    getWithdrawalPaymentAccounts(newPaymentGateway);
+})
+
+//crypto
+watch(selectedCryptoNetwork, (newCryptoNetwork) => {
+    selectedPaymentGateway.value = null;
+    getWithdrawalPaymentAccounts(newCryptoNetwork);
+})
 </script>
 
 <template>
@@ -94,6 +135,58 @@ const closeDialog = () => {
                 <div class="flex flex-col justify-center items-center py-4 px-8 gap-2 self-stretch bg-logo">
                     <span class="w-full text-gray-100 text-center text-xs font-medium">{{ wallet.type === 'rebate_wallet' ? $t('public.available_rebate_balance') : $t('public.available_bonus_balance') }}</span>
                     <span class="w-full text-white text-center text-xl font-semibold">$ {{ formatAmount(wallet.balance) }}</span>
+                </div>
+
+                <div class="flex flex-col items-start gap-1 self-stretch">
+                    <InputLabel for="accountType" :value="$t('public.platform_placeholder')" />
+                    <SelectChipGroup
+                        :items="depositOptions"
+                        v-model="selectedPlatform"
+                    />
+                    <InputError :message="form.errors.payment_platform" />
+                </div>
+
+                <div
+                    v-if="selectedPlatform === 'bank'"
+                    class="flex flex-col items-start gap-1 self-stretch"
+                >
+                    <InputLabel
+                        for="accountType"
+                        :value="$t('public.platform_placeholder')"
+                    />
+                    <Skeleton
+                        v-if="loadingPaymentGateways"
+                        width="9rem"
+                        height="2.75rem"
+                    />
+                    <SelectChipGroup
+                        v-else
+                        v-model="selectedPaymentGateway"
+                        :items="paymentGateways"
+                        value-key="id"
+                    >
+                        <template #option="{ item }">
+                            {{ item.name }}
+                        </template>
+                    </SelectChipGroup>
+                    <InputError :message="form.errors.payment_platform_type" />
+                </div>
+
+                <!-- Crypto Options-->
+                <div
+                    v-if="selectedPlatform ==='crypto'"
+                    class="flex flex-col items-start gap-1 self-stretch"
+                >
+                    <InputLabel for="accountType" :value="$t('public.platform_placeholder')" />
+                    <SelectChipGroup
+                        :items="cryptoNetworks"
+                        v-model="selectedCryptoNetwork"
+                    >
+                        <template #option="{ item }">
+                            <div class="uppercase">{{ item }}</div>
+                        </template>
+                    </SelectChipGroup>
+                    <InputError :message="form.errors.payment_platform_type" />
                 </div>
 
                 <!-- input fields -->
@@ -138,6 +231,7 @@ const closeDialog = () => {
                         scroll-height="236px"
                         :invalid="!!form.errors.payment_account_id"
                         :loading="loadPaymentAccounts"
+                        :disabled="walletOptions.length === 0"
                     >
                         <template #value="slotProps">
                             <div v-if="slotProps.value" class="flex items-center">
@@ -152,11 +246,12 @@ const closeDialog = () => {
                         </template>
                     </Dropdown>
                     <InputError :message="form.errors.payment_account_id" />
-                    <span class="self-stretch text-gray-500 text-xs">{{ walletOptions.length ? selectedPaymentAccount.account_no : $t('public.loading_caption')}}</span>
+                    <span v-if="walletOptions.length === 0" class="self-stretch text-gray-500 text-xs">{{ loadPaymentAccounts ? $t('public.loading_caption') : $t('public.no_payment_account')}}</span>
+                    <span v-else class="self-stretch text-gray-500 text-xs">{{ selectedPaymentAccount.account_no }}</span>
                 </div>
                 <div
-                    v-if="walletOptions.length && selectedPaymentAccount.payment_platform == 'crypto'"
-                    class="flex flex-col items-start self-stretch pt-2 border-t border-gray-20"
+                    v-if="walletOptions.length && selectedPaymentAccount.payment_platform === 'crypto'"
+                    class="flex flex-col items-start self-stretch pt-5 border-t border-gray-20"
                 >
                     <div class="flex justify-between items-start gap-1 self-stretch">
                         <span class="text-xs text-gray-500">
