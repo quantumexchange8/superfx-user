@@ -1008,11 +1008,13 @@ class TradingAccountController extends Controller
 
     public function payment_hot_callback(Request $request)
     {
+        $environment = in_array(app()->environment(), ['local', 'staging']) ? 'staging' : 'production';
+
         $apiKey = $request->header('P-API-KEY');
         $signature = $request->header('P-SIGNATURE');
         $payment_gateway = PaymentGateway::firstWhere([
             'payment_app_name' => 'payment-hot',
-            'environment' => app()->environment(),
+            'environment' => $environment,
         ]);
 
         // Check API Key
