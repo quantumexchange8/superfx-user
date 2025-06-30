@@ -113,13 +113,11 @@ watch(selectedPlatform, () => {
 
 //bank
 watch(selectedPaymentGateway, (newPaymentGateway) => {
-    selectedPaymentGateway.value = null;
     getWithdrawalPaymentAccounts(newPaymentGateway);
 })
 
 //crypto
 watch(selectedCryptoNetwork, (newCryptoNetwork) => {
-    selectedCryptoNetwork.value = null;
     getWithdrawalPaymentAccounts(newCryptoNetwork);
 })
 </script>
