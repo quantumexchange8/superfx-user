@@ -51,7 +51,7 @@ watchEffect(() => {
 </script>
 
 <template>
-    <GuestLayout :title="$t('public.login')">
+    <GuestLayout title="Forex Broker | Online Currency Trading with SuperFin (SF)">
         <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
             {{ status }}
         </div>
