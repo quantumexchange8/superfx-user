@@ -850,7 +850,9 @@ class TradingAccountController extends Controller
         Log::debug("Callback Response: " , $response);
 
         $transaction = Transaction::with('payment_gateway')
-            ->where('transaction_number', $response['partner_order_code'])->first();
+            ->where('transaction_number', $response['partner_order_code'])
+            ->where('status', 'processing')
+            ->first();
             // ->whereHas('payment_gateway', function ($query) use ($result) {
             //     $query->where('payment_app_number', $result['partner_id']);
             // })
