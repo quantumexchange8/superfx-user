@@ -8,6 +8,7 @@ use App\Mail\TransferMoneySuccessMail;
 use App\Mail\WithdrawalRequestMail;
 use App\Mail\WithdrawalRequestUsdtMail;
 use App\Mail\ChangePasswordMail;
+use App\Models\OpenTrade;
 use App\Models\Term;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
@@ -314,13 +315,20 @@ class TradingAccountController extends Controller
         $amount = $request->amount;
         $fee = $request->fee ?? 0;
 
-         (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
+        (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
-         if ($tradingAccount->balance < $amount) {
-             throw ValidationException::withMessages(['amount' => trans('public.insufficient_balance')]);
-         }
+        $floating = OpenTrade::where('meta_login', $tradingAccount->meta_login)
+            ->sum('trade_profit_usd');
 
-         $transaction_number = RunningNumberService::getID('transaction');
+        $equity = $tradingAccount->balance + $floating;
+
+        if ($equity < $amount) {
+            throw ValidationException::withMessages([
+                'amount' => trans('public.insufficient_balance'),
+            ]);
+        }
+
+        $transaction_number = RunningNumberService::getID('transaction');
 
         $multiplier = $tradingAccount->account_type->balance_multiplier;
         $adjusted_amount = $amount / $multiplier;
