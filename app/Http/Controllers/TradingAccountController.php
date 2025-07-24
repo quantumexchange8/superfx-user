@@ -423,9 +423,16 @@ class TradingAccountController extends Controller
 
          $amount = $request->input('amount');
 
-         if ($tradingAccount->balance < $amount) {
-             throw ValidationException::withMessages(['wallet' => trans('public.insufficient_balance')]);
-         }
+        $floating = OpenTrade::where('meta_login', $tradingAccount->meta_login)
+            ->sum('trade_profit_usd');
+
+        $equity = $tradingAccount->balance + $floating;
+
+        if ($equity < $amount) {
+            throw ValidationException::withMessages([
+                'amount' => trans('public.insufficient_balance'),
+            ]);
+        }
 
         $multiplier = $tradingAccount->account_type->balance_multiplier;
         $adjusted_amount = $amount / $multiplier;
@@ -434,8 +441,9 @@ class TradingAccountController extends Controller
         $to_adjusted_amount = $adjusted_amount * $to_multiplier;
 
          try {
-             $tradeFrom = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Transfer from ID (" . $tradingAccount->meta_login . ")", 'balance', '');
-             $tradeTo = (new MetaFourService)->createTrade($to_meta_login, $to_adjusted_amount, "Transfer to ID (" . $to_meta_login . ")", 'balance', '');
+             $tradeFrom = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Transfer to #$to_meta_login", 'balance', '');
+
+             $tradeTo = (new MetaFourService)->createTrade($to_meta_login, $to_adjusted_amount, "Transfer from #$tradingAccount->meta_login", 'balance', '');
          } catch (\Throwable $e) {
              if ($e->getMessage() == "Not found") {
                  TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);

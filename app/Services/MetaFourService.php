@@ -52,7 +52,7 @@ class MetaFourService {
     {
         $data = $this->getUser($meta_login);
 
-        if ($data && $data['status'] == 'success') {
+        if ($data) {
             (new UpdateTradingUser)->execute($meta_login, $data);
             (new UpdateTradingAccount)->execute($meta_login, $data);
         }
