@@ -76,6 +76,10 @@ class GeneralController extends Controller
     public function getAccountTypes($returnAsArray = false)
     {
         $accountTypes = AccountType::where('status', 'active')
+            ->where('account_group', '!=', 'Demo Account')
+            ->whereHas('markupProfileToAccountTypes.markupProfile.userToMarkupProfiles', function ($query) {
+                $query->where('user_id', Auth::id());
+            })
             ->get()
             ->map(function ($accountType) {
                 return [
@@ -83,11 +87,11 @@ class GeneralController extends Controller
                     'name' => trans('public.' . $accountType->slug),
                 ];
             });
-    
+
         if ($returnAsArray) {
             return $accountTypes;
         }
-    
+
         return response()->json([
             'accountTypes' => $accountTypes,
         ]);
