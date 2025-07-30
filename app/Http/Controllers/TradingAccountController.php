@@ -753,6 +753,7 @@ class TradingAccountController extends Controller
                         'random' => Str::random(14),
                         'partner_order_code' => $transaction->transaction_number,
                         'amount' => $conversion_amount,
+                        'payee_name' => 'SUPERFIN',
                         'notify_url' => route('depositCallback'),
                         'return_url' => route('depositReturn'),
                     ];
@@ -764,7 +765,7 @@ class TradingAccountController extends Controller
                         $params['partner_order_code'],
                         $params['amount'],
                         '', //bank
-                        '', //bank
+                        $params['payee_name'],
                         $params['notify_url'],
                         $params['return_url'],
                         '',
