@@ -51,12 +51,15 @@ watch(search, debounce((newSearchValue) => {
 }, 1000)); 
 
 const accountTypes = ref();
+const accountType = ref(null);
 
 watch(() => props.accountTypes, (newAccountTypes) => {
-    accountTypes.value = newAccountTypes;
-}, { immediate: true }); 
-
-const accountType = ref(accountTypes.value[0].value);
+    accountTypes.value = newAccountTypes || [];
+    if (accountTypes.value.length > 0 && accountType.value === null) {
+        accountType.value = accountTypes.value[0].value;
+        emit('update:accountType', accountType.value);
+    }
+}, { immediate: true });
 
 const loading = ref(false);
 const dt = ref();

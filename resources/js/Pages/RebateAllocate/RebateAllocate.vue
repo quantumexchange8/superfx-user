@@ -33,8 +33,6 @@ const getRebateAllocateData = async () => {
     }
 }
 
-getRebateAllocateData();
-
 const handleAccountTypeChange = (newType) => {
     account_type_id.value = newType
     getRebateAllocateData();
