@@ -75,7 +75,12 @@ class GeneralController extends Controller
 
     public function getAccountTypes($returnAsArray = false)
     {
-        $accountTypes = AccountType::all()
+        $accountTypes = AccountType::where('status', 'active')
+            ->where('account_group', '!=', 'Demo Account')
+            ->whereHas('markupProfileToAccountTypes.markupProfile.userToMarkupProfiles', function ($query) {
+                $query->where('user_id', Auth::id());
+            })
+            ->get()
             ->map(function ($accountType) {
                 return [
                     'value' => $accountType->id,

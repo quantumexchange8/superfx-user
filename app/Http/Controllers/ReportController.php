@@ -196,9 +196,9 @@ class ReportController extends Controller
 
                 // Map the listings to include the summary and grouping logic
             $allRecords = $query->get()->map(function ($item) {
-                $level = $this->calculateLevel($item->user->hierarchyList);
+                $level = $this->calculateLevel($item->user?->hierarchyList);
 
-                $email = $item->user->email;
+                $email = $item->user?->email;
 
                 if ($level > 1) {
                     $email = substr($email, 0, 2) . '*******' . strstr($email, '@');
@@ -206,9 +206,9 @@ class ReportController extends Controller
 
                 return [
                     'user_id' => $item->user_id,
-                    'name' => $item->user->name,
+                    'name' => $item->user?->name,
                     'email' => $email,
-                    'id_number' => $item->user->id_number,
+                    'id_number' => $item->user?->id_number,
                     'meta_login' => $item->meta_login,
                     'execute_at' => Carbon::parse($item->execute_at)->format('Y/m/d'),
                     'symbol_group' => $item->symbol_group,
@@ -614,9 +614,9 @@ class ReportController extends Controller
         $split = explode('-'.Auth::id().'-', $hierarchyList);
 
         if (!isset($split[1])) {
-            return 1; 
+            return 1;
         }
-        
+
         return substr_count($split[1], '-') + 1;
     }
 

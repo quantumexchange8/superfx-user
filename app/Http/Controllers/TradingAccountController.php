@@ -8,6 +8,7 @@ use App\Mail\TransferMoneySuccessMail;
 use App\Mail\WithdrawalRequestMail;
 use App\Mail\WithdrawalRequestUsdtMail;
 use App\Mail\ChangePasswordMail;
+use App\Models\OpenTrade;
 use App\Models\Term;
 use App\Models\User;
 use App\Services\PaymentService;
@@ -328,13 +329,20 @@ class TradingAccountController extends Controller
             throw ValidationException::withMessages(['payment_account_id' => trans('public.missing_bank_bin_in_account')]);
         }
 
-         (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
+        (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
-         if ($tradingAccount->balance < $amount) {
-             throw ValidationException::withMessages(['amount' => trans('public.insufficient_balance')]);
-         }
+        $floating = OpenTrade::where('meta_login', $tradingAccount->meta_login)
+            ->sum('trade_profit_usd');
 
-         $transaction_number = RunningNumberService::getID('transaction');
+        $equity = $tradingAccount->balance + $floating;
+
+        if ($equity < $amount) {
+            throw ValidationException::withMessages([
+                'amount' => trans('public.insufficient_balance'),
+            ]);
+        }
+
+        $transaction_number = RunningNumberService::getID('transaction');
 
         $multiplier = $tradingAccount->account_type->balance_multiplier;
         $adjusted_amount = $amount / $multiplier;
@@ -430,9 +438,16 @@ class TradingAccountController extends Controller
 
          $amount = $request->input('amount');
 
-         if ($tradingAccount->balance < $amount) {
-             throw ValidationException::withMessages(['wallet' => trans('public.insufficient_balance')]);
-         }
+        $floating = OpenTrade::where('meta_login', $tradingAccount->meta_login)
+            ->sum('trade_profit_usd');
+
+        $equity = $tradingAccount->balance + $floating;
+
+        if ($equity < $amount) {
+            throw ValidationException::withMessages([
+                'amount' => trans('public.insufficient_balance'),
+            ]);
+        }
 
         $multiplier = $tradingAccount->account_type->balance_multiplier;
         $adjusted_amount = $amount / $multiplier;
@@ -440,10 +455,11 @@ class TradingAccountController extends Controller
         $to_multiplier = $to_tradingAccount->account_type->balance_multiplier;
         $to_adjusted_amount = $adjusted_amount * $to_multiplier;
 
-         try {
-             $tradeFrom = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Transfer from ID (" . $tradingAccount->meta_login . ")", 'balance', '');
-             $tradeTo = (new MetaFourService)->createTrade($to_meta_login, $to_adjusted_amount, "Transfer to ID (" . $to_meta_login . ")", 'balance', '');
-         } catch (Throwable $e) {
+        try {
+            $tradeFrom = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Transfer to #$to_meta_login", 'balance', '');
+
+            $tradeTo = (new MetaFourService)->createTrade($to_meta_login, $to_adjusted_amount, "Transfer from #$tradingAccount->meta_login", 'balance', '');
+        } catch (\Throwable $e) {
              if ($e->getMessage() == "Not found") {
                  TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
              } else {
@@ -758,101 +774,6 @@ class TradingAccountController extends Controller
             ]);
         }
 
-//        if ($payment_gateway) {
-//            $baseUrl = '';
-//            $params = [];
-//
-//            switch ($payment_gateway->platform) {
-//                case 'bank':
-//                    $transaction->update([
-//                        'payment_gateway_id' => $payment_gateway->id,
-//                    ]);
-//
-//                    $params = [
-//                        'partner_id' => $payment_gateway->payment_app_number,
-//                        'timestamp' => Carbon::now()->timestamp,
-//                        'random' => Str::random(14),
-//                        'partner_order_code' => $transaction->transaction_number,
-//                        'amount' => $conversion_amount,
-//                        'notify_url' => route('depositCallback'),
-//                        'return_url' => route('depositReturn'),
-//                    ];
-//
-//                    $data = [
-//                        $params['partner_id'],
-//                        $params['timestamp'],
-//                        $params['random'],
-//                        $params['partner_order_code'],
-//                        $params['amount'],
-//                        '', //bank
-//                        '', //bank
-//                        $params['notify_url'],
-//                        $params['return_url'],
-//                        '',
-//                        $payment_gateway->payment_app_key
-//                    ];
-//
-//                    $hashedCode = md5(implode(':', $data));
-//                    $params['sign'] = $hashedCode;
-//
-//                    $baseUrl = $environment == 'production' ? $payment_gateway->payment_url . '/gateway/bnb/createVA.do' : $payment_gateway->payment_url . '/gateway/bnb/createVA.do';
-//                    break;
-//
-//                case 'crypto':
-//                    $transaction->update([
-//                        'payment_gateway_id' => $payment_gateway->id,
-//                        'payment_account_type' => strtolower($request->cryptoType),
-//                        // 'amount'  => $amount + $fee,
-//                        // 'transaction_charges' => $fee,
-//                        'transaction_amount' => $amount,
-//                    ]);
-//
-//                    $params = [
-//                        'partner_id' => $payment_gateway->payment_app_number,
-//                        'timestamp' => Carbon::now()->timestamp,
-//                        'random' => Str::random(14),
-//                        'partner_order_code' => $transaction->transaction_number,
-//                        'order_currency' => 0,
-//                        'order_language' => 'en_ww',
-//                        'guest_id' => md5('SuperFX' . $user->id),
-//                        'amount' => $transaction->amount,
-//                        'notify_url' => route('depositCallback'),
-//                        'return_url' => route('depositReturn'),
-//                    ];
-//
-//                    $data = [
-//                        $params['partner_id'],
-//                        $params['timestamp'],
-//                        $params['random'],
-//                        $params['partner_order_code'],
-//                        $params['order_currency'], //crypto
-//                        $params['order_language'], //crypto
-//                        $params['guest_id'], //crypto
-//                        $params['amount'],
-//                        $params['notify_url'],
-//                        $params['return_url'],
-//                        '',
-//                        $payment_gateway->payment_app_key
-//                    ];
-//
-//                    $hashedCode = md5(implode(':', $data));
-//                    $params['sign'] = $hashedCode;
-//
-//                    $baseUrl = $request->cryptoType == 'ERC20' ? $payment_gateway->payment_url . '/gateway/usdt/createERC20.do' : $payment_gateway->payment_url . '/gateway/usdt/createTRC20.do';
-//                    break;
-//            }
-//
-//            // Send response
-//            $redirectUrl = $baseUrl . "?" . http_build_query($params);
-//            Log::debug("POST URL : " . $redirectUrl);
-//
-//            $response = Http::get($redirectUrl);
-//
-//            $responseData = $response->json();
-//
-//
-//        }
-
         return redirect()->back()
             ->with('title', trans('public.successful'))
             ->with('success', trans('public.toast_deposit_request_success_message'));
@@ -868,7 +789,12 @@ class TradingAccountController extends Controller
 
         $transaction = Transaction::with('payment_gateway')
             ->where('transaction_number', $response['partner_order_code'])
+            ->where('status', 'processing')
             ->first();
+            // ->whereHas('payment_gateway', function ($query) use ($result) {
+            //     $query->where('payment_app_number', $result['partner_id']);
+            // })
+            // ->first();
 
         $result = [];
         if ($transaction->payment_gateway->platform === 'crypto') {
