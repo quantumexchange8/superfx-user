@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Auth;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +14,7 @@ class PaymentService
 {
     /**
      * @throws ConnectionException
+     * @throws Exception
      */
     public function getPaymentUrl($payment_gateway, $transaction)
     {
@@ -49,21 +51,51 @@ class PaymentService
                 $payment_url = $this->buildAndRequestUrl($baseUrl, $params);
                 break;
 
-            case 'payment-hot':
+            case 'hypay':
                 $params = [
-                    'merchant_id'  => $payment_gateway->payment_app_number,
-                    'order_code'   => $transaction->transaction_number,
-                    'total_amount' => $transaction->conversion_amount,
-                    'currency'     => 'VND',
-                    'language'     => app()->getLocale(),
-                    'timestamp'    => Carbon::now()->timestamp,
-                    'content'      => 'deposit',
+                    'mch_no'  => $transaction->transaction_number,
+                    'sync_url' => route('depositReturn'),
+                    'async_url' => route('hypay_deposit_callback'),
+                    'true_name' => $transaction->user->name,
+                    'phone' => $transaction->user->phone_number,
+                    'order_amount' => $transaction->conversion_amount,
+                    'amount' => $transaction->amount,
                 ];
 
-                $params['signature'] = $this->generatePaymentHotSignature($params, $payment_gateway->payment_app_key);
+                $timestamp = now()->timestamp;
+                $bodyString = json_encode($params, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                Log::info('body json: ' . $bodyString);
 
-                $payment_url = $payment_gateway->payment_url . "?" . http_build_query($params);
-                break;
+                $msg = "/api/place/orders/checkout$timestamp$bodyString";
+
+                $bank_headers = [
+                    'ACCESS-KEY'  => $payment_gateway->payment_app_key,
+                    'ACCESS-SIGN'  => hash_hmac('sha256', $msg, $payment_gateway->secondary_key),
+                    'ACCESS-TIMESTAMP'  => $timestamp,
+                ];
+
+                $response = Http::withHeaders(array_merge($bank_headers, [
+                    'Content-Type' => 'application/json',
+                ]))
+                    ->withBody($bodyString)
+                    ->post("$payment_gateway->payment_url/api/place/orders/checkout");
+
+                $responseData = $response->json();
+
+                if (isset($responseData['code']) && $responseData['code'] === 0) {
+                    // success → get the URL from data
+                    $payment_url = $responseData['data']['url'] ?? null;
+
+                    if ($payment_url) {
+                        break;
+                    }
+
+                    // code == 0 but url missing → throw exception
+                    throw new Exception('Missing checkout URL in gateway response: ' . json_encode($responseData));
+                }
+
+                // error case → throw exception with message
+                throw new Exception('Gateway request failed: ' . ($responseData['message'] ?? json_encode($responseData)));
 
             default:
                 $params = [

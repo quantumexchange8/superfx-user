@@ -6,6 +6,7 @@ use App\Models\Bank;
 use App\Models\PaymentAccount;
 use App\Models\PaymentGateway;
 use App\Models\PaymentGatewayHasBank;
+use App\Models\PaymentMethod;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -43,12 +44,18 @@ class SelectOptionController extends Controller
 
     public function getPaymentGateways(Request $request)
     {
-        $environment = in_array(app()->environment(), ['local', 'staging']) ? 'staging' : 'production';
+        $method = PaymentMethod::where('slug', $request->slug)->firstOrFail();
 
-        $payments = PaymentGateway::where([
-            'environment' => $environment,
-            'platform' => $request->platform
-        ])
+        // Find all methods of the same type (Bank + VietQR)
+        $methodIds = PaymentMethod::where('type', $method->type)->pluck('id');
+
+        // Get all gateways that support any of those methods
+        $payments = PaymentGateway::whereHas('methods', function ($q) use ($methodIds) {
+            $q->whereIn('payment_method_id', $methodIds);
+        })
+            ->with(['methods' => function ($q) use ($methodIds) {
+                $q->whereIn('payment_methods.id', $methodIds);
+            }])
             ->get();
 
         return response()->json([

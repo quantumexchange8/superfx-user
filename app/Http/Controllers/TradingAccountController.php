@@ -9,9 +9,12 @@ use App\Mail\WithdrawalRequestMail;
 use App\Mail\WithdrawalRequestUsdtMail;
 use App\Mail\ChangePasswordMail;
 use App\Models\OpenTrade;
+use App\Models\PaymentGatewayMethod;
+use App\Models\PaymentMethod;
 use App\Models\Term;
 use App\Models\User;
 use App\Services\PaymentService;
+use DB;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
@@ -29,10 +32,12 @@ use App\Services\MetaFourService;
 use App\Models\AssetSubscription;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
 use App\Services\RunningNumberService;
 use App\Services\DropdownOptionService;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\PaymentGateway;
 use App\Models\CurrencyConversionRate;
@@ -54,29 +59,41 @@ class TradingAccountController extends Controller
             ];
         }
 
+        $methods = PaymentMethod::query()
+            ->where('type', '!=', 'bank')
+            ->union(
+                PaymentMethod::query()
+                    ->where('type', 'bank')
+                    ->orderBy('id')
+                    ->limit(1)
+            )
+            ->orderBy('id')
+            ->get();
+
         return Inertia::render('TradingAccount/Account', [
-            'terms' => $structuredTerms
+            'terms' => $structuredTerms,
+            'methods' => $methods,
         ]);
     }
 
     public function getOptions()
     {
-        $accountOptions = AccountType::whereNot('account_group', 'Demo Account')
-        ->where('status', 'active')
-        ->whereHas('markupProfileToAccountTypes.markupProfile.userToMarkupProfiles', function ($query) {
-            $query->where('user_id', Auth::id()); // Filter for the authenticated user's markup profiles
-        })
-        ->get()
-        ->map(function ($accountType) {
-            return [
-                'id' => $accountType->id,
-                'name' => $accountType->name,
-                'slug' => $accountType->slug,
-                'member_display_name' => $accountType->member_display_name ?? null,
-                'account_group' => $accountType->account_group,
-                'leverage' => $accountType->leverage,
-            ];
-        });
+        $accountOptions = AccountType::query()
+            ->whereNot('account_group', 'Demo Account')
+            ->where('status', 'active')
+            ->whereHas('markupProfileToAccountTypes.markupProfile.userToMarkupProfiles', function ($query) {
+                $query->where('user_id', Auth::id());
+            })
+            ->select([
+                'id',
+                'name',
+                'slug',
+                DB::raw('member_display_name as member_display_name'),
+                'account_group',
+                'leverage'
+            ])
+            ->get()
+            ->toArray();
 
         $conversionRate = CurrencyConversionRate::firstWhere('base_currency', 'VND')->deposit_rate;
 
@@ -687,15 +704,13 @@ class TradingAccountController extends Controller
         //change cryptoType validation as bank won't work
         Validator::make($request->all(), [
             'meta_login' => ['required', 'exists:trading_accounts,meta_login'],
-            'payment_platform' => ['required'],
-            'payment_gateway' => ['nullable'],
-            'cryptoType' => ['required_if:payment_platform,crypto'],
+            'payment_method' => ['required'],
+            'payment_gateway' => ['required'],
             'amount' => ['required', 'numeric', "gte:$minAmount"],
         ])->setAttributeNames([
             'meta_login' => trans('public.account'),
-            'payment_platform' => trans('public.platform'),
+            'payment_method' => trans('public.select_payment'),
             'payment_gateway' => trans('public.payment_gateway'),
-            'cryptoType' => trans('public.method'),
             'amount' => trans('public.amount'),
         ])->validate();
 
@@ -707,13 +722,8 @@ class TradingAccountController extends Controller
             $environment = 'production';
         }
 
-        if ($request->payment_platform == 'bank') {
-            $payment_gateway = PaymentGateway::find($request->payment_gateway);
-        } else {
-            $payment_gateway = PaymentGateway::where('platform', $request->payment_platform)
-                ->where('environment', $environment)
-                ->first();
-        }
+        $payment_method = $request->payment_method;
+        $payment_gateway = PaymentGateway::find($request->payment_gateway);
 
         $latest_transaction = Transaction::where('user_id', $user->id)
             ->where('category', 'trading_account')
@@ -739,8 +749,20 @@ class TradingAccountController extends Controller
         // $fee = $request->fee ?? 0;
         $fee = 0;
 
-        if ($request->payment_platform == 'bank') {
-            $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', 'VND')->deposit_rate;
+        $baseMethod = PaymentMethod::select('id', 'type')->findOrFail($payment_method['id']);
+
+        $typeMethodIds = PaymentMethod::where('type', $baseMethod->type)->pluck('id');
+
+        $paymentGatewayMethod = PaymentGatewayMethod::with([
+            'payment_gateway:id,name',
+            'payment_method:id,name,slug,type',
+        ])
+            ->where('payment_gateway_id', $payment_gateway->id)
+            ->whereIn('payment_method_id', $typeMethodIds)
+            ->firstOrFail();
+
+        if ($payment_gateway->platform == 'bank') {
+            $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', $paymentGatewayMethod->currency)->deposit_rate;
             $conversion_amount = round($amount * $conversion_rate, 2);
         }
 
@@ -932,51 +954,39 @@ class TradingAccountController extends Controller
         ]);
     }
 
-    public function payment_hot_callback(Request $request)
+    public function hypay_deposit_callback(Request $request)
     {
-        $environment = in_array(app()->environment(), ['local', 'staging']) ? 'staging' : 'production';
+        $environment = in_array(app()->environment(), ['local', 'staging']) ? 'local' : 'production';
 
-        $apiKey = $request->header('P-API-KEY');
-        $signature = $request->header('P-SIGNATURE');
         $payment_gateway = PaymentGateway::firstWhere([
-            'payment_app_name' => 'payment-hot',
-            'environment' => $environment,
+            'payment_app_name' => 'hypay',
+            'environment' => 'production',
         ]);
-
-        // Check API Key
-        if ($apiKey != $payment_gateway->payment_api_key) {
-            return response()->json(['message' => 'Invalid key'], 400);
-        }
 
         $bodyContent = $request->getContent();
         $dataArray = json_decode($bodyContent, true);
-        $jsonString = json_encode($dataArray, JSON_UNESCAPED_UNICODE);
+        $jsonString = json_encode($bodyContent, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         Log::debug("Callback Response: " , $dataArray);
+        $timestamp = $request->header('ACCESS-TIMESTAMP');
+        $signature = $request->header('ACCESS-SIGN');
 
-        $concatenatedString = $jsonString . $payment_gateway->secondary_key;
-        $hashBody = hash('sha256', $concatenatedString, true);
-        $hashedSign = base64_encode($hashBody);
+        $concatenatedString = $jsonString . $timestamp;
+        $hashedSign = hash_hmac('sha256', $concatenatedString, $payment_gateway->secondary_key);
 
         if ($signature != $hashedSign) {
             return response()->json(['message' => 'Invalid JSON body'], 400);
         }
 
-        $transaction = Transaction::firstWhere('transaction_number', $dataArray['orderId']);
-        $status = $dataArray['code'] == 'SUCCESS' ? 'successful' : 'failed';
+        $transaction = Transaction::firstWhere('transaction_number', $dataArray['mch_no']);
+        $status = $dataArray['status'] == 'success' ? 'successful' : 'failed';
 
         $transaction->update([
-            'payment_platform_name' => $dataArray['senderBankName'] ?? null,
-            'bank_code' => $dataArray['senderBankId'] ?? null,
-            'txn_hash' => $dataArray['secretSenderBankRefNumber'] ?? null,
-            'payment_account_name' => $dataArray['senderBankRefName'] ?? null,
-            'payment_account_no' => $dataArray['receiverBankRefNumber'] ?? null,
-            'to_wallet_address' => $dataArray['receiverBankRefNumber'] ?? null,
             'transaction_amount' => $transaction->amount,
-            'from_currency' => 'VND',
+            'from_currency' => 'CNY',
             'to_currency' => 'USD',
             'status' => $status,
-            'comment' => $dataArray['txnId'] ?? null,
+            'comment' => 'CNY ' . $dataArray['amount'] ?? null,
             'approved_at' => now()
         ]);
 

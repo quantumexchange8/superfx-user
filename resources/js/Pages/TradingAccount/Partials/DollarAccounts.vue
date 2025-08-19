@@ -7,7 +7,8 @@ import {generalFormat, transactionFormat} from "@/Composables/index.js";
 import {usePage} from "@inertiajs/vue3";
 
 const props = defineProps({
-    user: Object
+    user: Object,
+    methods: Array,
 })
 
 const isLoading = ref(false);
@@ -116,7 +117,10 @@ watchEffect(() => {
                 </div>
             </div>
             <div class="flex justify-end items-center gap-3 self-stretch">
-                <ActionButton :account="account" />
+                <ActionButton
+                    :account="account"
+                    :methods="methods"
+                />
             </div>
         </div>
     </div>

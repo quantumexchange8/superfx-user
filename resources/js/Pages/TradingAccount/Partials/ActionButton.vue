@@ -14,6 +14,7 @@ import {transactionFormat} from "@/Composables/index.js";
 
 const props = defineProps({
     account: Object,
+    methods: Array,
 });
 
 const {formatAmount} = transactionFormat()
@@ -85,6 +86,7 @@ const submitForm = (formType) => {
     <DepositAccount
         :account="account"
         :conversionRate="conversionRate"
+        :methods="methods"
     />
     <Button
         type="button"

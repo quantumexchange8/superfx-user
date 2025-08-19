@@ -27,7 +27,7 @@ const isSelected = (item) => {
 </script>
 
 <template>
-    <div class="flex items-start overflow-x-auto gap-3 self-stretch">
+    <div class="grid gap-3 self-stretch grid-cols-1 sm:grid-cols-2">
         <div
             v-for="item in items"
             :key="props.valueKey ? item[props.valueKey] : item"

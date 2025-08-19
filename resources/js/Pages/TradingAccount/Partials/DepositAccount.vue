@@ -15,11 +15,13 @@ import toast from "@/Composables/toast.js";
 import { trans } from "laravel-vue-i18n";
 import SelectChipGroup from "@/Components/SelectChipGroup.vue";
 import Skeleton from "primevue/skeleton";
+import Dropdown from "primevue/dropdown";
 
 
 const props = defineProps({
     account: Object,
     conversionRate: Number,
+    methods: Array,
 });
 
 const maxAmount = ref();
@@ -29,17 +31,13 @@ const selectedCryptoOption = ref();
 
 const form = ref({
     meta_login: props.account.meta_login,
-    payment_platform: '',
-    cryptoType: '',
+    payment_method: '',
     payment_gateway: '',
     amount: 0,
 });
 
+const selectedMethod = ref();
 const selectedPlatform = ref('');
-const depositOptions = [
-    'bank',
-    'crypto'
-];
 
 const paymentGateways = ref([]);
 const selectedPaymentGateway = ref();
@@ -48,8 +46,12 @@ const loadingPaymentGateways = ref(false);
 const getPaymentGateways = async () => {
     loadingPaymentGateways.value = true;
     try {
-        const response = await axios.get(`/getPaymentGateways?platform=${selectedPlatform.value}`);
+        const response = await axios.get(`/getPaymentGateways?slug=${selectedMethod.value.slug}`);
         paymentGateways.value = response.data.payment_gateways;
+
+        if (paymentGateways.value.length === 1) {
+            selectedPaymentGateway.value = paymentGateways.value[0].id;
+        }
     } catch (error) {
         console.error('Error changing locale:', error);
     } finally {
@@ -57,14 +59,19 @@ const getPaymentGateways = async () => {
     }
 };
 
-watch(selectedPlatform, (newPlatform) => {
-    if (newPlatform === 'crypto') {
-        getFee();
-        maxAmount.value = formatAmount(1000000);
-    } else {
-        getPaymentGateways();
-        maxAmount.value = formatAmount(299999999/props.conversionRate);
-    }
+// watch(selectedPlatform, (newPlatform) => {
+//     if (newPlatform === 'crypto') {
+//         getFee();
+//         maxAmount.value = formatAmount(1000000);
+//     } else {
+//         getPaymentGateways();
+//         maxAmount.value = formatAmount(299999999/props.conversionRate);
+//     }
+// })
+
+watch(selectedMethod, () => {
+    selectedPaymentGateway.value = null;
+    getPaymentGateways();
 })
 
 const cryptoOptions = ref([]);
@@ -105,14 +112,8 @@ const steps = computed(() => {
 const submitForm = async () => {
     isLoading.value = true;
     try {
-        form.value.payment_platform = selectedPlatform.value;
-
-        if (form.value.payment_platform === 'crypto') {
-            form.value.cryptoType = selectedCryptoOption.value;
-        } else {
-            form.value.cryptoType = null;
-            form.value.payment_gateway = selectedPaymentGateway.value;
-        }
+        form.value.payment_method = selectedMethod.value;
+        form.value.payment_gateway = selectedPaymentGateway.value;
 
         // Send POST request with form data
         const response = await axios.post(route('account.deposit_to_account'), form.value);
@@ -182,25 +183,62 @@ const closeDialog = () => {
                     <span class="text-gray-950 text-center text-xl font-semibold">$ {{ account.balance ?? 0 }}</span>
                 </div>
                 <div class="flex flex-col items-start gap-1 self-stretch">
-                    <InputLabel for="accountType" :value="$t('public.platform_placeholder')" />
-                    <SelectChipGroup
-                        :items="depositOptions"
-                        v-model="selectedPlatform"
-                    />
-                    <InputError v-if="errors.payment_platform" :message="errors.payment_platform[0]" />
-                </div>
-
-                <div
-                    v-if="selectedPlatform === 'bank'"
-                    class="flex flex-col items-start gap-1 self-stretch"
-                >
                     <InputLabel
                         for="accountType"
                         :value="$t('public.select_payment')"
                     />
+                    <Dropdown
+                        v-model="selectedMethod"
+                        :options="methods"
+                        optionLabel="name"
+                        :placeholder="$t('public.select_payment')"
+                        class="w-full"
+                        scroll-height="236px"
+                        :invalid="!!errors.payment_method"
+                    >
+                        <template #value="slotProps">
+                            <div
+                                v-if="slotProps.value"
+                                class="flex items-center gap-2"
+                            >
+                                <img
+                                    :src="`/img/payment/${slotProps.value.slug}.png`"
+                                    alt="Logo"
+                                    class="w-5 h-5 object-cover"
+                                />
+                                {{ slotProps.value.name }}
+                            </div>
+                            <span v-else>
+                                {{ $t('public.bank_placeholder') }}
+                            </span>
+                        </template>
+                        <template #option="slotProps">
+                            <div
+                                class="flex items-center gap-2"
+                            >
+                                <img
+                                    :src="`/img/payment/${slotProps.option.slug}.png`"
+                                    alt="Logo"
+                                    class="w-5 h-5 object-cover"
+                                />
+                                {{ slotProps.option.name }}
+                            </div>
+                        </template>
+                    </Dropdown>
+                    <InputError v-if="errors.payment_method" :message="errors.payment_method[0]" />
+                </div>
+
+                <div
+                    v-if="selectedMethod"
+                    class="flex flex-col items-start gap-1 self-stretch"
+                >
+                    <InputLabel
+                        for="accountType"
+                        :value="$t('public.platform_placeholder')"
+                    />
                     <Skeleton
                         v-if="loadingPaymentGateways"
-                        width="9rem"
+                        width="10rem"
                         height="2.75rem"
                     />
                     <SelectChipGroup
@@ -210,7 +248,14 @@ const closeDialog = () => {
                         value-key="id"
                     >
                         <template #option="{ item }">
-                            {{ item.name }}
+                            <div class="flex items-center gap-2">
+                                <img
+                                    :src="`/img/payment/${item.slug}.png`"
+                                    alt="Logo"
+                                    class="w-5 h-5 object-cover"
+                                />
+                                {{ item.name }}
+                            </div>
                         </template>
                     </SelectChipGroup>
                     <InputError v-if="errors.payment_platform" :message="errors.payment_platform[0]" />

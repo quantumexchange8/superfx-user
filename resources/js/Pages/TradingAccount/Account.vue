@@ -18,7 +18,8 @@ import { wTrans } from "laravel-vue-i18n";
 import OpenDemoAccount from "@/Pages/TradingAccount/Partials/OpenDemoAccount.vue";
 
 const props = defineProps({
-    terms: Object
+    terms: Object,
+    methods: Array
 })
 
 // Initialize the form with user data
@@ -37,8 +38,8 @@ const demoAccountForm = useForm({
 });
 
 const tabs = ref([
-    { title: wTrans('public.dollar'), component: h(DollarAccounts), type: 'dollar' },
-    { title: wTrans('public.cent'), component: h(CentAccounts), type: 'cent' },
+    { title: wTrans('public.dollar'), component: h(DollarAccounts, {methods: props.methods}), type: 'dollar' },
+    { title: wTrans('public.cent'), component: h(CentAccounts, {methods: props.methods}), type: 'cent' },
     // { title: wTrans('public.demo'), component: h(DemoAccounts), type: 'demo' },
 ]);
 
