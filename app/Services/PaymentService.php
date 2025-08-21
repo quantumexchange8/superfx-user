@@ -69,16 +69,17 @@ class PaymentService
 
                 $msg = "/api/place/orders/checkout$timestamp$bodyString";
 
-                $bank_headers = [
+                $headers = [
                     'ACCESS-KEY'  => $payment_gateway->payment_app_key,
                     'ACCESS-SIGN'  => hash_hmac('sha256', $msg, $payment_gateway->secondary_key),
                     'ACCESS-TIMESTAMP'  => $timestamp,
                 ];
+                $headers['Content-Type'] = 'application/json';
 
-                $response = Http::withHeaders(array_merge($bank_headers, [
-                    'Content-Type' => 'application/json',
-                ]))
-                    ->withBody($bodyString)
+                Log::info('post headers: ' . json_encode($headers, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+                $response = Http::withHeaders($headers)
+                    ->withBody(json_encode($params, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE))
                     ->post("$payment_gateway->payment_url/api/place/orders/checkout");
 
                 $responseData = $response->json();

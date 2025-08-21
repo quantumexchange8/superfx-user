@@ -142,6 +142,8 @@ const submitForm = async () => {
                 message: response.data.toast_message,
                 type: response.data.toast_type,
             });
+
+            closeDialog();
         }
     } catch (error) {
         if (error.response && error.response.status === 422) {
