@@ -56,10 +56,11 @@ class PaymentService
                     'mch_no'  => $transaction->transaction_number,
                     'sync_url' => route('depositReturn'),
                     'async_url' => route('hypay_deposit_callback'),
-                    'true_name' => $transaction->user->name,
+                    'true_name' => '张三',
                     'phone' => $transaction->user->phone_number,
                     'order_amount' => $transaction->conversion_amount,
                     'amount' => $transaction->amount,
+                    'pay_channel' => 'card'
                 ];
 
                 $timestamp = now()->timestamp;
