@@ -58,8 +58,8 @@ class PaymentService
                     'async_url' => route('hypay_deposit_callback'),
                     'true_name' => '张三',
                     'phone' => $transaction->user->phone_number,
-                    'order_amount' => $transaction->conversion_amount,
-                    'amount' => $transaction->amount,
+                    'order_amount' => (float) $transaction->conversion_amount,
+                    'amount' => (float) $transaction->amount,
                     'pay_channel' => 'card'
                 ];
 
