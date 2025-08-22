@@ -956,13 +956,6 @@ class TradingAccountController extends Controller
 
     public function hypay_deposit_callback(Request $request)
     {
-        $environment = in_array(app()->environment(), ['local', 'staging']) ? 'local' : 'production';
-
-        $payment_gateway = PaymentGateway::firstWhere([
-            'payment_app_name' => 'hypay',
-            'environment' => 'production',
-        ]);
-
         $bodyContent = $request->getContent();
         $dataArray = json_decode($bodyContent, true);
         $jsonString = json_encode($bodyContent, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -970,6 +963,8 @@ class TradingAccountController extends Controller
         Log::debug("Callback Response: " , $dataArray);
 
         $transaction = Transaction::firstWhere('transaction_number', $dataArray['mch_no']);
+
+        $payment_gateway = PaymentGateway::find($transaction->payment_gateway_id);
 
         if ($dataArray['status'] == 'cancel') {
             $transaction->update([
@@ -982,10 +977,13 @@ class TradingAccountController extends Controller
         $timestamp = $request->header('ACCESS-TIMESTAMP');
         $signature = $request->header('ACCESS-SIGN');
 
-        Log::info('All request headers: ' . json_encode($request->headers->all(), JSON_PRETTY_PRINT));
+        Log::info('header-sign: ' . $signature);
 
         $concatenatedString = $jsonString . $timestamp;
         $hashedSign = hash_hmac('sha256', $concatenatedString, $payment_gateway->secondary_key);
+
+        Log::info('sign data: ' . $concatenatedString);
+        Log::info('my-sign: ' . $hashedSign);
 
         if ($signature != $hashedSign) {
             return response()->json(['message' => 'Invalid JSON body'], 400);
