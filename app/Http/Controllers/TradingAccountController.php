@@ -982,6 +982,8 @@ class TradingAccountController extends Controller
         $timestamp = $request->header('ACCESS-TIMESTAMP');
         $signature = $request->header('ACCESS-SIGN');
 
+        Log::info('All request headers: ' . json_encode($request->headers->all(), JSON_PRETTY_PRINT));
+
         $concatenatedString = $jsonString . $timestamp;
         $hashedSign = hash_hmac('sha256', $concatenatedString, $payment_gateway->secondary_key);
 
