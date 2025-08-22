@@ -958,7 +958,6 @@ class TradingAccountController extends Controller
     {
         $bodyContent = $request->getContent();
         $dataArray = json_decode($bodyContent, true);
-        $jsonString = json_encode($bodyContent, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         Log::debug("Callback Response: " , $dataArray);
 
@@ -977,13 +976,8 @@ class TradingAccountController extends Controller
         $timestamp = $request->header('ACCESS-TIMESTAMP');
         $signature = $request->header('ACCESS-SIGN');
 
-        Log::info('header-sign: ' . $signature);
-
-        $concatenatedString = $jsonString . $timestamp;
+        $concatenatedString = $bodyContent . $timestamp;
         $hashedSign = hash_hmac('sha256', $concatenatedString, $payment_gateway->secondary_key);
-
-        Log::info('sign data: ' . $concatenatedString);
-        Log::info('my-sign: ' . $hashedSign);
 
         if ($signature != $hashedSign) {
             return response()->json(['message' => 'Invalid JSON body'], 400);
