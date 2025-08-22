@@ -968,6 +968,17 @@ class TradingAccountController extends Controller
         $jsonString = json_encode($bodyContent, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         Log::debug("Callback Response: " , $dataArray);
+
+        $transaction = Transaction::firstWhere('transaction_number', $dataArray['mch_no']);
+
+        if ($dataArray['status'] == 'cancel') {
+            $transaction->update([
+                'status' => 'failed',
+                'comment' => 'Transaction has been cancelled.',
+                'approved_at' => now()
+            ]);
+        }
+
         $timestamp = $request->header('ACCESS-TIMESTAMP');
         $signature = $request->header('ACCESS-SIGN');
 
@@ -978,7 +989,6 @@ class TradingAccountController extends Controller
             return response()->json(['message' => 'Invalid JSON body'], 400);
         }
 
-        $transaction = Transaction::firstWhere('transaction_number', $dataArray['mch_no']);
         $status = $dataArray['status'] == 'success' ? 'successful' : 'failed';
 
         $transaction->update([

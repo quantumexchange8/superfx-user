@@ -68,8 +68,6 @@ class PaymentService
 
                 $msg = "/api/place/orders/checkout$timestamp$bodyString";
 
-                Log::info('sign: ' . $msg);
-
                 $headers = [
                     'ACCESS-KEY'  => $payment_gateway->payment_app_key,
                     'ACCESS-SIGN'  => hash_hmac('sha256', $msg, $payment_gateway->secondary_key),
@@ -80,15 +78,6 @@ class PaymentService
                 $response = Http::withHeaders($headers)
                     ->withBody($bodyString)
                     ->post("$payment_gateway->payment_url/api/place/orders/checkout");
-
-                // For logging curl format
-                $curl = "curl -X POST '" . $payment_gateway->payment_url . "/api/place/orders/checkout'";
-                foreach ($headers as $key => $value) {
-                    $curl .= " -H '" . $key . ": " . $value . "'";
-                }
-                $curl .= " -d " . escapeshellarg($bodyString);
-
-                Log::info("CURL: " . $curl);
 
                 $responseData = $response->json();
 
