@@ -56,7 +56,7 @@ class PaymentService
                     'mch_no'  => $transaction->transaction_number,
                     'sync_url' => route('depositReturn'),
                     'async_url' => route('hypay_deposit_callback'),
-                    'true_name' => '张三',
+                    'true_name' => $transaction->user->name,
                     'phone' => $transaction->user->phone_number,
                     'order_amount' => (float) $transaction->conversion_amount,
                     'amount' => (float) $transaction->amount,
@@ -67,6 +67,8 @@ class PaymentService
                 $bodyString = json_encode($params, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
                 $msg = "/api/place/orders/checkout$timestamp$bodyString";
+
+                Log::info('sign: ' . $msg);
 
                 $headers = [
                     'ACCESS-KEY'  => $payment_gateway->payment_app_key,
