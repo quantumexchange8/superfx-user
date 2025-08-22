@@ -65,7 +65,6 @@ class PaymentService
 
                 $timestamp = now()->timestamp;
                 $bodyString = json_encode($params, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                Log::info('body json: ' . $bodyString);
 
                 $msg = "/api/place/orders/checkout$timestamp$bodyString";
 
@@ -76,11 +75,18 @@ class PaymentService
                 ];
                 $headers['Content-Type'] = 'application/json';
 
-                Log::info('post headers: ' . json_encode($headers, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-
                 $response = Http::withHeaders($headers)
-                    ->withBody(json_encode($params, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE))
+                    ->withBody($bodyString)
                     ->post("$payment_gateway->payment_url/api/place/orders/checkout");
+
+                // For logging curl format
+                $curl = "curl -X POST '" . $payment_gateway->payment_url . "/api/place/orders/checkout'";
+                foreach ($headers as $key => $value) {
+                    $curl .= " -H '" . $key . ": " . $value . "'";
+                }
+                $curl .= " -d " . escapeshellarg($bodyString);
+
+                Log::info("CURL: " . $curl);
 
                 $responseData = $response->json();
 
