@@ -18,7 +18,8 @@
         "spatie/laravel-activitylog": "^4.8",
         "spatie/laravel-medialibrary": "^11.8",
         "spatie/laravel-permission": "^6.9",
-        "tightenco/ziggy": "^2.3"
+        "tightenco/ziggy": "^2.3",
+        "ext-openssl": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

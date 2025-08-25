@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bank;
+use App\Models\CurrencyConversionRate;
 use App\Models\PaymentAccount;
 use App\Models\PaymentGateway;
 use App\Models\PaymentGatewayHasBank;
+use App\Models\PaymentGatewayMethod;
 use App\Models\PaymentMethod;
 use App\Models\Setting;
 use Illuminate\Http\Request;
@@ -13,33 +15,35 @@ use Illuminate\Support\Facades\Auth;
 
 class SelectOptionController extends Controller
 {
-    public function getPaymentAccounts(Request $request)
+    public function getPaymentMethodRule(Request $request)
     {
-        $paymentAccounts = PaymentAccount::where('user_id', Auth::id())
-            ->latest()
-            ->get();
+        $baseMethod = PaymentMethod::select(['id', 'type'])->findOrFail($request->payment_method_id);
 
-        if ($request->type) {
-            $cryptoOptions = Setting::where('slug', 'LIKE', "%$request->type%")
-                    ->get()
-                    ->map(function ($setting) {
-                        $type = explode('_', $setting->slug)[0];
-                        return [
-                            'type' => strtoupper($type),
-                            'fee' => floatval($setting->value),
-                        ];
-                    });
+        $typeMethodIds = PaymentMethod::where('type', $baseMethod->type)->pluck('id');
 
-            return response()->json([
-                'payment_accounts' => $paymentAccounts,
-                'crypto_options' => $cryptoOptions,
-            ]);
+        $paymentGatewayMethod = PaymentGatewayMethod::with([
+            'payment_gateway:id,name',
+            'payment_method:id,name,slug,type',
+        ])
+            ->where('payment_gateway_id', $request->payment_gateway_id)
+            ->whereIn('payment_method_id', $typeMethodIds)
+            ->firstOrFail();
+
+        $currency_rate = 1;
+
+        if ($paymentGatewayMethod->currency != 'USD') {
+            $currency_rate = CurrencyConversionRate::firstWhere('base_currency', $paymentGatewayMethod->currency)->{$request->type . '_rate'};
         }
-        else{
-            return response()->json([
-                'payment_accounts' => $paymentAccounts,
-            ]);
-        }
+
+        $txn_charge = round($paymentGatewayMethod->fee / $currency_rate, 2);
+        $min_amount = round($paymentGatewayMethod->min_amount / $currency_rate, 2);
+        $max_amount = round($paymentGatewayMethod->max_amount / $currency_rate, 2);
+
+        return response()->json([
+            'fee' => $txn_charge,
+            'minAmount' => $min_amount,
+            'maxAmount' => $max_amount,
+        ]);
     }
 
     public function getPaymentGateways(Request $request)

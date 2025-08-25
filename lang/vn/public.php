@@ -520,8 +520,9 @@ return [
     "filter_type" => "Lọc theo loại",
     "platform" => "Nền tảng",
     "deposit_info_message_1" => "Tỷ giá nạp tiền: $:conversionRate.",
-    "deposit_info_message_2" => "Số tiền nạp tối thiểu cho mỗi giao dịch là $50.00, không có phí.",
-    "deposit_info_message_3" => "Số tiền nạp tối đa cho mỗi giao dịch là $:maxAmount, không có phí.",
+    "deposit_info_message_2" => "Số tiền gửi tối thiểu cho mỗi giao dịch là $:minAmount.",
+    "deposit_info_message_3" => "Số tiền gửi tối đa cho mỗi giao dịch là $:maxAmount.",
+    "deposit_info_message_4" => "Phí giao dịch là $:txnFee.",
     "id_number" => "ID",
     "toast_deposit_request_success_message" => "Yêu cầu nạp tiền đã được xử lý thành công",
     "cancel_withdrawal" => "Hủy rút tiền",
@@ -653,4 +654,5 @@ return [
     "cent10-new" => "Cent10-New",
     "cent15-new" => "Cent15-New",
     "pro-new" => "PRO-New",
+    "amount_cannot_larger_than_max_amount" => "số tiền không thể lớn hơn $:max_amount",
 ];

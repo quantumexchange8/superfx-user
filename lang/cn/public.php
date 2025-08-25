@@ -520,8 +520,9 @@ return [
     "filter_type" => "按类型筛选",
     "platform" => "平台",
     "deposit_info_message_1" => "存款汇率: $:conversionRate.",
-    "deposit_info_message_2" => "每笔交易的最低存款金额为 $50.00, 无手续费.",
-    "deposit_info_message_3" => "每笔交易的最高存款金额为 $:maxAmount, 无手续费.",
+    "deposit_info_message_2" => "每笔交易的最低存款金额为 $:minAmount.",
+    "deposit_info_message_3" => "每笔交易的最高存款金额为 $:maxAmount.",
+    "deposit_info_message_4" => "您的交易所需费用为 $:txnFee.",
     "id_number" => "ID",
     "toast_deposit_request_success_message" => "存款申请成功处理",
     "cancel_withdrawal" => "取消提现",
@@ -653,4 +654,5 @@ return [
     "cent10-new" => "Cent10-New",
     "cent15-new" => "Cent15-New",
     "pro-new" => "PRO-New",
+    "amount_cannot_larger_than_max_amount" => "金额不能大于 $:max_amount",
 ];

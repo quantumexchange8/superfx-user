@@ -1,11 +1,9 @@
 <script setup>
 import Button from "@/Components/Button.vue";
-import {ref, computed, watch} from "vue";
+import {ref, watch} from "vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import {
     IconLoader2,
-    IconCircleCheckFilled,
-    IconInfoOctagonFilled
 } from "@tabler/icons-vue";
 import InputNumber from "primevue/inputnumber";
 import InputError from "@/Components/InputError.vue";
@@ -16,7 +14,7 @@ import { trans } from "laravel-vue-i18n";
 import SelectChipGroup from "@/Components/SelectChipGroup.vue";
 import Skeleton from "primevue/skeleton";
 import Dropdown from "primevue/dropdown";
-
+import Loader from "@/Components/Loader.vue";
 
 const props = defineProps({
     account: Object,
@@ -24,20 +22,20 @@ const props = defineProps({
     methods: Array,
 });
 
-const maxAmount = ref();
 const visible = ref(false);
 const isLoading = ref(false);
-const selectedCryptoOption = ref();
 
 const form = ref({
     meta_login: props.account.meta_login,
     payment_method: '',
     payment_gateway: '',
     amount: 0,
+    txn_fee: '',
+    min_amount: '',
+    max_amount: '',
 });
 
 const selectedMethod = ref();
-const selectedPlatform = ref('');
 
 const paymentGateways = ref([]);
 const selectedPaymentGateway = ref();
@@ -59,61 +57,66 @@ const getPaymentGateways = async () => {
     }
 };
 
-// watch(selectedPlatform, (newPlatform) => {
-//     if (newPlatform === 'crypto') {
-//         getFee();
-//         maxAmount.value = formatAmount(1000000);
-//     } else {
-//         getPaymentGateways();
-//         maxAmount.value = formatAmount(299999999/props.conversionRate);
-//     }
-// })
-
+// Get Payment Gateway
 watch(selectedMethod, () => {
     selectedPaymentGateway.value = null;
     getPaymentGateways();
 })
 
-const cryptoOptions = ref([]);
-const loadingCrypto = ref(false);
+// Get Payment Gateway Fee
+watch(selectedPaymentGateway, (newVal) => {
+    if (newVal) {
+        getFee();
+    }
+})
+
+const txnFee = ref(null);
+const minAmount = ref(null);
+const maxAmount = ref(null);
+const loadingFee = ref(false);
+
+const steps = ref([]);
 
 const getFee = async () => {
-    loadingCrypto.value = true;
+    loadingFee.value = true;
     try {
-        const response = await axios.get('/getPaymentAccounts?type=deposit');
-        cryptoOptions.value = response.data.crypto_options;
-        selectedCryptoOption.value = cryptoOptions.value[0];
+        const response = await axios.get(`/getPaymentMethodRule?payment_method_id=${selectedMethod.value.id}&payment_gateway_id=${selectedPaymentGateway.value}&type=deposit`);
+
+        txnFee.value = response.data.fee;
+        minAmount.value = response.data.minAmount;
+        maxAmount.value = response.data.maxAmount;
+
+        const stepsArray = [];
+        if (selectedMethod.value.type === 'bank') {
+            stepsArray.push(trans('public.deposit_info_message_1', { conversionRate: formatAmount(props.conversionRate) }));
+            stepsArray.push(trans('public.deposit_info_message_2', { minAmount: props.account.minimum_deposit > 0 ? props.account.minimum_deposit : (minAmount.value < 50 ? 50 : Math.round(minAmount.value)) }));
+            stepsArray.push(trans('public.deposit_info_message_3', { maxAmount: Math.floor(maxAmount.value) }));
+            stepsArray.push(trans('public.deposit_info_message_4', { txnFee: formatAmount(txnFee.value) }));
+        } else {
+            stepsArray.push(trans('public.crypto_deposit_info_message_1'));
+            stepsArray.push(trans('public.crypto_deposit_info_message_2', { maxAmount: maxAmount.value }));
+        }
+
+        steps.value = stepsArray;
+
     } catch (error) {
-        console.error('Error changing locale:', error);
+        console.error('Error get payment fee:', error);
     } finally {
-        loadingCrypto.value = false;
+        loadingFee.value = false;
     }
 };
 
 const {formatAmount} = transactionFormat();
 const errors = ref({});
 
-const steps = computed(() => {
-    const stepsArray = [];
-
-    if (selectedPlatform.value === 'bank') {
-        stepsArray.push(trans('public.deposit_info_message_1', { conversionRate: formatAmount(props.conversionRate) }));
-        stepsArray.push(trans('public.deposit_info_message_2'));
-        stepsArray.push(trans('public.deposit_info_message_3', { maxAmount: maxAmount.value }));
-    }
-    else {
-        stepsArray.push(trans('public.crypto_deposit_info_message_1'));
-        stepsArray.push(trans('public.crypto_deposit_info_message_2', { maxAmount: maxAmount.value }));
-    }
-
-     return stepsArray;
-});
-
 const submitForm = async () => {
     isLoading.value = true;
     try {
         form.value.payment_method = selectedMethod.value;
         form.value.payment_gateway = selectedPaymentGateway.value;
+        form.value.txn_fee = txnFee.value;
+        form.value.min_amount = minAmount.value;
+        form.value.max_amount = maxAmount.value;
 
         // Send POST request with form data
         const response = await axios.post(route('account.deposit_to_account'), form.value);
@@ -241,7 +244,7 @@ const closeDialog = () => {
                     <Skeleton
                         v-if="loadingPaymentGateways"
                         width="10rem"
-                        height="2.75rem"
+                        height="3rem"
                     />
                     <SelectChipGroup
                         v-else
@@ -263,30 +266,6 @@ const closeDialog = () => {
                     <InputError v-if="errors.payment_platform" :message="errors.payment_platform[0]" />
                 </div>
 
-                <!-- Crypto Options-->
-                <div
-                    v-if="selectedPlatform ==='crypto'"
-                    class="flex flex-col items-start gap-1 self-stretch"
-                >
-                    <InputLabel for="accountType" :value="$t('public.platform_placeholder')" />
-                    <Skeleton
-                        v-if="loadingCrypto"
-                        width="9rem"
-                        height="2.75rem"
-                    />
-                    <SelectChipGroup
-                        v-else
-                        v-model="selectedCryptoOption"
-                        :items="cryptoOptions"
-                        value-key="type"
-                    >
-                        <template #option="{ item }">
-                            {{ item.type }}
-                        </template>
-                    </SelectChipGroup>
-                    <InputError v-if="errors.cryptoType" :message="errors.cryptoType[0]" />
-                </div>
-
                 <div class="flex flex-col items-start gap-1 self-stretch">
                     <InputLabel for="amount" :value="$t('public.amount')" />
                     <div class="relative w-full">
@@ -304,16 +283,21 @@ const closeDialog = () => {
                             :invalid="!!errors.amount"
                         />
                     </div>
-                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount( account.group === 'PRIME' ? account.minimum_deposit : 50,0) }}</span>
+                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount( account.group === 'PRIME' ? account.minimum_deposit : (minAmount < 50 ? 50 : Math.round(minAmount)),0) }}</span>
                     <InputError v-if="errors.amount" :message="errors.amount[0]" />
                 </div>
                 <div class="flex flex-col items-center self-stretch">
-                    <div v-if="selectedPlatform" class="flex justify-center items-start gap-3 self-stretch">
+                    <div class="flex justify-center items-start gap-3 self-stretch">
                         <div class="flex flex-col items-start gap-1 flex-grow">
                             <span class="self-stretch text-gray-950 text-sm font-semibold">{{ $t('public.deposit_info_header') }}</span>
-                            <span v-for="(step, index) in steps" :key="index" class="self-stretch text-gray-500 text-xs">
-                            {{ index + 1 }}. {{ step }}
-                        </span>
+                            <div v-if="loadingFee" class="flex flex-col items-center justify-center w-full py-5">
+                                <Loader />
+                            </div>
+                            <div v-else class="flex flex-col items-start gap-1 flex-grow">
+                                <div v-for="(step, index) in steps" :key="index" class="self-stretch text-gray-500 text-xs">
+                                    {{ index + 1 }}. {{ step }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

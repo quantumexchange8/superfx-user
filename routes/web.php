@@ -32,6 +32,7 @@ Route::get('/', function () {
 Route::get('/admin_login/{hashedToken}', [DashboardController::class, 'admin_login']);
 Route::post('deposit_callback', [TradingAccountController::class, 'depositCallback'])->name('depositCallback');
 Route::post('hypay_deposit_callback', [TradingAccountController::class, 'hypay_deposit_callback'])->name('hypay_deposit_callback');
+Route::post('hypay_deposit_callback', [TradingAccountController::class, 'psp_deposit_callback'])->name('psp_deposit_callback');
 
 Route::get('/confirmWithdrawal/{transaction_number}/{token}', [TransactionController::class, 'confirmWithdrawal'])->name('confirmWithdrawal');
 
@@ -40,7 +41,7 @@ Route::middleware(['auth','verified'])->group(function () {
 
     Route::get('/getUserMarkupProfiles', [GeneralController::class, 'getUserMarkupProfiles'])->name('getUserMarkupProfiles');
     // Select Option
-    Route::get('getPaymentAccounts', [SelectOptionController::class, 'getPaymentAccounts'])->name('getPaymentAccounts');
+    Route::get('getPaymentMethodRule', [SelectOptionController::class, 'getPaymentMethodRule'])->name('getPaymentMethodRule');
     Route::get('getPaymentGateways', [SelectOptionController::class, 'getPaymentGateways'])->name('getPaymentGateways');
     Route::get('getWithdrawalPaymentAccounts', [SelectOptionController::class, 'getWithdrawalPaymentAccounts'])->name('getWithdrawalPaymentAccounts');
 

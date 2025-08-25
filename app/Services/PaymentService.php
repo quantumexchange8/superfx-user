@@ -51,6 +51,69 @@ class PaymentService
                 $payment_url = $this->buildAndRequestUrl($baseUrl, $params);
                 break;
 
+            case 'pay-superfin':
+                $params = [
+                    'version'  => "2.0",
+                    'merId'  => $payment_gateway->payment_app_number,
+                    'transDate' => date_format($transaction->created_at, 'Ymd'),
+                    'seqId' => $transaction->transaction_number,
+                    'transTime' => date_format($transaction->created_at, 'His'),
+                    'amount' => (string) $transaction->conversion_amount,
+                    'notifyUrl' => route('psp_deposit_callback'),
+                    'payType' => "00",
+                    'buyerId' => (string) $transaction->user_id,
+                ];
+
+                // Remove null/empty values
+                $filtered = array_filter($params, fn($v) => $v !== null && $v !== '');
+
+                // Sort by key (ASCII order)
+                ksort($filtered);
+
+                $stringA = urldecode(http_build_query($filtered));
+
+                Log::info('params string to sign: '. $stringA);
+
+                $privateKeyPath = storage_path('app/keys/psp_private.pem');
+                $privateKey = file_get_contents($privateKeyPath);
+
+                if (!$privateKey) {
+                    throw new Exception('Private key file not found or unreadable.');
+                }
+
+                $signature = null;
+                $success = openssl_sign($stringA, $signature, $privateKey, OPENSSL_ALGO_SHA256);
+
+                if (!$success) {
+                    throw new Exception('Failed to generate RSA signature.');
+                }
+
+                // Encode signature (usually Base64 for transmission)
+                $params['sign'] = base64_encode($signature);
+
+                $response = Http::withBody(json_encode($params, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES))
+                    ->post("$payment_gateway->payment_url/pay");
+
+                $responseData = $response->json();
+
+                if (isset($responseData['code']) && $responseData['code'] == "0000") {
+                    // success → get the URL from data
+                    $payment_url = $responseData['payResult'] ?? null;
+
+                    if ($payment_url) {
+                        break;
+                    }
+
+                    // code == 0 but url missing → throw exception
+                    throw new Exception('Missing checkout URL in gateway response: ' . json_encode($responseData));
+                }
+
+                Log::info('PSP Pay response code: ' . $responseData['code']);
+                Log::info('PSP Pay response msg: ' . $responseData['msg']);
+
+                // error case → throw exception with message
+                throw new Exception('Gateway request failed: CODE - ' . $responseData['code'] . '; MSG - ' . ($responseData['msg'] ?? json_encode($responseData)));
+
             case 'hypay':
                 $params = [
                     'mch_no'  => $transaction->transaction_number,

@@ -699,7 +699,7 @@ class TradingAccountController extends Controller
                 ->where('meta_login', $request->meta_login)
                 ->first();
 
-        $minAmount = $tradingAccount->account_type->account_group === 'PRIME' ? $tradingAccount->account_type->minimum_deposit : 50;
+        $minAmount = $tradingAccount->account_type->minimum_deposit > 0 ? $tradingAccount->account_type->minimum_deposit : ($request->min_amount < 50 ? 50 : $request->min_amount);
 
         //change cryptoType validation as bank won't work
         Validator::make($request->all(), [
@@ -716,12 +716,6 @@ class TradingAccountController extends Controller
 
         $user = Auth::user();
 
-        $environment = 'local';
-
-        if (App::environment('production')) {
-            $environment = 'production';
-        }
-
         $payment_method = $request->payment_method;
         $payment_gateway = PaymentGateway::find($request->payment_gateway);
 
@@ -733,6 +727,14 @@ class TradingAccountController extends Controller
             ->first();
 
         $amount = number_format(floatval($request->amount), 2, '.', '');
+
+        if ($request->amount > $request->max_amount) {
+            throw ValidationException::withMessages([
+                'amount' => trans('public.amount_cannot_larger_than_max_amount', [
+                    'max_amount' => floor($request->max_amount),
+                ]),
+            ]);
+        }
 
         // Check if the latest transaction exists and its created_at time is within the last 30 seconds
         if ($latest_transaction && Carbon::parse($latest_transaction->created_at)->diffInSeconds(Carbon::now()) < 30) {
@@ -746,10 +748,9 @@ class TradingAccountController extends Controller
 
         $conversion_rate = null;
         $conversion_amount = null;
-        // $fee = $request->fee ?? 0;
-        $fee = 0;
+        $fee = $request->txn_fee ?? 0;
 
-        $baseMethod = PaymentMethod::select('id', 'type')->findOrFail($payment_method['id']);
+        $baseMethod = PaymentMethod::select(['id', 'type'])->findOrFail($payment_method['id']);
 
         $typeMethodIds = PaymentMethod::where('type', $baseMethod->type)->pluck('id');
 
@@ -774,9 +775,11 @@ class TradingAccountController extends Controller
             'payment_platform' => $request->payment_platform,
             'transaction_type' => 'deposit',
             'amount' => $amount,
+            'from_currency' => $conversion_rate ? $paymentGatewayMethod->currency : 'USD',
+            'to_currency' => 'USD',
             'conversion_rate' => $conversion_rate ?? null,
             'conversion_amount' => $conversion_amount ?? null,
-            'transaction_charges' => 0,
+            'transaction_charges' => $fee,
             'status' => 'processing',
             'payment_gateway_id' => $payment_gateway->id,
             'payment_account_type' => strtolower($request->cryptoType) ?? null,
@@ -1003,6 +1006,57 @@ class TradingAccountController extends Controller
         }
 
         return response()->json(['success' => false, 'message' => 'Deposit Failed']);
+    }
+
+    public function psp_deposit_callback(Request $request)
+    {
+        $bodyContent = $request->getContent();
+        $dataArray = json_decode($bodyContent, true);
+
+        Log::debug("Callback Response: " , $dataArray);
+
+        $transaction = Transaction::firstWhere('transaction_number', $dataArray['seqId']);
+//
+//        $payment_gateway = PaymentGateway::find($transaction->payment_gateway_id);
+//
+//        if ($dataArray['status'] == 'cancel') {
+//            $transaction->update([
+//                'status' => 'failed',
+//                'comment' => 'Transaction has been cancelled.',
+//                'approved_at' => now()
+//            ]);
+//        }
+//
+//        $timestamp = $request->header('ACCESS-TIMESTAMP');
+//        $signature = $request->header('ACCESS-SIGN');
+//
+//        $concatenatedString = $bodyContent . $timestamp;
+//        $hashedSign = hash_hmac('sha256', $concatenatedString, $payment_gateway->secondary_key);
+//
+//        if ($signature != $hashedSign) {
+//            return response()->json(['message' => 'Invalid JSON body'], 400);
+//        }
+//
+//        $status = $dataArray['status'] == 'success' ? 'successful' : 'failed';
+//
+//        $transaction->update([
+//            'transaction_amount' => $transaction->amount,
+//            'from_currency' => 'CNY',
+//            'to_currency' => 'USD',
+//            'status' => $status,
+//            'comment' => 'CNY ' . $dataArray['amount'] ?? null,
+//            'approved_at' => now()
+//        ]);
+//
+//        if ($transaction->status == 'successful') {
+//            if ($transaction->transaction_type == 'deposit') {
+//                $this->proceed_deposit_to_account($transaction);
+//
+//                return response()->json(['success' => true, 'message' => 'Deposit Success']);
+//            }
+//        }
+//
+//        return response()->json(['success' => false, 'message' => 'Deposit Failed']);
     }
 
     private function proceed_deposit_to_account($transaction)
