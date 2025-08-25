@@ -296,7 +296,7 @@ watchEffect(() => {
                         <label for="role_member">{{ $t('public.member') }}</label>
                     </div>
                     <div class="flex items-center gap-2 text-sm text-gray-950">
-                        <RadioButton v-model="filters['role'].value" inputId="role_agent" value="agent" class="w-4 h-4" />
+                        <RadioButton v-model="filters['role'].value" inputId="role_agent" value="ib" class="w-4 h-4" />
                         <label for="role_agent">{{ $t('public.ib') }}</label>
                     </div>
                 </div>
