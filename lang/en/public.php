@@ -657,4 +657,5 @@ return [
     "cent15-new" => "Cent15-New",
     "pro-new" => "PRO-New",
     "amount_cannot_larger_than_max_amount" => "Amount cannot be larger than $:max_amount",
+    "please_try_again_later" => "Please try again later",
 ];

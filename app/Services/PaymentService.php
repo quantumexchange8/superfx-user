@@ -82,7 +82,7 @@ class PaymentService
                 }
 
                 $signature = null;
-                $success = openssl_sign($stringA, $signature, $privateKey, OPENSSL_ALGO_SHA256);
+                $success = openssl_sign($stringA, $signature, $privateKey);
 
                 if (!$success) {
                     throw new Exception('Failed to generate RSA signature.');
@@ -91,8 +91,8 @@ class PaymentService
                 // Encode signature (usually Base64 for transmission)
                 $params['sign'] = base64_encode($signature);
 
-                $response = Http::withBody(json_encode($params, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES))
-                    ->post("$payment_gateway->payment_url/pay");
+                $response = Http::asForm()
+                    ->post("$payment_gateway->payment_url/pay", $params);
 
                 $responseData = $response->json();
 
@@ -110,6 +110,11 @@ class PaymentService
 
                 Log::info('PSP Pay response code: ' . $responseData['code']);
                 Log::info('PSP Pay response msg: ' . $responseData['msg']);
+
+                $transaction->update([
+                    'status' => 'failed',
+                    'approved_at' => now()
+                ]);
 
                 // error case → throw exception with message
                 throw new Exception('Gateway request failed: CODE - ' . $responseData['code'] . '; MSG - ' . ($responseData['msg'] ?? json_encode($responseData)));
@@ -155,6 +160,11 @@ class PaymentService
                     // code == 0 but url missing → throw exception
                     throw new Exception('Missing checkout URL in gateway response: ' . json_encode($responseData));
                 }
+
+                $transaction->update([
+                    'status' => 'failed',
+                    'approved_at' => now(),
+                ]);
 
                 // error case → throw exception with message
                 throw new Exception('Gateway request failed: ' . ($responseData['message'] ?? json_encode($responseData)));

@@ -15,6 +15,7 @@ use App\Models\Term;
 use App\Models\User;
 use App\Services\PaymentService;
 use DB;
+use Exception;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
@@ -41,6 +42,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\PaymentGateway;
 use App\Models\CurrencyConversionRate;
+use Storage;
 use Throwable;
 
 class TradingAccountController extends Controller
@@ -649,7 +651,7 @@ class TradingAccountController extends Controller
                 'title' => trans('public.toast_revoke_account_success'),
                 'type' => 'success',
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Revoke Account Error: ' . $e->getMessage());
         }
     }
@@ -785,23 +787,39 @@ class TradingAccountController extends Controller
             'payment_account_type' => strtolower($request->cryptoType) ?? null,
         ]);
 
-        $redirect_url = (new PaymentService())->getPaymentUrl($payment_gateway, $transaction);
+        try {
+            $redirect_url = (new PaymentService())->getPaymentUrl($payment_gateway, $transaction);
 
-        if ($redirect_url) {
-            Log::debug("Payment URL: " . $redirect_url);
+            if ($redirect_url) {
+                Log::debug("Payment URL: " . $redirect_url);
+
+                return response()->json([
+                    'success'       => true,
+                    'payment_url'   => $redirect_url,
+                    'toast_title'   => trans('public.successful'),
+                    'toast_message' => trans('public.toast_deposit_request_success_message'),
+                    'toast_type'    => 'success'
+                ]);
+            }
 
             return response()->json([
-                'success' => true,
-                'payment_url' => $redirect_url,
-                'toast_title' => trans('public.successful'),
-                'toast_message' => trans('public.toast_deposit_request_success_message'),
-                'toast_type' => 'success'
+                'success'       => false,
+                'toast_title'   => trans('public.gateway_error'),
+                'toast_message' => trans('public.please_try_again_later'),
+                'toast_type'    => 'error'
             ]);
-        }
+        } catch (Exception $e) {
+            // Log server-side for debugging
+            Log::error('Deposit error: ' . $e->getMessage());
 
-        return redirect()->back()
-            ->with('title', trans('public.successful'))
-            ->with('success', trans('public.toast_deposit_request_success_message'));
+            // Send back error to frontend
+            return response()->json([
+                'success'       => false,
+                'toast_title'   => trans('public.gateway_error'),
+                'toast_message' => $e->getMessage(),
+                'toast_type'    => 'error'
+            ], 400);
+        }
     }
 
     public function depositCallback(Request $request)
@@ -1008,55 +1026,64 @@ class TradingAccountController extends Controller
         return response()->json(['success' => false, 'message' => 'Deposit Failed']);
     }
 
+    /**
+     * @throws Exception
+     */
     public function psp_deposit_callback(Request $request)
     {
         $bodyContent = $request->getContent();
-        $dataArray = json_decode($bodyContent, true);
+        $dataArray   = json_decode($bodyContent, true);
 
-        Log::debug("Callback Response: " , $dataArray);
+        Log::debug("Callback Response: ", $dataArray);
+
+        // Extract the signature
+        $signature = $dataArray['sign'] ?? null;
+        if (!$signature) {
+            throw new Exception('Missing signature in callback');
+        }
+
+        unset($dataArray['sign']);
+
+        $filtered = array_filter($dataArray, fn($v) => $v !== null && $v !== '');
+
+        ksort($filtered);
+
+        $stringA = urldecode(http_build_query($filtered));
+
+        $publicKey = Storage::get('app/keys/psp_public.pem');
+        $publicKeyId = openssl_pkey_get_public($publicKey);
+
+        $isValid = openssl_verify($stringA, base64_decode($signature), $publicKeyId);
+
+        if ($isValid !== 1) {
+            Log::error('Signature verification failed', ['stringA' => $stringA, 'signature' => $signature]);
+            return response()
+                ->json([
+                    'success' => false,
+                    'message' => 'Signature verification failed.',
+                ]);
+        }
 
         $transaction = Transaction::firstWhere('transaction_number', $dataArray['seqId']);
-//
-//        $payment_gateway = PaymentGateway::find($transaction->payment_gateway_id);
-//
-//        if ($dataArray['status'] == 'cancel') {
-//            $transaction->update([
-//                'status' => 'failed',
-//                'comment' => 'Transaction has been cancelled.',
-//                'approved_at' => now()
-//            ]);
-//        }
-//
-//        $timestamp = $request->header('ACCESS-TIMESTAMP');
-//        $signature = $request->header('ACCESS-SIGN');
-//
-//        $concatenatedString = $bodyContent . $timestamp;
-//        $hashedSign = hash_hmac('sha256', $concatenatedString, $payment_gateway->secondary_key);
-//
-//        if ($signature != $hashedSign) {
-//            return response()->json(['message' => 'Invalid JSON body'], 400);
-//        }
-//
-//        $status = $dataArray['status'] == 'success' ? 'successful' : 'failed';
-//
-//        $transaction->update([
-//            'transaction_amount' => $transaction->amount,
-//            'from_currency' => 'CNY',
-//            'to_currency' => 'USD',
-//            'status' => $status,
-//            'comment' => 'CNY ' . $dataArray['amount'] ?? null,
-//            'approved_at' => now()
-//        ]);
-//
-//        if ($transaction->status == 'successful') {
-//            if ($transaction->transaction_type == 'deposit') {
-//                $this->proceed_deposit_to_account($transaction);
-//
-//                return response()->json(['success' => true, 'message' => 'Deposit Success']);
-//            }
-//        }
-//
-//        return response()->json(['success' => false, 'message' => 'Deposit Failed']);
+
+        $status = $dataArray['stat'] == '0000' ? 'successful' : 'failed';
+
+        $transaction->update([
+            'transaction_amount' => $transaction->amount,
+            'status' => $status,
+            'comment' => 'VND ' . $dataArray['amount'] ?? null,
+            'approved_at' => now()
+        ]);
+
+        if ($transaction->status == 'successful') {
+            if ($transaction->transaction_type == 'deposit') {
+                $this->proceed_deposit_to_account($transaction);
+
+                return response()->json(['success' => true, 'message' => 'Deposit Success']);
+            }
+        }
+
+        return response()->json(['success' => false, 'message' => 'Deposit Failed']);
     }
 
     private function proceed_deposit_to_account($transaction)
