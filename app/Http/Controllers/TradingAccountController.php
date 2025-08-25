@@ -1034,6 +1034,7 @@ class TradingAccountController extends Controller
 
         // Extract the signature
         $signature = $dataArray['sign'] ?? null;
+
         if (!$signature) {
             throw new Exception('Missing signature in callback');
         }
@@ -1041,15 +1042,14 @@ class TradingAccountController extends Controller
         unset($dataArray['sign']);
 
         $filtered = array_filter($dataArray, fn($v) => $v !== null && $v !== '');
-
         ksort($filtered);
 
         $stringA = urldecode(http_build_query($filtered));
 
-        $publicKey = Storage::get('app/keys/psp_public.pem');
-        $publicKeyId = openssl_pkey_get_public($publicKey);
+        $publicKeyPath = storage_path('app/keys/psp_public.pem');
+        $publicKey = file_get_contents($publicKeyPath);
 
-        $isValid = openssl_verify($stringA, base64_decode($signature), $publicKeyId);
+        $isValid = openssl_verify($stringA, base64_decode($signature), $publicKey);
 
         if ($isValid !== 1) {
             Log::error('Signature verification failed', ['stringA' => $stringA, 'signature' => $signature]);
