@@ -692,9 +692,6 @@ class TradingAccountController extends Controller
         ]);
     }
 
-    /**
-     * @throws ConnectionException
-     */
     public function deposit_to_account(Request $request)
     {
         $tradingAccount = TradingAccount::with('account_type')
@@ -788,7 +785,7 @@ class TradingAccountController extends Controller
         ]);
 
         try {
-            $redirect_url = (new PaymentService())->getPaymentUrl($payment_gateway, $transaction);
+            $redirect_url = (new PaymentService())->getPaymentUrl($payment_gateway, $transaction, $paymentGatewayMethod);
 
             if ($redirect_url) {
                 Log::debug("Payment URL: " . $redirect_url);
@@ -1079,7 +1076,10 @@ class TradingAccountController extends Controller
             if ($transaction->transaction_type == 'deposit') {
                 $this->proceed_deposit_to_account($transaction);
 
-                return response()->json(['success' => true, 'message' => 'Deposit Success']);
+                return response()->json([
+                    "code" => "SUCCESS",
+                    "msg" => "Deposit success",
+                ]);
             }
         }
 
