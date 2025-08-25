@@ -705,7 +705,7 @@ class TradingAccountController extends Controller
             'meta_login' => ['required', 'exists:trading_accounts,meta_login'],
             'payment_method' => ['required'],
             'payment_gateway' => ['required'],
-            'amount' => ['required', 'numeric', "gte:$minAmount"],
+            'amount' => ['required', 'numeric', "gte:" . round($minAmount)],
         ])->setAttributeNames([
             'meta_login' => trans('public.account'),
             'payment_method' => trans('public.select_payment'),
@@ -1028,8 +1028,7 @@ class TradingAccountController extends Controller
      */
     public function psp_deposit_callback(Request $request)
     {
-        $bodyContent = $request->getContent();
-        $dataArray   = json_decode($bodyContent, true);
+        $dataArray = $request->all();
 
         Log::debug("Callback Response: ", $dataArray);
 
