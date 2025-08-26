@@ -658,4 +658,5 @@ return [
     "pro-new" => "PRO-New",
     "amount_cannot_larger_than_max_amount" => "Amount cannot be larger than $:max_amount",
     "please_try_again_later" => "Please try again later",
+    "deposit_no_fee" => "Your deposit has no service fee charged.",
 ];

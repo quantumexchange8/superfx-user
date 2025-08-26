@@ -655,4 +655,6 @@ return [
     "cent15-new" => "Cent15-New",
     "pro-new" => "PRO-New",
     "amount_cannot_larger_than_max_amount" => "金額不能大於 $:max_amount",
+    "please_try_again_later" => "請稍後重試",
+    "deposit_no_fee" => "您的存款不收取手續費。",
 ];

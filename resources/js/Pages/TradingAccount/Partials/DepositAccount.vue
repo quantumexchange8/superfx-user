@@ -60,6 +60,7 @@ const getPaymentGateways = async () => {
 // Get Payment Gateway
 watch(selectedMethod, () => {
     selectedPaymentGateway.value = null;
+    steps.value = [];
     getPaymentGateways();
 })
 
@@ -89,15 +90,18 @@ const getFee = async () => {
         const stepsArray = [];
         if (selectedMethod.value.type === 'bank') {
             stepsArray.push(trans('public.deposit_info_message_1', { conversionRate: formatAmount(props.conversionRate) }));
-            stepsArray.push(trans('public.deposit_info_message_2', { minAmount: props.account.minimum_deposit > 0 ? props.account.minimum_deposit : (minAmount.value < 50 ? 50 : Math.round(minAmount.value)) }));
-            stepsArray.push(trans('public.deposit_info_message_3', { maxAmount: Math.floor(maxAmount.value) }));
+        }
+        stepsArray.push(trans('public.deposit_info_message_2', { minAmount: props.account.minimum_deposit > 0 ? props.account.minimum_deposit : (minAmount.value < 50 ? 50 : Math.round(minAmount.value)) }));
+        stepsArray.push(trans('public.deposit_info_message_3', { maxAmount: Math.floor(maxAmount.value) }));
+
+        if (Number(txnFee.value) > 0) {
             stepsArray.push(trans('public.deposit_info_message_4', { txnFee: formatAmount(txnFee.value) }));
         } else {
-            stepsArray.push(trans('public.crypto_deposit_info_message_1'));
-            stepsArray.push(trans('public.crypto_deposit_info_message_2', { maxAmount: maxAmount.value }));
+            stepsArray.push(trans('public.deposit_no_fee'));
         }
 
         steps.value = stepsArray;
+        calculateFinalAmount();
 
     } catch (error) {
         console.error('Error get payment fee:', error);
@@ -105,6 +109,19 @@ const getFee = async () => {
         loadingFee.value = false;
     }
 };
+
+const finalAmount = ref(0);
+
+watch(
+    () => form.value.amount,
+    () => {
+        calculateFinalAmount()
+    }
+);
+
+const calculateFinalAmount = () => {
+    finalAmount.value = Math.abs(Number(form.value.amount || 0) - Number(txnFee.value || 0))
+}
 
 const {formatAmount} = transactionFormat();
 const errors = ref({});
@@ -289,7 +306,7 @@ const closeDialog = () => {
                 <div class="flex flex-col items-center self-stretch">
                     <div class="flex justify-center items-start gap-3 self-stretch">
                         <div class="flex flex-col items-start gap-1 flex-grow">
-                            <span class="self-stretch text-gray-950 text-sm font-semibold">{{ $t('public.deposit_info_header') }}</span>
+                            <span v-if="steps.length" class="self-stretch text-gray-950 text-sm font-semibold">{{ $t('public.deposit_info_header') }}</span>
                             <div v-if="loadingFee" class="flex flex-col items-center justify-center w-full py-5">
                                 <Loader />
                             </div>
@@ -301,8 +318,8 @@ const closeDialog = () => {
                         </div>
                     </div>
                 </div>
-                <!-- <div
-                    v-if="selectedPlatform ==='crypto'"
+                <div
+                    v-if="txnFee > 0 && selectedPaymentGateway"
                     class="flex flex-col items-end justify-end self-stretch pt-5 border-t border-gray-200"
                 >
                     <div class="flex justify-between items-start gap-1 self-stretch">
@@ -318,7 +335,7 @@ const closeDialog = () => {
                             {{ $t('public.deposit_fee') }} :
                         </span>
                         <span class="col-span-1 text-right text-gray-500 text-sm">
-                            ${{ formatAmount(selectedCryptoOption.fee ?? 0) }}
+                            ${{ formatAmount(txnFee ?? 0) }}
                         </span>
                     </div>
                     <div class="flex justify-between items-start gap-1 self-stretch">
@@ -329,7 +346,7 @@ const closeDialog = () => {
                             ${{ formatAmount(finalAmount) }}
                         </span>
                     </div>
-                </div> -->
+                </div>
             </div>
             <div class="flex justify-end items-center pt-5 gap-4 self-stretch sm:pt-7">
                 <Button

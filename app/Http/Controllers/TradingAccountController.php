@@ -778,6 +778,7 @@ class TradingAccountController extends Controller
             'to_currency' => 'USD',
             'conversion_rate' => $conversion_rate ?? null,
             'conversion_amount' => $conversion_amount ?? null,
+            'transaction_amount' => $amount - $fee,
             'transaction_charges' => $fee,
             'status' => 'processing',
             'payment_gateway_id' => $payment_gateway->id,
@@ -898,8 +899,7 @@ class TradingAccountController extends Controller
                 'comment' => $result['system_order_code'] ?? null,
                 'approved_at' => now()
             ]);
-        }
-        else{
+        } else {
             $to_wallet_address = $result['bank_account_no'];
             $fees = round($result['fees'] / $transaction->conversion_rate, 2);
 

@@ -21,28 +21,48 @@ class SelectOptionController extends Controller
 
         $typeMethodIds = PaymentMethod::where('type', $baseMethod->type)->pluck('id');
 
-        $paymentGatewayMethod = PaymentGatewayMethod::with([
+        $paymentGatewayMethods = PaymentGatewayMethod::with([
             'payment_gateway:id,name',
             'payment_method:id,name,slug,type',
         ])
             ->where('payment_gateway_id', $request->payment_gateway_id)
             ->whereIn('payment_method_id', $typeMethodIds)
-            ->firstOrFail();
+            ->get();
 
-        $currency_rate = 1;
+        $gatewayMethodData = [];
 
-        if ($paymentGatewayMethod->currency != 'USD') {
-            $currency_rate = CurrencyConversionRate::firstWhere('base_currency', $paymentGatewayMethod->currency)->{$request->type . '_rate'};
+        foreach ($paymentGatewayMethods as $method) {
+            $currency_rate = 1;
+            if ($method->currency !== 'USD') {
+                $currency_rate = CurrencyConversionRate::firstWhere(
+                    'base_currency',
+                    $method->currency
+                )->{$request->type . '_rate'};
+            }
+
+            $gatewayMethodData[$method->payment_method_id] = [
+                'txn_charge' => $method->{$request->type . '_fee'},
+                'min_amount' => round($method->min_amount / $currency_rate, 2),
+                'max_amount' => round($method->max_amount / $currency_rate, 2),
+            ];
         }
 
-        $txn_charge = round($paymentGatewayMethod->fee / $currency_rate, 2);
-        $min_amount = round($paymentGatewayMethod->min_amount / $currency_rate, 2);
-        $max_amount = round($paymentGatewayMethod->max_amount / $currency_rate, 2);
+        if ($baseMethod->type == 'bank') {
+            $targetMethod = $paymentGatewayMethods->firstWhere('payment_gateway_id', $request->payment_gateway_id);
+        } else {
+            $targetMethod = $paymentGatewayMethods->firstWhere('payment_method_id', $request->payment_method_id);
+        }
+
+        if (!$targetMethod) {
+            return response()->json([
+                'error' => 'Payment method not supported by this gateway',
+            ], 422);
+        }
 
         return response()->json([
-            'fee' => $txn_charge,
-            'minAmount' => $min_amount,
-            'maxAmount' => $max_amount,
+            'fee'       => $gatewayMethodData[$targetMethod->payment_method_id]['txn_charge'],
+            'minAmount' => $gatewayMethodData[$targetMethod->payment_method_id]['min_amount'],
+            'maxAmount' => $gatewayMethodData[$targetMethod->payment_method_id]['max_amount'],
         ]);
     }
 

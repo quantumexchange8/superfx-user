@@ -655,4 +655,6 @@ return [
     "cent15-new" => "Cent15-New",
     "pro-new" => "PRO-New",
     "amount_cannot_larger_than_max_amount" => "số tiền không thể lớn hơn $:max_amount",
+    "please_try_again_later" => "Vui lòng thử lại sau",
+    "deposit_no_fee" => "Bạn sẽ không bị tính phí khi gửi tiền.",
 ];

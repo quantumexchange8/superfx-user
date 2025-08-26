@@ -52,23 +52,6 @@ class PaymentService
                 break;
 
             case 'pay-superfin':
-                $map = [
-                    '00' => 'vietqr',
-                    '01' => 'momo',
-                    '02' => 'zalopay',
-                ];
-
-                // get the slug from model
-                $slug = $paymentGatewayMethod->payment_method->slug;
-
-                // find the code by slug
-                $pay_type = array_search($slug, $map);
-
-                if ($pay_type === false) {
-                    // handle unmapped slug
-                    throw new Exception('Pay type not found.');
-                }
-
                 $params = [
                     'version'  => "2.0",
                     'merId'  => $payment_gateway->payment_app_number,
@@ -77,7 +60,7 @@ class PaymentService
                     'transTime' => date_format($transaction->created_at, 'His'),
                     'amount' => (string) $transaction->conversion_amount,
                     'notifyUrl' => route('psp_deposit_callback'),
-                    'payType' => $pay_type,
+                    'payType' => "00",
                     'buyerId' => (string) $transaction->user_id,
                 ];
 
@@ -240,13 +223,5 @@ class PaymentService
         $responseData = $response->json();
 
         return $responseData['data']['payment_url'] ?? null;
-    }
-
-    private function generatePaymentHotSignature($params, $merchantKey): string
-    {
-        ksort($params);
-        $concatenatedString = implode('', $params);
-        $hashParams = hash('sha256', $concatenatedString . $merchantKey, true);
-        return base64_encode($hashParams);
     }
 }
