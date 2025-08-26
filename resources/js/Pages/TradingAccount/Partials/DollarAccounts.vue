@@ -93,7 +93,7 @@ watchEffect(() => {
                             color: `#${account.account_type_color}`,
                         }"
                     >
-                        {{ props.user?.role == 'member' ? (account.member_display_name ?? account.account_type_name) : account.account_type_name }}
+                        {{ (account.member_display_name ?? account.account_type_name) }}
                     </div>
                 </div>
                 <Action :account="account" :type="accountType" />

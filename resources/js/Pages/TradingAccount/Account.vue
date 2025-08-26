@@ -235,7 +235,7 @@ const noticeVisible = ref(true);
                                         'text-gray-950': selectedAccountType !== account.account_group
                                     }"
                                 >
-                                    {{ user.role == 'member' ? (account.member_display_name ?? account.name) : account.name }}
+                                    {{ (account.member_display_name ?? account.name) }}
                                 </span>
                                 <IconCircleCheckFilled v-if="selectedAccountType === account.account_group" size="20" stroke-width="1.25" color="#2970FF" />
                             </div>
