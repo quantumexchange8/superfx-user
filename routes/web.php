@@ -32,7 +32,7 @@ Route::get('/', function () {
 Route::get('/admin_login/{hashedToken}', [DashboardController::class, 'admin_login']);
 Route::post('deposit_callback', [TradingAccountController::class, 'depositCallback'])->name('depositCallback');
 Route::post('hypay_deposit_callback', [TradingAccountController::class, 'hypay_deposit_callback'])->name('hypay_deposit_callback');
-Route::post('hypay_deposit_callback', [TradingAccountController::class, 'psp_deposit_callback'])->name('psp_deposit_callback');
+Route::post('psp_deposit_callback', [TradingAccountController::class, 'psp_deposit_callback'])->name('psp_deposit_callback');
 
 Route::get('/confirmWithdrawal/{transaction_number}/{token}', [TransactionController::class, 'confirmWithdrawal'])->name('confirmWithdrawal');
 
