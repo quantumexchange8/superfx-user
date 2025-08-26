@@ -240,23 +240,6 @@ class TransactionController extends Controller
             throw ValidationException::withMessages(['amount' => trans('public.insufficient_balance')]);
         }
 
-        $payment_platform_type = $request->payment_platform_type;
-        $bank_code = null;
-
-        if ($request->payment_platform == 'bank') {
-            $payment_gateway = PaymentGateway::find($payment_platform_type);
-            if ($payment_gateway->payment_app_name == 'payment-hot') {
-                $bank = Bank::firstWhere('bank_code', $paymentWallet->bank_code);
-                $bank_code = $bank?->alias_bank_code ?? $paymentWallet->bank_code;
-            }
-        } else {
-            $payment_gateway = PaymentGateway::firstWhere('payment_app_name', 'payme-usdt');
-        }
-
-        if ($payment_gateway->payment_app_name && !$paymentWallet->bank_bin_code) {
-            throw ValidationException::withMessages(['payment_account_id' => trans('public.missing_bank_bin_in_account')]);
-        }
-
         $transaction_number = RunningNumberService::getID('transaction');
 
         $transaction = Transaction::create([
@@ -271,9 +254,7 @@ class TransactionController extends Controller
             'payment_platform_name' => $paymentWallet->payment_platform_name,
             'payment_account_no' => $paymentWallet->account_no,
             'payment_account_type' => $paymentWallet->payment_account_type,
-            'bank_code' => $bank_code,
-            'bank_bin_code' => $paymentWallet->bank_bin_code,
-            'payment_gateway_id' => $payment_gateway->id,
+            'bank_code' => $paymentWallet->bank_code,
             'from_currency' => 'USD',
             'to_currency' => $paymentWallet->currency,
             'to_wallet_address' => $paymentWallet->account_no,
@@ -282,7 +263,6 @@ class TransactionController extends Controller
             'transaction_amount' => $transaction_amount,
             'old_wallet_amount' => $wallet->balance,
             'new_wallet_amount' => $wallet->balance -= $amount,
-            'comment' => $payment_gateway->payment_app_name,
         ]);
 
         $wallet->save();
