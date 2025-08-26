@@ -1075,10 +1075,8 @@ class TradingAccountController extends Controller
             if ($transaction->transaction_type == 'deposit') {
                 $this->proceed_deposit_to_account($transaction);
 
-                return response()->json([
-                    "code" => "SUCCESS",
-                    "msg" => "Deposit success",
-                ]);
+                return response("SUCCESS", 200)
+                    ->header('Content-Type', 'text/plain');
             }
         }
 
