@@ -989,7 +989,7 @@ class TradingAccountController extends Controller
             'from_currency' => 'CNY',
             'to_currency' => 'USD',
             'status' => $status,
-            'comment' => 'CNY ' . $dataArray['amount'] ?? null,
+            'comment' => $transaction->transaction_number,
             'approved_at' => now()
         ]);
 
@@ -1048,7 +1048,7 @@ class TradingAccountController extends Controller
         $transaction->update([
             'transaction_amount' => $transaction->amount,
             'status' => $status,
-            'comment' => 'VND ' . $dataArray['amount'] ?? null,
+            'comment' => $dataArray['tradeNo'] ?? null,
             'approved_at' => now()
         ]);
 
