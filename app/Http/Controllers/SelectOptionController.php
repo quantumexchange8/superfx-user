@@ -73,14 +73,20 @@ class SelectOptionController extends Controller
         // Find all methods of the same type (Bank + VietQR)
         $methodIds = PaymentMethod::where('type', $method->type)->pluck('id');
 
-        // Get all gateways that support any of those methods
-        $payments = PaymentGateway::whereHas('methods', function ($q) use ($methodIds) {
-            $q->whereIn('payment_method_id', $methodIds);
-        })
-            ->with(['methods' => function ($q) use ($methodIds) {
-                $q->whereIn('payment_methods.id', $methodIds);
-            }])
-            ->get();
+        if ($method->type == 'bank') {
+            // Get all gateways that support any of those methods
+            $payments = PaymentGateway::whereHas('methods', function ($q) use ($methodIds) {
+                $q->whereIn('payment_method_id', $methodIds);
+            })
+                ->with(['methods' => function ($q) use ($methodIds) {
+                    $q->whereIn('payment_methods.id', $methodIds);
+                }])
+                ->get();
+        } else {
+            $payments = PaymentGateway::whereHas('methods', function ($q) use ($request) {
+                $q->where('slug', $request->slug);
+            })->get();
+        }
 
         return response()->json([
             'payment_gateways' => $payments,

@@ -344,7 +344,10 @@ const closeDialog = () => {
                     </div>
                 </div>
             </div>
-            <div class="flex justify-end items-center pt-5 gap-4 self-stretch sm:pt-7">
+            <div
+                v-if="selectedMethod && selectedMethod.status === 'active'"
+                class="flex justify-end items-center pt-5 gap-4 self-stretch sm:pt-7"
+            >
                 <Button
                     type="submit"
                     variant="primary-flat"
