@@ -231,7 +231,7 @@ const closeDialog = () => {
                                 {{ slotProps.value.name }}
                             </div>
                             <span v-else>
-                                {{ $t('public.bank_placeholder') }}
+                                {{ slotProps.placeholder }}
                             </span>
                         </template>
                         <template #option="slotProps">
@@ -261,23 +261,19 @@ const closeDialog = () => {
                     <Skeleton
                         v-if="loadingPaymentGateways"
                         width="10rem"
-                        height="3rem"
+                        height="2.75rem"
                     />
                     <SelectChipGroup
                         v-else
                         v-model="selectedPaymentGateway"
-                        :items="paymentGateways"
+                        :items="paymentGateways.map(pg => ({
+                            ...pg,
+                            disabled: !pg.payment_url
+                        }))"
                         value-key="id"
                     >
                         <template #option="{ item }">
-                            <div class="flex items-center gap-2">
-                                <img
-                                    :src="`/img/payment/${item.slug}.png`"
-                                    alt="Logo"
-                                    class="w-5 h-5 object-cover"
-                                />
-                                {{ item.name }}
-                            </div>
+                            {{ item.name }}
                         </template>
                     </SelectChipGroup>
                     <InputError v-if="errors.payment_platform" :message="errors.payment_platform[0]" />
