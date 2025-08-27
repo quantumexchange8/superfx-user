@@ -51,7 +51,6 @@ const form = useForm({
     country: null,
     currency: '',
     bank_code: '',
-    bank_bin_code: props.paymentAccount.bank_bin_code,
 });
 
 const selectedPaymentAccountType = ref(props.paymentAccount.payment_platform);
@@ -64,7 +63,6 @@ const selectPaymentAccountType = (type) => {
         form.payment_account_name = '';
         form.account_no = '';
         form.bank_code = '';
-        form.bank_bin_code = '';
     }
     selectedPaymentAccountType.value = type;
 }
@@ -251,8 +249,7 @@ const closeDialog = () => {
                 >
                     <template #value="slotProps">
                         <div v-if="slotProps.value.bank_name" class="flex items-center">
-                            <div>{{JSON.parse(slotProps.value.bank_name)[locale]
-                            ?? JSON.parse(slotProps.value.bank_name).vn }}</div>
+                            <div>{{ slotProps.value.bank_name }}</div>
                         </div>
                         <span v-else>
                                 {{ $t('public.bank_placeholder') }}
@@ -260,8 +257,7 @@ const closeDialog = () => {
                     </template>
                     <template #option="slotProps">
                         <div class="flex items-center w-[250px] md:w-full overflow-x-auto">
-                            <div>{{ JSON.parse(slotProps.option.bank_name)[locale]
-                            ?? JSON.parse(slotProps.option.bank_name).vn }} <span class="text-gray-500">( {{ slotProps.option.bank_code }} )</span></div>
+                            <div>{{ slotProps.option.bank_name }} <span class="text-gray-500">( {{ slotProps.option.bank_code }} )</span></div>
                         </div>
                     </template>
                 </Dropdown>
@@ -321,24 +317,6 @@ const closeDialog = () => {
                     :invalid="!!form.errors.account_no"
                 />
                 <InputError :message="form.errors.account_no" />
-            </div>
-
-            <!-- Bank BIN Code -->
-            <div
-                v-if="selectedPaymentAccountType === 'bank'"
-                class="flex flex-col gap-1 items-start self-stretch"
-            >
-                <InputLabel
-                    for="bank_bin_code"
-                    :value="$t('public.bank_bin')"
-                />
-                <InputText
-                    id="bank_bin_code"
-                    type="text"
-                    class="block w-full"
-                    v-model="form.bank_bin_code"
-                    placeholder="eg. 412345"
-                />
             </div>
         </div>
 

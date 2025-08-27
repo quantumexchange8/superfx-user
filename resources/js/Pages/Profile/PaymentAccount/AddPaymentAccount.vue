@@ -253,8 +253,7 @@ getResults();
                     >
                         <template #value="slotProps">
                             <div v-if="slotProps.value.bank_name" class="flex items-center">
-                                <div>{{JSON.parse(slotProps.value.bank_name)[locale]
-                                ?? JSON.parse(slotProps.value.bank_name).vn }}</div>
+                                <div>{{ slotProps.value.bank_name }}</div>
                             </div>
                             <span v-else>
                                 {{ $t('public.bank_placeholder') }}
@@ -262,8 +261,7 @@ getResults();
                         </template>
                         <template #option="slotProps">
                             <div class="flex items-center w-[250px] md:w-full overflow-x-auto">
-                                <div>{{ JSON.parse(slotProps.option.bank_name)[locale]
-                                ?? JSON.parse(slotProps.option.bank_name).vn }} <span class="text-gray-500">( {{ slotProps.option.bank_code }} )</span></div>
+                                <div>{{ slotProps.option.bank_name }} <span class="text-gray-500">( {{ slotProps.option.bank_code }} )</span></div>
                             </div>
                         </template>
                     </Dropdown>

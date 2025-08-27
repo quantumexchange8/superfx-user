@@ -242,7 +242,6 @@ class ProfileController extends Controller
                 ? trans('public.token_address')
                 : ($request->payment_account_type == 'account' ? trans('public.account_no') : trans('public.card_no')),
             'bank_code' => trans('public.bank_code'),
-            'bank_bin_code' => trans('public.bank_bin'),
         ];
 
         Validator::make($request->all(), [
@@ -252,7 +251,6 @@ class ProfileController extends Controller
             'payment_platform_name' => ['required'],
             'account_no' => ['required'],
             'bank_code' => ['required_if:payment_platform,bank'],
-            'bank_bin_code' => ['required_if:payment_platform,bank'],
         ])->setAttributeNames($attributeNames)
             ->validate();
 
@@ -271,7 +269,6 @@ class ProfileController extends Controller
 
             $payment_account->update([
                 'bank_code' => $bank->bank_code,
-                'bank_bin_code' => $request->bank_bin_code,
                 'country_id' => $bank->country_id,
                 'currency' => $bank->currency,
             ]);
@@ -314,7 +311,6 @@ class ProfileController extends Controller
                 ? trans('public.token_address')
                 : ($request->payment_account_type == 'account' ? trans('public.account_no') : trans('public.card_no')),
             'bank_code' => trans('public.bank_code'),
-            'bank_bin_code' => trans('public.bank_bin'),
         ];
 
         Validator::make($request->all(), [
@@ -324,7 +320,6 @@ class ProfileController extends Controller
             'payment_platform_name' => ['required'],
             'account_no' => ['required'],
             'bank_code' => ['required_if:payment_platform,bank'],
-            'bank_bin_code' => ['required_if:payment_platform,bank'],
         ])->setAttributeNames($attributeNames)
             ->validate();
 
@@ -344,7 +339,6 @@ class ProfileController extends Controller
 
             $payment_account->update([
                 'bank_code' => $bank->bank_code,
-                'bank_bin_code' => $request->bank_bin_code,
                 'country_id' => $bank->country_id,
                 'currency' => $bank->currency,
             ]);
