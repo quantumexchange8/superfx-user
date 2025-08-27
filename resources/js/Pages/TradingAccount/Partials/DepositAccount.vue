@@ -268,7 +268,7 @@ const closeDialog = () => {
                         v-model="selectedPaymentGateway"
                         :items="paymentGateways.map(pg => ({
                             ...pg,
-                            disabled: !pg.payment_url
+                            disabled: pg.status === 'inactive',
                         }))"
                         value-key="id"
                     >
