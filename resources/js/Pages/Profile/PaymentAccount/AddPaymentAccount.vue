@@ -26,7 +26,6 @@ const form = useForm({
     country: null,
     currency: '',
     bank_code: '',
-    bank_bin_code: '',
 });
 
 const selectedPaymentAccountType = ref('bank');
@@ -39,7 +38,6 @@ const selectPaymentAccountType = (type) => {
         form.payment_account_name = '';
         form.account_no = '';
         form.bank_code = '';
-        form.bank_bin_code = '';
     }
     selectedPaymentAccountType.value = type;
 }
@@ -321,24 +319,6 @@ getResults();
                         :invalid="!!form.errors.account_no"
                     />
                     <InputError :message="form.errors.account_no" />
-                </div>
-
-                <!-- Bank BIN Code -->
-                <div
-                    v-if="selectedPaymentAccountType === 'bank'"
-                    class="flex flex-col gap-1 items-start self-stretch"
-                >
-                    <InputLabel
-                        for="bank_bin_code"
-                        :value="$t('public.bank_bin')"
-                    />
-                    <InputText
-                        id="bank_bin_code"
-                        type="text"
-                        class="block w-full"
-                        v-model="form.bank_bin_code"
-                        placeholder="eg. 412345"
-                    />
                 </div>
             </div>
 
