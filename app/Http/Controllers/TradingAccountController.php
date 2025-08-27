@@ -818,7 +818,6 @@ class TradingAccountController extends Controller
             // })
             // ->first();
 
-        $result = [];
         if ($transaction->payment_gateway->platform === 'crypto') {
             //crypto
             $result = [
@@ -868,7 +867,7 @@ class TradingAccountController extends Controller
         $status = $result['status'] == 'success' ? 'successful' : 'failed';
 
         if($transaction->payment_gateway->platform === 'crypto') {
-            $to_wallet_address = $result['erc20address'] ?? $result['trc20address'];
+            $to_wallet_address = $transaction->payment_account_type == 'trc20' ?  $result['trc20address'] : $result['erc20address'];
 
             $transaction->update([
                 'to_wallet_address' => $to_wallet_address ?? null,
