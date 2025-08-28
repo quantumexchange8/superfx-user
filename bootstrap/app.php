@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'deposit_callback',
             'hypay_deposit_callback',
             'psp_deposit_callback',
+            'zpay_deposit_callback',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

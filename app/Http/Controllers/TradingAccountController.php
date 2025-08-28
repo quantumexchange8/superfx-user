@@ -1063,6 +1063,58 @@ class TradingAccountController extends Controller
         return response()->json(['success' => false, 'message' => 'Deposit Failed']);
     }
 
+    /**
+     * @throws Exception
+     */
+    public function zpay_deposit_callback(Request $request)
+    {
+        $dataArray = $request->all();
+
+        Log::debug("Callback Response: ", $dataArray);
+
+        if (!$dataArray['signature']) {
+            throw new Exception('Missing signature in callback');
+        }
+
+        $transaction = Transaction::with('payment_gateway')->firstWhere('transaction_number', $dataArray['reference_code']);
+
+        $scaled_amount = $transaction->conversion_amount * pow(10, 2);
+
+        $hashedString = hash('sha256', "{$transaction->payment_gateway->payment_app_key}&$transaction->from_currency&{$dataArray['transaction_id']}&$transaction->transaction_number&$scaled_amount");
+
+        $signature = strtoupper(base64_encode($hashedString));
+
+        if ($signature != $dataArray['signature']) {
+            Log::error('Signature verification failed', [
+                'response signature' => $dataArray['signature'],
+                'signature' => $signature
+            ]);
+
+            return response("SIGNATURE VERIFICATION FAILED", 404)
+                ->header('Content-Type', 'text/plain');
+        }
+
+        $status = $dataArray['status_code'] == '10001' ? 'successful' : 'failed';
+
+        $transaction->update([
+            'transaction_amount' => $transaction->amount,
+            'status' => $status,
+            'comment' => $dataArray['transaction_id'] ?? null,
+            'approved_at' => now()
+        ]);
+
+        if ($transaction->status == 'successful') {
+            if ($transaction->transaction_type == 'deposit') {
+                $this->proceed_deposit_to_account($transaction);
+
+                return response("RECEIVED", 200)
+                    ->header('Content-Type', 'text/plain');
+            }
+        }
+
+        return response()->json(['success' => false, 'message' => 'Deposit Failed']);
+    }
+
     private function proceed_deposit_to_account($transaction)
     {
         $trade = null;

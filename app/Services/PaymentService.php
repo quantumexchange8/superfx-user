@@ -167,6 +167,52 @@ class PaymentService
                 // error case → throw exception with message
                 throw new Exception('Gateway request failed: ' . ($responseData['message'] ?? json_encode($responseData)));
 
+            case 'zpay':
+                $params = [
+                    'merchantCode'  => $payment_gateway->payment_app_number,
+                    'merchantKey' => $payment_gateway->payment_app_key,
+                    'currency' => 'VND',
+                    'paymentID' => $transaction->transaction_number,
+                    'responseURL' => route('zpay_deposit_callback'),
+                    'amount' => $transaction->conversion_amount,
+                    'bankType' => 'BANK_QR',
+                    'remark' => 'Deposit'
+                ];
+
+                $scaled_amount = $params['amount'] * pow(10, 2);
+
+                $signature = hash('sha256', "{$params['merchantCode']}&{$params['merchantKey']}&{$params['currency']}&{$params['paymentID']}&{$params['responseURL']}&$scaled_amount");
+
+                $params['signature'] = strtoupper(base64_encode($signature));
+
+                $response = Http::asForm()
+                    ->post("$payment_gateway->payment_url/authV2", $params);
+
+                $responseData = $response->json();
+
+                if (isset($responseData['status']) && $responseData['status'] == 200) {
+                    // success → get the URL from data
+                    $payment_url = $responseData['redirect_url'] ?? null;
+
+                    if ($payment_url) {
+                        break;
+                    }
+
+                    // code == 200 but url missing → throw exception
+                    throw new Exception('Missing redirect URL in gateway response: ' . json_encode($responseData));
+                }
+
+                Log::info('ZPay response status: ' . $responseData['status']);
+                Log::info('ZPay response message: ' . $responseData['message']);
+
+                $transaction->update([
+                    'status' => 'failed',
+                    'approved_at' => now()
+                ]);
+
+                // error case → throw exception with message
+                throw new Exception('Gateway request failed: CODE - ' . $responseData['status'] . '; Message - ' . ($responseData['message'] ?? json_encode($responseData)));
+
             default:
                 $params = [
                     'partner_id'          => $payment_gateway->payment_app_number,
