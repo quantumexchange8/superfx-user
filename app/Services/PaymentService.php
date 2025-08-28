@@ -188,7 +188,7 @@ class PaymentService
                 $params['signature'] = $signature;
 
                 $response = Http::asForm()
-                    ->post("$payment_gateway->payment_url/auth", $params);
+                    ->post("$payment_gateway->payment_url/authV2", $params);
 
                 $responseData = $response->json();
 
