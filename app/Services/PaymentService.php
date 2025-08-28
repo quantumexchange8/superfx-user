@@ -72,8 +72,6 @@ class PaymentService
 
                 $stringA = urldecode(http_build_query($filtered));
 
-                Log::info('params string to sign: '. $stringA);
-
                 $privateKeyPath = storage_path('app/keys/psp_private.pem');
                 $privateKey = file_get_contents($privateKeyPath);
 
