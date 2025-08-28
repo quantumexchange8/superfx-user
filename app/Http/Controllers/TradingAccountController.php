@@ -1080,9 +1080,9 @@ class TradingAccountController extends Controller
 
         $scaled_amount = $transaction->conversion_amount * pow(10, 2);
 
-        $hashedString = hash('sha256', "{$transaction->payment_gateway->payment_app_key}&$transaction->from_currency&{$dataArray['transaction_id']}&$transaction->transaction_number&$scaled_amount");
+        $rawString = "{$transaction->payment_gateway->payment_app_key}&$transaction->from_currency&{$dataArray['transaction_id']}&$transaction->transaction_number&$scaled_amount";
 
-        $signature = strtoupper(base64_encode($hashedString));
+        $signature = strtoupper(hash('sha256', $rawString));
 
         if ($signature != $dataArray['signature']) {
             Log::error('Signature verification failed', [

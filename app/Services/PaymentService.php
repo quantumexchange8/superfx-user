@@ -181,10 +181,11 @@ class PaymentService
 
                 $scaled_amount = $params['amount'] * pow(10, 2);
 
-                $signature = hash('sha256', "{$params['merchantCode']}&{$params['merchantKey']}&{$params['currency']}&{$params['paymentID']}&{$params['responseURL']}&$scaled_amount");
+                $rawString = "{$params['merchantCode']}&{$params['merchantKey']}&{$params['currency']}&{$params['paymentID']}&{$params['responseURL']}&$scaled_amount";
 
-                $params['signature'] = strtoupper(base64_encode($signature));
-                Log::info('ZPay sign: ' . $params['signature']);
+                $signature = strtoupper(hash('sha256', $rawString));
+
+                $params['signature'] = $signature;
 
                 $response = Http::asForm()
                     ->post("$payment_gateway->payment_url/auth", $params);
