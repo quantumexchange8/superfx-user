@@ -139,32 +139,24 @@ const submitForm = async () => {
         const response = await axios.post(route('account.deposit_to_account'), form.value);
 
         if (response.data.success) {
-            closeDialog();
-
-            toast.add({
-                title: response.data.toast_title,
-                message: response.data.toast_message,
-                type: response.data.toast_type,
-            });
-
-            form.value = {
-                meta_login: props.account.meta_login,
-                payment_platform: '',
-                cryptoType: '',
-                amount: 0,
-                payment_gateway: ''
-            };
-
             window.location.assign(response.data.payment_url);
-        } else {
-            toast.add({
-                title: response.data.toast_title,
-                message: response.data.toast_message,
-                type: response.data.toast_type,
-            });
-
-            closeDialog();
         }
+
+        toast.add({
+            title: response.data.toast_title,
+            message: response.data.toast_message,
+            type: response.data.toast_type,
+        });
+
+        closeDialog();
+
+        form.value = {
+            meta_login: props.account.meta_login,
+            payment_platform: '',
+            cryptoType: '',
+            amount: 0,
+            payment_gateway: ''
+        };
     } catch (error) {
         if (error.response && error.response.status === 422) {
             // Validation errors
