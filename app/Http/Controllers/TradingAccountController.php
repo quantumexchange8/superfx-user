@@ -809,7 +809,7 @@ class TradingAccountController extends Controller
             return response()->json([
                 'success'       => false,
                 'toast_title'   => trans('public.gateway_error'),
-                'toast_message' => $this->formatErrorMessage($e->getMessage(), $payment_method['payment_app_name']),
+                'toast_message' => $this->formatErrorMessage($e->getMessage(), $payment_gateway['payment_app_name']),
                 'toast_type'    => 'error'
             ], 400);
         }
