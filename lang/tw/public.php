@@ -199,7 +199,7 @@ return [
     "revoke_pamm" => "取消綁定資管大師",
     "account_report" => "交易賬戶報表",
     "current_account_balance" => "目前交易賬戶餘額",
-    "minimum_amount" => "最低提款額",
+    "minimum_amount" => "最低金額",
     "receiving_wallet" => "收款錢包",
     "receiving_wallet_placeholder" => "我的錢包",
     "leverages" => "槓桿",

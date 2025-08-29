@@ -199,7 +199,7 @@ return [
     "revoke_pamm" => "Hủy quản lý tài sản",
     "account_report" => "Báo cáo tài khoản giao dịch",
     "current_account_balance" => "Số dư tài khoản giao dịch hiện tại",
-    "minimum_amount" => "Số tiền rút tối thiểu",
+    "minimum_amount" => "số tiền tối thiểu",
     "receiving_wallet" => "Ví nhận tiền",
     "receiving_wallet_placeholder" => "Ví của tôi",
     "leverages" => "Đòn bẩy",

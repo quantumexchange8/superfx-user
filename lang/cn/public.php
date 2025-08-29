@@ -199,7 +199,7 @@ return [
     "revoke_pamm" => "取消绑定资管大师",
     "account_report" => "交易账户报表",
     "current_account_balance" => "目前交易账户余额",
-    "minimum_amount" => "最低提款额",
+    "minimum_amount" => "最低金额",
     "receiving_wallet" => "收款钱包",
     "receiving_wallet_placeholder" => "我的钱包",
     "leverages" => "杠杆",
