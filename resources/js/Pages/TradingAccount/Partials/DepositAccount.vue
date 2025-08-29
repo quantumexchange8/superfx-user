@@ -74,7 +74,7 @@ watch(selectedPaymentGateway, (newVal) => {
         getFee();
         const gateway = paymentGateways.value.find(pg => pg.id === newVal);
 
-        if (gateway.platform === 'bank') {
+        if (selectedMethod.value.type === 'bank') {
             selectedPaymentGatewaySlug.value = gateway ? gateway.methods[0].slug : null;
         }
     }

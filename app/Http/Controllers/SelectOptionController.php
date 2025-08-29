@@ -87,7 +87,16 @@ class SelectOptionController extends Controller
         } else {
             $payments = PaymentGateway::whereHas('methods', function ($q) use ($request) {
                 $q->where('slug', $request->slug);
-            })->get();
+            })
+                ->select([
+                    'id',
+                    'name',
+                    'platform',
+                    'environment',
+                    'payment_url',
+                    'status',
+                ])
+                ->get();
         }
 
         return response()->json([

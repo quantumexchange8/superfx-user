@@ -752,9 +752,13 @@ class TradingAccountController extends Controller
             ]);
         }
 
-        if ($payment_gateway->platform == 'bank') {
+        if ($paymentGatewayMethod->payment_method->type == 'bank') {
             $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', $paymentGatewayMethod->currency)->deposit_rate;
             $conversion_amount = round($amount * $conversion_rate, 2);
+        } else {
+            $targetMethod = PaymentGatewayMethod::firstWhere('payment_method_id', $payment_method['id']);
+
+            $payment_gateway = PaymentGateway::find($targetMethod->payment_gateway_id);
         }
 
         $transaction = Transaction::create([
@@ -773,7 +777,7 @@ class TradingAccountController extends Controller
             'transaction_charges' => $fee,
             'status' => 'processing',
             'payment_gateway_id' => $payment_gateway->id,
-            'payment_account_type' => strtolower($request->cryptoType) ?? null,
+            'payment_account_type' => $payment_method['slug'] ?? null,
         ]);
 
         try {
@@ -893,9 +897,7 @@ class TradingAccountController extends Controller
             $to_wallet_address = $result['bank_account_no'];
             $fees = round($result['fees'] / $transaction->conversion_rate, 2);
 
-            $payment_platform_name = Bank::where('bank_code', $result['bank_code'])
-                ->orWhere('alias_bank_code', $result['bank_code'])
-                ->first();
+            $payment_platform_name = Bank::where('bank_code', $result['bank_code'])->first();
 
             $transaction->update([
                 'payment_platform_name' => $payment_platform_name->bank_name ?? null,
