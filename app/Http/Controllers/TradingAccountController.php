@@ -809,7 +809,7 @@ class TradingAccountController extends Controller
             return response()->json([
                 'success'       => false,
                 'toast_title'   => trans('public.gateway_error'),
-                'toast_message' => $e->getMessage(),
+                'toast_message' => $this->formatErrorMessage($e->getMessage(), $payment_method['payment_app_name']),
                 'toast_type'    => 'error'
             ], 400);
         }
@@ -1101,5 +1101,21 @@ class TradingAccountController extends Controller
         $user = User::firstWhere('id', $transaction->user_id);
 
         Mail::to($user->email)->send(new DepositSuccessMail($user, $transaction->to_meta_login, $transaction->amount, $transaction->created_at));
+    }
+
+    protected function formatErrorMessage($message, $gatewayName)
+    {
+        $decoded = json_decode($message, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && isset($decoded['msg'])) {
+            return $decoded['msg']; // 👉 show the Chinese message
+        }
+
+        // If Hypay needs array handling
+        if ($gatewayName == 'hypay') {
+            return [$message];
+        }
+
+        return $message;
     }
 }
