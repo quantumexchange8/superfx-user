@@ -53,7 +53,7 @@ const getPaymentGateways = async () => {
             selectedPaymentGateway.value = paymentGateways.value[0].id;
         }
     } catch (error) {
-        console.error('Error changing locale:', error);
+        console.error('Error get payment gateways:', error);
     } finally {
         loadingPaymentGateways.value = false;
     }

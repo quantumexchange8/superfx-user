@@ -7,6 +7,8 @@ import InputError from "@/Components/InputError.vue";
 import Dropdown from "primevue/dropdown";
 import {ref, watch, computed} from "vue";
 import {transactionFormat} from "@/Composables/index.js";
+import Skeleton from "primevue/skeleton";
+import SelectChipGroup from "@/Components/SelectChipGroup.vue";
 
 const props = defineProps({
     account: Object,
@@ -36,6 +38,8 @@ getOptions();
 watch(selectedPaymentAccount, (newWallet) => {
     selectedPaymentAccount.value = newWallet;
 
+    getPaymentGateways();
+
     const matchingOption = cryptoOptions.value.find(
         (option) => option.type === selectedPaymentAccount.value.payment_account_type.toUpperCase()
     );
@@ -45,7 +49,29 @@ watch(selectedPaymentAccount, (newWallet) => {
     } else {
         selectedCryptoOption.value = null;
     }
-})
+});
+
+const selectedMethod = ref();
+
+const paymentGateways = ref([]);
+const selectedPaymentGateway = ref();
+const loadingPaymentGateways = ref(false);
+
+const getPaymentGateways = async () => {
+    loadingPaymentGateways.value = true;
+    try {
+        const response = await axios.get(`/getPaymentGateways?slug=${selectedPaymentAccount.value.payment_platform}`);
+        paymentGateways.value = response.data.payment_gateways;
+
+        if (paymentGateways.value.length === 1) {
+            selectedPaymentGateway.value = paymentGateways.value[0].id;
+        }
+    } catch (error) {
+        console.error('Error get payment gateways:', error);
+    } finally {
+        loadingPaymentGateways.value = false;
+    }
+};
 
 const form = useForm({
     account_id: props.account.id,
@@ -152,6 +178,36 @@ const closeDialog = () => {
                     <InputError :message="form.errors.payment_account_id" />
                     <span class="self-stretch text-gray-500 text-xs">{{ walletOptions.length ? selectedPaymentAccount.account_no : $t('public.loading_caption')}}</span>
                 </div>
+
+                <div
+                    v-if="selectedPaymentAccount"
+                    class="flex flex-col items-start gap-1 self-stretch"
+                >
+                    <InputLabel
+                        for="accountType"
+                        :value="$t('public.platform_placeholder')"
+                    />
+                    <Skeleton
+                        v-if="loadingPaymentGateways"
+                        width="10rem"
+                        height="2.75rem"
+                    />
+                    <SelectChipGroup
+                        v-else
+                        v-model="selectedPaymentGateway"
+                        :items="paymentGateways.map(pg => ({
+                            ...pg,
+                            disabled: pg.status === 'inactive',
+                        }))"
+                        value-key="id"
+                    >
+                        <template #option="{ item }">
+                            {{ item.name }}
+                        </template>
+                    </SelectChipGroup>
+                    <InputError v-if="form.errors.payment_platform" :message="form.errors.payment_platform" />
+                </div>
+
                 <div
                     v-if="walletOptions.length && selectedPaymentAccount.payment_platform === 'crypto'"
                     class="flex flex-col items-start self-stretch pt-5 border-t border-gray-20"
