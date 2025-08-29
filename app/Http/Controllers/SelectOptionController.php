@@ -44,6 +44,7 @@ class SelectOptionController extends Controller
                 'txn_charge' => $method->{$request->type . '_fee'},
                 'min_amount' => round($method->min_amount / $currency_rate, 2),
                 'max_amount' => round($method->max_amount / $currency_rate, 2),
+                'currency_rate' => "$method->currency_symbol$currency_rate",
             ];
         }
 
@@ -63,6 +64,7 @@ class SelectOptionController extends Controller
             'fee'       => $gatewayMethodData[$targetMethod->payment_method_id]['txn_charge'],
             'minAmount' => $gatewayMethodData[$targetMethod->payment_method_id]['min_amount'],
             'maxAmount' => $gatewayMethodData[$targetMethod->payment_method_id]['max_amount'],
+            'conversionRate' => $gatewayMethodData[$targetMethod->payment_method_id]['currency_rate'],
         ]);
     }
 

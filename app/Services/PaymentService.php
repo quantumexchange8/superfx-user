@@ -122,7 +122,7 @@ class PaymentService
                     'mch_no'  => $transaction->transaction_number,
                     'sync_url' => route('depositReturn'),
                     'async_url' => route('hypay_deposit_callback'),
-                    'true_name' => $transaction->user->name,
+                    'true_name' => $transaction->user->chinese_name,
                     'phone' => $transaction->user->phone_number,
                     'order_amount' => (float) $transaction->conversion_amount,
                     'amount' => (float) $transaction->amount,

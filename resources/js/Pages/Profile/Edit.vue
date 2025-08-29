@@ -14,6 +14,7 @@ defineProps({
         type: String,
     },
     paymentAccountsCount: Number,
+    user: Object
 });
 </script>
 
@@ -26,7 +27,9 @@ defineProps({
             </div>
 
             <div class="flex flex-col md:flex-row justify-center items-center gap-5 self-stretch">
-                <UpdateProfileInformationForm />
+                <UpdateProfileInformationForm
+                    :user="user"
+                />
                 <UpdatePasswordForm />
             </div>
 

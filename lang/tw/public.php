@@ -519,7 +519,7 @@ return [
     "completed" => "已完成",
     "filter_type" => "按類型篩選",
     "platform" => "平台",
-    "deposit_info_message_1" => "存款匯率: $:conversionRate.",
+    "deposit_info_message_1" => "存款匯率: :conversionRate.",
     "deposit_info_message_2" => "每筆交易的最低存款金額為 $:minAmount.",
     "deposit_info_message_3" => "每筆交易的最高存款金額為 $:maxAmount.",
     "deposit_info_message_4" => "您的交易所需費用為 $:txnFee.",
@@ -657,4 +657,9 @@ return [
     "amount_cannot_larger_than_max_amount" => "金額不能大於 $:max_amount",
     "please_try_again_later" => "請稍後重試",
     "deposit_no_fee" => "您的存款不收取手續費。",
+    "chinese_name" => "中文姓名",
+    "require_chinese_name" => "需要中文姓名才能儲值。",
+    "current_platform_requires" => "目前平台要求使用中文姓名。",
+    "your_chinese_name" => "您的中文姓名",
+    "enter_chinese_name" => "輸入中文姓名",
 ];

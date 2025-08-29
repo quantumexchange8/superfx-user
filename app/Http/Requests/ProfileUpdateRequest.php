@@ -17,6 +17,7 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'max:255'],
+            'chinese_name' => ['nullable', 'string', 'max:255'],
             'email' => ['sometimes', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
             'dial_code' => ['required'],
             'phone' => ['required', 'max:255'],
@@ -30,6 +31,7 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'name' => trans('public.your_name'),
+            'chinese_name' => trans('public.your_chinese_name'),
             'email' => trans('public.email'),
             'dial_code' => trans('public.phone_code'),
             'phone' => trans('public.phone'),

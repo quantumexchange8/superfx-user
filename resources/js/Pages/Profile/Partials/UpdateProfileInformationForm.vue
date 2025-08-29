@@ -2,39 +2,40 @@
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import Button from "@/Components/Button.vue"
-import { useForm, usePage } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
 import {ref, watch} from "vue";
 
-defineProps({
+const props = defineProps({
     mustVerifyEmail: {
         type: Boolean,
     },
     status: {
         type: String,
     },
+    user: Object
 });
 
-const user = usePage().props.auth.user;
 const countries = ref();
 const nationalities = ref();
 const selectedCode = ref();
 const selectedCountry = ref();
 
 const form = useForm({
-    name: user.name,
-    email: user.email,
+    name: props.user.name,
+    chinese_name: props.user.chinese_name,
+    email: props.user.email,
     dial_code: '',
-    phone: user.phone,
+    phone: props.user.phone,
     phone_number: '',
-    country_id: user.country_id,
-    nationality: user.nationality,
+    country_id: props.user.country_id,
+    nationality: props.user.nationality,
 });
 
 watch(countries, () => {
-    selectedCode.value = countries.value.find(country => country.phone_code === user.dial_code);
-    selectedCountry.value = countries.value.find(country => country.id === user.country_id);
+    selectedCode.value = countries.value.find(country => country.phone_code === props.user.dial_code);
+    selectedCountry.value = countries.value.find(country => country.id === props.user.country_id);
 });
 
 const getResults = async () => {
@@ -49,47 +50,6 @@ const getResults = async () => {
 
 getResults();
 
-const dirtyFields = ref({
-    dial_code: false,
-    phone: false,
-    country_id: false,
-    nationality: false,
-});
-
-const handleInputChange = (field) => {
-    dirtyFields.value[field] = true;
-    console.log(field);
-};
-
-const resetForm = () => {
-    // Only reset fields that are marked as dirty
-    if (dirtyFields.value.dial_code) {
-        selectedCode.value = countries.value.find(country => country.phone_code === user.dial_code) || null;
-        form.dial_code = user.dial_code || '';
-    }
-
-    if (dirtyFields.value.phone) {
-        form.phone = user.phone || '';
-    }
-
-    if (dirtyFields.value.country_id) {
-        selectedCountry.value = countries.value.find(country => country.id === user.country_id) || null;
-        form.country_id = user.country_id || '';
-    }
-
-    if (dirtyFields.value.nationality) {
-        form.nationality = user.nationality || '';
-    }
-
-    // Reset dirty fields tracking
-    dirtyFields.value = {
-        dial_code: false,
-        phone: false,
-        country_id: false,
-        nationality: false,
-    };
-};
-
 const submitForm = () => {
     form.dial_code = selectedCode.value;
 
@@ -98,19 +58,18 @@ const submitForm = () => {
     }
 
     form.post(route('profile.update'), {
-        onSuccess: () => {
-            form.reset();
-        },
+        preserveScroll: true,
+        preserveState: true,
     });
 }
 
 watch(selectedCountry, (newCountry) => {
-    if (newCountry && newCountry.id != form.country_id) {
+    if (newCountry && newCountry.id !== form.country_id) {
         form.country_id = newCountry.id;
         const foundNationality = nationalities.value.find(nationality => nationality.id === newCountry.id);
         if (foundNationality) {
             form.nationality = foundNationality.nationality;
-            handleInputChange('nationality');
+            // handleInputChange('nationality');
         } else {
             form.nationality = ''; // Reset if not found
         }
@@ -127,21 +86,38 @@ watch(selectedCountry, (newCountry) => {
             </div>
 
             <div class="flex flex-col gap-5 items-center self-stretch w-full">
-                <div class="flex flex-col gap-1 w-full">
-                    <InputLabel for="name">
-                        {{ $t('public.your_name') }}
-                    </InputLabel>
-                    <InputText
-                        id="name"
-                        type="text"
-                        class="block w-full"
-                        v-model="form.name"
-                        :placeholder="$t('public.enter_name')"
-                        :invalid="!!form.errors.name"
-                        autocomplete="name"
-                        disabled
-                    />
-                    <InputError :message="form.errors.name" />
+                <div class="flex flex-col md:flex-row items-center gap-5 w-full">
+                    <div class="flex flex-col gap-1 w-full">
+                        <InputLabel for="name">
+                            {{ $t('public.your_name') }}
+                        </InputLabel>
+                        <InputText
+                            id="name"
+                            type="text"
+                            class="block w-full"
+                            v-model="form.name"
+                            :placeholder="$t('public.enter_name')"
+                            :invalid="!!form.errors.name"
+                            autocomplete="name"
+                            disabled
+                        />
+                        <InputError :message="form.errors.name" />
+                    </div>
+
+                    <div class="flex flex-col gap-1 w-full">
+                        <InputLabel for="chinese_name">
+                            {{ $t('public.your_chinese_name') }}
+                        </InputLabel>
+                        <InputText
+                            id="chinese_name"
+                            type="text"
+                            class="block w-full"
+                            v-model="form.chinese_name"
+                            :placeholder="$t('public.enter_chinese_name')"
+                            :invalid="!!form.errors.chinese_name"
+                        />
+                        <InputError :message="form.errors.chinese_name" />
+                    </div>
                 </div>
 
                 <div class="flex flex-col gap-1 w-full">
@@ -177,7 +153,6 @@ watch(selectedCountry, (newCountry) => {
                             scroll-height="236px"
                             :invalid="!!form.errors.phone"
                             :disabled="!countries"
-                            @change="handleInputChange('dial_code')"
                         >
                             <template #value="slotProps">
                                 <div v-if="slotProps.value" class="flex items-center">
@@ -201,7 +176,6 @@ watch(selectedCountry, (newCountry) => {
                             v-model="form.phone"
                             :placeholder="$t('public.phone_number')"
                             :invalid="!!form.errors.phone"
-                            @input="handleInputChange('phone')"
                         />
                     </div>
                     <InputError :message="form.errors.phone" />
@@ -221,7 +195,6 @@ watch(selectedCountry, (newCountry) => {
                         scroll-height="236px"
                         :invalid="!!form.errors.country_id"
                         :disabled="!countries"
-                        @change="handleInputChange('country_id')"
                     >
                         <template #value="slotProps">
                             <div v-if="slotProps.value" class="flex items-center">
@@ -255,7 +228,6 @@ watch(selectedCountry, (newCountry) => {
                         scroll-height="236px"
                         :invalid="!!form.errors.nationality"
                         :disabled="!nationalities"
-                        @change="handleInputChange('nationality')"
                     >
                         <template #value="slotProps">
                             <div v-if="slotProps.value" class="flex items-center">
@@ -278,14 +250,6 @@ watch(selectedCountry, (newCountry) => {
 
 
         <div class="flex justify-end items-center pt-10 md:pt-7 gap-4 self-stretch">
-            <Button
-                type="button"
-                variant="gray-tonal"
-                :disabled="form.processing"
-                @click="resetForm"
-            >
-                {{ $t('public.cancel') }}
-            </Button>
             <Button
                 variant="primary-flat"
                 :disabled="form.processing"

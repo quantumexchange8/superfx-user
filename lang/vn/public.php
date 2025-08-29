@@ -519,7 +519,7 @@ return [
     "completed" => "Hoàn thành",
     "filter_type" => "Lọc theo loại",
     "platform" => "Nền tảng",
-    "deposit_info_message_1" => "Tỷ giá nạp tiền: $:conversionRate.",
+    "deposit_info_message_1" => "Tỷ giá nạp tiền: :conversionRate.",
     "deposit_info_message_2" => "Số tiền gửi tối thiểu cho mỗi giao dịch là $:minAmount.",
     "deposit_info_message_3" => "Số tiền gửi tối đa cho mỗi giao dịch là $:maxAmount.",
     "deposit_info_message_4" => "Phí giao dịch là $:txnFee.",
@@ -657,4 +657,9 @@ return [
     "amount_cannot_larger_than_max_amount" => "số tiền không thể lớn hơn $:max_amount",
     "please_try_again_later" => "Vui lòng thử lại sau",
     "deposit_no_fee" => "Bạn sẽ không bị tính phí khi gửi tiền.",
+    "chinese_name" => "Tên tiếng Trung",
+    "require_chinese_name" => "Cần phải có tên tiếng Trung để nạp tiền.",
+    "current_platform_requires" => "Nền tảng hiện tại yêu cầu tên tiếng Trung.",
+    "your_chinese_name" => "Tên tiếng Trung của bạn",
+    "enter_chinese_name" => "Nhập tên tiếng Trung của bạn",
 ];
