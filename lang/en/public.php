@@ -521,7 +521,7 @@ return [
     "completed" => "Completed",
     "filter_type" => "Filter by Type",
     "platform" => "Platform",
-    "deposit_info_message_1" => "Deposit exchange rate: $:conversionRate.",
+    "deposit_info_message_1" => "Deposit exchange rate: :conversionRate.",
     "deposit_info_message_2" => "Minimum deposit amount per transaction is $:minAmount.",
     "deposit_info_message_3" => "Maximum deposit amount per transaction is $:maxAmount.",
     "deposit_info_message_4" => "Your deposit is subject to a fee of $:txnFee.",
@@ -659,4 +659,9 @@ return [
     "amount_cannot_larger_than_max_amount" => "Amount cannot be larger than $:max_amount",
     "please_try_again_later" => "Please try again later",
     "deposit_no_fee" => "Your deposit has no service fee charged.",
+    "chinese_name" => "Chinese Name",
+    "require_chinese_name" => "Chinese Name is required to proceed deposit.",
+    "current_platform_requires" => "Current platform requires Chinese Name to proceed.",
+    "your_chinese_name" => "Your Chinese Name",
+    "enter_chinese_name" => "Enter chinese name",
 ];

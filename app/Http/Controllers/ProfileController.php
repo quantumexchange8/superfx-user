@@ -31,6 +31,7 @@ class ProfileController extends Controller
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
             'paymentAccountsCount' => $paymentAccountsCount,
+            'user' => Auth::user(),
         ]);
     }
 
@@ -53,6 +54,7 @@ class ProfileController extends Controller
         $dial_code = $request->dial_code;
 
         $user->update([
+            'chinese_name' => $request->chinese_name,
             'dial_code' => $dial_code['phone_code'],
             'phone' => $request->phone,
             'phone_number' => $request->phone_number,

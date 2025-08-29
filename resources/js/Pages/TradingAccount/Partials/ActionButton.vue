@@ -22,13 +22,11 @@ const {formatAmount} = transactionFormat()
 const showTransferDialog = ref(false);
 const transferOptions = ref([]);
 const selectedAccount = ref(0);
-const conversionRate = ref(0);
 
 const getOptions = async () => {
     try {
         const response = await axios.get('/account/getOptions');
         transferOptions.value = response.data.transferOptions;
-        conversionRate.value = Number(response.data.conversionRate);
     } catch (error) {
         console.error('Error changing locale:', error);
     }
@@ -85,7 +83,6 @@ const submitForm = (formType) => {
 <template>
     <DepositAccount
         :account="account"
-        :conversionRate="conversionRate"
         :methods="methods"
     />
     <Button

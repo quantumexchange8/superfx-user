@@ -97,15 +97,12 @@ class TradingAccountController extends Controller
             ->get()
             ->toArray();
 
-        $conversionRate = CurrencyConversionRate::firstWhere('base_currency', 'VND')->deposit_rate;
-
         return response()->json([
             'leverages' => (new DropdownOptionService())->getLeveragesOptions(),
             'transferOptions' => (new DropdownOptionService())->getInternalTransferOptions(),
             'walletOptions' => (new DropdownOptionService())->getWalletOptions(),
             'downlineOptions' => (new DropdownOptionService())->getDownlines(),
             'accountOptions' => $accountOptions,
-            'conversionRate' => $conversionRate,
         ]);
     }
 
@@ -741,6 +738,19 @@ class TradingAccountController extends Controller
             ->where('payment_gateway_id', $payment_gateway->id)
             ->whereIn('payment_method_id', $typeMethodIds)
             ->firstOrFail();
+
+        // Check chinese name for HyPay requirements
+        if ($paymentGatewayMethod->payment_method->slug == 'hypay' && !$user->chinese_name && !$request->chinese_name) {
+            throw ValidationException::withMessages([
+                'chinese_name' => trans('public.current_platform_requires'),
+            ]);
+        }
+
+        if ($request->chinese_name) {
+            $user->update([
+                'chinese_name' => $request->chinese_name
+            ]);
+        }
 
         if ($payment_gateway->platform == 'bank') {
             $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', $paymentGatewayMethod->currency)->deposit_rate;

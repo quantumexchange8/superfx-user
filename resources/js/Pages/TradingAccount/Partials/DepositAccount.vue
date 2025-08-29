@@ -15,10 +15,11 @@ import SelectChipGroup from "@/Components/SelectChipGroup.vue";
 import Skeleton from "primevue/skeleton";
 import Dropdown from "primevue/dropdown";
 import Loader from "@/Components/Loader.vue";
+import {usePage} from "@inertiajs/vue3";
+import InputText from "primevue/inputtext";
 
 const props = defineProps({
     account: Object,
-    conversionRate: Number,
     methods: Array,
 });
 
@@ -33,6 +34,7 @@ const form = ref({
     txn_fee: '',
     min_amount: '',
     max_amount: '',
+    chinese_name: '',
 });
 
 const selectedMethod = ref();
@@ -64,16 +66,24 @@ watch(selectedMethod, () => {
     getPaymentGateways();
 })
 
+const selectedPaymentGatewaySlug = ref('');
+
 // Get Payment Gateway Fee
 watch(selectedPaymentGateway, (newVal) => {
     if (newVal) {
         getFee();
+        const gateway = paymentGateways.value.find(pg => pg.id === newVal);
+
+        if (gateway.platform === 'bank') {
+            selectedPaymentGatewaySlug.value = gateway ? gateway.methods[0].slug : null;
+        }
     }
 })
 
 const txnFee = ref(null);
 const minAmount = ref(null);
 const maxAmount = ref(null);
+const exchangeRate = ref(null);
 const loadingFee = ref(false);
 
 const steps = ref([]);
@@ -86,10 +96,11 @@ const getFee = async () => {
         txnFee.value = response.data.fee;
         minAmount.value = response.data.minAmount;
         maxAmount.value = response.data.maxAmount;
+        exchangeRate.value = response.data.conversionRate;
 
         const stepsArray = [];
-        if (selectedMethod.value.type === 'bank') {
-            stepsArray.push(trans('public.deposit_info_message_1', { conversionRate: formatAmount(props.conversionRate) }));
+        if (selectedMethod.value.type !== 'crypto') {
+            stepsArray.push(trans('public.deposit_info_message_1', { conversionRate: exchangeRate.value }));
         }
         stepsArray.push(trans('public.deposit_info_message_2', { minAmount: props.account.minimum_deposit > 0 ? props.account.minimum_deposit : (minAmount.value < 50 ? 50 : Math.round(minAmount.value)) }));
         stepsArray.push(trans('public.deposit_info_message_3', { maxAmount: Math.floor(maxAmount.value) }));
@@ -291,6 +302,26 @@ const closeDialog = () => {
                     <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount( account.group === 'PRIME' ? account.minimum_deposit : (minAmount < 50 ? 50 : Math.round(minAmount)),0) }}</span>
                     <InputError v-if="errors.amount" :message="errors.amount[0]" />
                 </div>
+
+                <div
+                    v-if="selectedPaymentGatewaySlug === 'hypay' && usePage().props.auth.user.chinese_name === null"
+                    class="flex flex-col items-start gap-1 self-stretch"
+                >
+                    <InputLabel for="name" :value="$t('public.chinese_name')" />
+                    <div class="relative w-full">
+                        <InputText
+                            id="chinese_name"
+                            type="text"
+                            class="block w-full"
+                            v-model="form.chinese_name"
+                            :placeholder="$t('public.chinese_name')"
+                            :invalid="!!errors.chinese_name"
+                        />
+                    </div>
+                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.require_chinese_name') }}</span>
+                    <InputError v-if="errors.chinese_name" :message="errors.chinese_name[0]" />
+                </div>
+
                 <div class="flex flex-col items-center self-stretch">
                     <div class="flex justify-center items-start gap-3 self-stretch">
                         <div class="flex flex-col items-start gap-1 flex-grow">
