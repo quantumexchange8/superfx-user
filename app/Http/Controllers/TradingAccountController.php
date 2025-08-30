@@ -1111,11 +1111,6 @@ class TradingAccountController extends Controller
             return $decoded['msg']; // 👉 show the Chinese message
         }
 
-        // If Hypay needs array handling
-        if ($gatewayName == 'hypay') {
-            return [$message];
-        }
-
         return $message;
     }
 }
