@@ -802,15 +802,13 @@ class TradingAccountController extends Controller
                 'toast_type'    => 'error'
             ]);
         } catch (Exception $e) {
-            // Log server-side for debugging
             Log::error('Deposit error: ' . $e->getMessage());
 
-            // Send back error to frontend
             return response()->json([
                 'success'       => false,
                 'toast_title'   => trans('public.gateway_error'),
                 'toast_message' => $e->getMessage(),
-                'toast_type'    => 'error'
+                'toast_type'    => 'error',
             ], 400);
         }
     }
@@ -1153,5 +1151,24 @@ class TradingAccountController extends Controller
         $user = User::firstWhere('id', $transaction->user_id);
 
         Mail::to($user->email)->send(new DepositSuccessMail($user, $transaction->to_meta_login, $transaction->amount, $transaction->created_at));
+    }
+
+    protected function formatErrorMessage($message, $gatewayName)
+    {
+        // Attempt to clean up escaped junk
+        $clean = stripslashes($message); // remove extra backslashes
+
+        $decoded = json_decode($clean, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && isset($decoded['msg'])) {
+            return $decoded['msg']; // clean Chinese message
+        }
+
+        // If Hypay expects array
+        if ($gatewayName === 'hypay') {
+            return [$message];
+        }
+
+        return $message;
     }
 }

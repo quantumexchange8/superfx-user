@@ -173,6 +173,16 @@ const submitForm = async () => {
             // Validation errors
             errors.value = error.response.data.errors;
         }
+
+        if (error.response && error.response.status === 400) {
+            toast.add({
+                title: error.response.data.toast_title,
+                message: error.response.data.toast_message,
+                type: error.response.data.toast_type,
+            });
+
+            closeDialog();
+        }
     } finally {
         isLoading.value = false;
     }
