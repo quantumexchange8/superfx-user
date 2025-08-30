@@ -802,15 +802,13 @@ class TradingAccountController extends Controller
                 'toast_type'    => 'error'
             ]);
         } catch (Exception $e) {
-            // Log server-side for debugging
             Log::error('Deposit error: ' . $e->getMessage());
 
-            // Send back error to frontend
             return response()->json([
                 'success'       => false,
                 'toast_title'   => trans('public.gateway_error'),
-                'toast_message' => $this->formatErrorMessage($e->getMessage(), $payment_gateway['payment_app_name']),
-                'toast_type'    => 'error'
+                'toast_message' => $e->getMessage(),
+                'toast_type'    => 'error',
             ], 400);
         }
     }
@@ -1105,10 +1103,18 @@ class TradingAccountController extends Controller
 
     protected function formatErrorMessage($message, $gatewayName)
     {
-        $decoded = json_decode($message, true);
+        // Attempt to clean up escaped junk
+        $clean = stripslashes($message); // remove extra backslashes
+
+        $decoded = json_decode($clean, true);
 
         if (json_last_error() === JSON_ERROR_NONE && isset($decoded['msg'])) {
-            return $decoded['msg']; // 👉 show the Chinese message
+            return $decoded['msg']; // clean Chinese message
+        }
+
+        // If Hypay expects array
+        if ($gatewayName === 'hypay') {
+            return [$message];
         }
 
         return $message;

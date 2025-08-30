@@ -115,7 +115,11 @@ class PaymentService
                 ]);
 
                 // error case → throw exception with message
-                throw new Exception('Gateway request failed: CODE - ' . $responseData['code'] . '; MSG - ' . ($responseData['msg'] ?? json_encode($responseData)));
+                $errorMsg = $responseData['msg']
+                    ?? $responseData['message']
+                    ?? 'Unknown gateway error';
+
+                throw new Exception($errorMsg);
 
             case 'hypay':
                 $params = [
@@ -165,7 +169,16 @@ class PaymentService
                 ]);
 
                 // error case → throw exception with message
-                throw new Exception('Gateway request failed: ' . ($responseData['message'] ?? json_encode($responseData)));
+                $errorMsg = $responseData['msg']
+                    ?? $responseData['message']
+                    ?? 'Unknown gateway error';
+
+                // If message is still escaped unicode, decode it
+                if (preg_match('/\\\\u[0-9a-fA-F]{4}/', $errorMsg)) {
+                    $errorMsg = json_decode('"' . $errorMsg . '"');
+                }
+
+                throw new Exception($errorMsg);
 
             default:
                 $params = [
