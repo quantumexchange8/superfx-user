@@ -225,8 +225,10 @@ class PaymentService
                     'approved_at' => now()
                 ]);
 
-                // error case → throw exception with message
-                throw new Exception('Gateway request failed: CODE - ' . $responseData['status'] . '; Message - ' . ($responseData['message'] ?? json_encode($responseData)));
+                $errorMsg = $responseData['message']
+                    ?? 'Unknown gateway error';
+
+                throw new Exception($errorMsg);
 
             default:
                 $params = [
@@ -276,7 +278,6 @@ class PaymentService
     private function buildAndRequestUrl($baseUrl, $params)
     {
         $redirectUrl = $baseUrl . "?" . http_build_query($params);
-        Log::debug("POST URL : " . $redirectUrl);
 
         $response = Http::get($redirectUrl);
         $responseData = $response->json();

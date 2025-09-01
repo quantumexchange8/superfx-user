@@ -51,8 +51,6 @@ watch(selectedPaymentAccount, (newWallet) => {
     }
 });
 
-const selectedMethod = ref();
-
 const paymentGateways = ref([]);
 const selectedPaymentGateway = ref();
 const loadingPaymentGateways = ref(false);
@@ -60,8 +58,14 @@ const loadingPaymentGateways = ref(false);
 const getPaymentGateways = async () => {
     loadingPaymentGateways.value = true;
     try {
-        const response = await axios.get(`/getPaymentGateways?slug=${selectedPaymentAccount.value.payment_platform}`);
+        const paymentAccType = selectedPaymentAccount.value.payment_platform === 'bank' ? 'bank' : selectedPaymentAccount.value.payment_account_type;
+
+        const response = await axios.get(`/getPaymentGateways?slug=${paymentAccType}`);
         paymentGateways.value = response.data.payment_gateways;
+
+        paymentGateways.value = response.data.payment_gateways.filter(
+            gateway => gateway.can_withdraw
+        );
 
         if (paymentGateways.value.length === 1) {
             selectedPaymentGateway.value = paymentGateways.value[0].id;
@@ -78,6 +82,7 @@ const form = useForm({
     amount: 0,
     fee: 0,
     payment_account_id: '',
+    payment_gateway_id: '',
 })
 
 const finalAmount = computed(() => {
@@ -98,6 +103,7 @@ const toggleFullAmount = () => {
 
 const submitForm = () => {
     form.payment_account_id = selectedPaymentAccount.value.id;
+    form.payment_gateway_id = selectedPaymentGateway.value;
     form.fee = Number(selectedCryptoOption.value?.fee ?? 0);
     form.post(route('account.withdrawal_from_account'), {
         onSuccess: () => {
@@ -205,7 +211,7 @@ const closeDialog = () => {
                             {{ item.name }}
                         </template>
                     </SelectChipGroup>
-                    <InputError v-if="form.errors.payment_platform" :message="form.errors.payment_platform" />
+                    <InputError v-if="form.errors.payment_gateway_id" :message="form.errors.payment_gateway_id" />
                 </div>
 
                 <div

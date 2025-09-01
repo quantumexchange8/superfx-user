@@ -316,11 +316,13 @@ class TradingAccountController extends Controller
         $validator = Validator::make($request->all(), [
             'account_id' => ['required', 'exists:trading_accounts,id'],
             'amount' => ['required', 'numeric', "gte:$minAmount"],
-            'payment_account_id' => ['required']
+            'payment_account_id' => ['required'],
+            'payment_gateway_id' => ['required'],
         ])->setAttributeNames([
             'account_id' => trans('public.account'),
             'amount' => trans('public.amount'),
             'payment_account_id' => trans('public.receiving_wallet'),
+            'payment_gateway_id' => trans('public.platform'),
         ]);
         $validator->validate();
 
@@ -377,6 +379,7 @@ class TradingAccountController extends Controller
             'payment_account_no' => $paymentWallet->account_no,
             'payment_account_type' => $paymentWallet->payment_account_type,
             'bank_code' => $paymentWallet->bank_code,
+            'payment_gateway_id' => $request->payment_gateway_id,
             'from_currency' => 'USD',
             'to_currency' => $paymentWallet->currency,
             'to_wallet_address' => $paymentWallet->account_no,
@@ -784,7 +787,6 @@ class TradingAccountController extends Controller
             $redirect_url = (new PaymentService())->getPaymentUrl($payment_gateway, $transaction, $paymentGatewayMethod);
 
             if ($redirect_url) {
-                Log::debug("Payment URL: " . $redirect_url);
 
                 return response()->json([
                     'success'       => true,

@@ -94,6 +94,7 @@ class SelectOptionController extends Controller
                     'platform',
                     'environment',
                     'payment_url',
+                    'can_withdraw',
                     'status',
                 ])
                 ->get();
