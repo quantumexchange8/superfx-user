@@ -16,7 +16,7 @@ class PaymentService
      * @throws ConnectionException
      * @throws Exception
      */
-    public function getPaymentUrl($payment_gateway, $transaction, $paymentGatewayMethod)
+    public function getPaymentUrl($payment_gateway, $transaction)
     {
         $payment_app_name = $payment_gateway->payment_app_name;
 
