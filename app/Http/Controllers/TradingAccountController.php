@@ -755,6 +755,10 @@ class TradingAccountController extends Controller
         if ($paymentGatewayMethod->payment_method->type == 'bank') {
             $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', $paymentGatewayMethod->currency)->deposit_rate;
             $conversion_amount = round($amount * $conversion_rate, 2);
+
+            if ($payment_gateway->payment_app_name == 'hypay') {
+                $conversion_amount = round($conversion_amount);
+            }
         } else {
             $targetMethod = PaymentGatewayMethod::firstWhere('payment_method_id', $payment_method['id']);
 
@@ -781,7 +785,7 @@ class TradingAccountController extends Controller
         ]);
 
         try {
-            $redirect_url = (new PaymentService())->getPaymentUrl($payment_gateway, $transaction, $paymentGatewayMethod);
+            $redirect_url = (new PaymentService())->getPaymentUrl($payment_gateway, $transaction);
 
             if ($redirect_url) {
                 Log::debug("Payment URL: " . $redirect_url);
