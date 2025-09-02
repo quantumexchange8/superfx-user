@@ -766,17 +766,17 @@ class TradingAccountController extends Controller
             ]);
         }
 
-        if ($paymentGatewayMethod->payment_method->type == 'bank') {
+        if ($paymentGatewayMethod->payment_method->type == 'crypto') {
+            $targetMethod = PaymentGatewayMethod::firstWhere('payment_method_id', $payment_method['id']);
+
+            $payment_gateway = PaymentGateway::find($targetMethod->payment_gateway_id);
+        } else {
             $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', $paymentGatewayMethod->currency)->deposit_rate;
             $conversion_amount = round($amount * $conversion_rate, 2);
 
             if ($payment_gateway->payment_app_name == 'hypay') {
                 $conversion_amount = round($conversion_amount);
             }
-        } else {
-            $targetMethod = PaymentGatewayMethod::firstWhere('payment_method_id', $payment_method['id']);
-
-            $payment_gateway = PaymentGateway::find($targetMethod->payment_gateway_id);
         }
 
         $transaction = Transaction::create([
