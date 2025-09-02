@@ -363,6 +363,7 @@ class TradingAccountController extends Controller
         }
 
         $paymentWallet = PaymentAccount::find($request->payment_account_id);
+        $payment_gateway = PaymentGateway::find($request->payment_gateway_id);
 
         $user = Auth::user();
 
@@ -379,7 +380,7 @@ class TradingAccountController extends Controller
             'payment_account_no' => $paymentWallet->account_no,
             'payment_account_type' => $paymentWallet->payment_account_type,
             'bank_code' => $paymentWallet->bank_code,
-            'payment_gateway_id' => $request->payment_gateway_id,
+            'payment_gateway_id' => $payment_gateway->id,
             'from_currency' => 'USD',
             'to_currency' => $paymentWallet->currency,
             'to_wallet_address' => $paymentWallet->account_no,
@@ -388,6 +389,16 @@ class TradingAccountController extends Controller
             'transaction_charges' => $fee,
             'transaction_amount' => $transaction_amount,
         ]);
+
+         if ($payment_gateway->payment_app_name == 'zpay') {
+             $bank = Bank::firstWhere('bank_code', $paymentWallet->bank_code);
+
+             if ($bank->alias_bank_code) {
+                 $transaction->update([
+                     'bank_code' => $bank->alias_bank_code,
+                 ]);
+             }
+         }
 
         if ($paymentWallet->payment_platform == 'crypto') {
             $transaction->update(['status' => 'required_confirmation']);
