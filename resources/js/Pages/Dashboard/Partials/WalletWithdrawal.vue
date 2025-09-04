@@ -7,7 +7,9 @@ import InputError from "@/Components/InputError.vue";
 import Dropdown from "primevue/dropdown";
 import {ref, watch, computed} from "vue";
 import {transactionFormat} from "@/Composables/index.js";
-// import TermsAndCondition from "@/Components/TermsAndCondition.vue";
+import SelectChipGroup from "@/Components/SelectChipGroup.vue";
+import Skeleton from "primevue/skeleton";
+import {IconLoader2} from "@tabler/icons-vue"
 
 const props = defineProps({
     wallet: Object,
@@ -27,19 +29,80 @@ const getOptions = async () => {
         const response = await axios.get('/getWithdrawalPaymentAccounts?type=withdrawal');
         walletOptions.value = response.data.payment_accounts;
         selectedPaymentAccount.value = walletOptions.value[0];
-        cryptoOptions.value = response.data.crypto_options;
     } catch (error) {
-        console.error('Error changing locale:', error);
+        console.error('Error fetching wallets:', error);
     }
 };
 
 getOptions();
+
+watch(selectedPaymentAccount, (newWallet) => {
+    selectedPaymentAccount.value = newWallet;
+
+    getPaymentGateways();
+});
+
+const paymentGateways = ref([]);
+const selectedPaymentGateway = ref();
+const loadingPaymentGateways = ref(false);
+
+const getPaymentGateways = async () => {
+    loadingPaymentGateways.value = true;
+    try {
+        const paymentAccType = selectedPaymentAccount.value.payment_platform === 'bank' ? 'bank' : selectedPaymentAccount.value.payment_account_type;
+
+        const response = await axios.get(`/getPaymentGateways?slug=${paymentAccType}`);
+        paymentGateways.value = response.data.payment_gateways;
+
+        paymentGateways.value = response.data.payment_gateways.filter(
+            gateway => gateway.can_withdraw
+        );
+
+        if (paymentGateways.value.length === 1) {
+            selectedPaymentGateway.value = paymentGateways.value[0].id;
+        }
+    } catch (error) {
+        console.error('Error get payment gateways:', error);
+    } finally {
+        loadingPaymentGateways.value = false;
+    }
+};
+
+watch(selectedPaymentGateway, () => {
+    getFee()
+});
+
+const txnFee = ref(null);
+const minAmount = ref(null);
+const maxAmount = ref(null);
+const exchangeRate = ref(null);
+const loadingFee = ref(false);
+
+const getFee = async () => {
+    loadingFee.value = true;
+    try {
+        const paymentAccType = selectedPaymentAccount.value.payment_platform === 'bank' ? 'bank' : selectedPaymentAccount.value.payment_account_type;
+
+        const response = await axios.get(`/getWithdrawalCondition?payment_gateway_id=${selectedPaymentGateway.value}&type=${paymentAccType}`);
+
+        txnFee.value = response.data.fee;
+        minAmount.value = response.data.minAmount;
+        maxAmount.value = response.data.maxAmount;
+        exchangeRate.value = response.data.conversionRate;
+    } catch (error) {
+        console.error('Error get payment fee:', error);
+    } finally {
+        loadingFee.value = false;
+    }
+};
 
 const form = useForm({
     wallet_id: props.wallet.id,
     amount: 0,
     fee: 0,
     payment_account_id: '',
+    payment_gateway_id: '',
+    min_amount: 50,
 })
 
 watch(selectedPaymentAccount, (newWallet) => {
@@ -57,11 +120,11 @@ watch(selectedPaymentAccount, (newWallet) => {
 })
 
 const finalAmount = computed(() => {
-    if (form.amount - Number(selectedCryptoOption.value.fee) < 0) {
+    if (form.amount - Number(txnFee.value) < 0) {
         return 0;
     }
 
-    return form.amount - Number(selectedCryptoOption.value.fee);
+    return form.amount - Number(txnFee.value);
 });
 
 const toggleFullAmount = () => {
@@ -74,10 +137,14 @@ const toggleFullAmount = () => {
 
 const submitForm = () => {
     form.payment_account_id = selectedPaymentAccount.value.id;
-    form.fee = Number(selectedCryptoOption.value?.fee ?? 0);
+    form.payment_gateway_id = selectedPaymentGateway.value;
+    form.fee = Number(txnFee.value ?? 0);
+    form.min_amount = Number(minAmount.value < 50 ? 50 : minAmount.value);
+
     form.post(route('dashboard.walletWithdrawal'), {
         onSuccess: () => {
             closeDialog();
+            form.reset();
         }
     });
 }
@@ -97,6 +164,62 @@ const closeDialog = () => {
                 </div>
 
                 <!-- input fields -->
+                <div class="flex flex-col items-start gap-1 self-stretch">
+                    <InputLabel for="receiving_wallet" :value="$t('public.receiving_wallet')" />
+                    <Dropdown
+                        v-model="selectedPaymentAccount"
+                        :options="walletOptions"
+                        :placeholder="$t('public.receiving_wallet_placeholder')"
+                        class="w-full"
+                        scroll-height="236px"
+                        :invalid="!!form.errors.payment_account_id"
+                        :loading="loadPaymentAccounts"
+                    >
+                        <template #value="slotProps">
+                            <div v-if="slotProps.value" class="flex items-center">
+                                <div>{{ slotProps.value.payment_account_name }}</div>
+                            </div>
+                            <span v-else>{{ slotProps.placeholder }}</span>
+                        </template>
+                        <template #option="slotProps">
+                            <div class="flex items-center w-[262px] md:max-w-[236px]">
+                                {{ slotProps.option.payment_account_name }}
+                            </div>
+                        </template>
+                    </Dropdown>
+                    <InputError :message="form.errors.payment_account_id" />
+                    <span class="self-stretch text-gray-500 text-xs">{{ walletOptions.length ? selectedPaymentAccount.account_no : $t('public.loading_caption')}}</span>
+                </div>
+
+                <div
+                    v-if="selectedPaymentAccount"
+                    class="flex flex-col items-start gap-1 self-stretch"
+                >
+                    <InputLabel
+                        for="accountType"
+                        :value="$t('public.platform_placeholder')"
+                    />
+                    <Skeleton
+                        v-if="loadingPaymentGateways"
+                        width="10rem"
+                        height="2.75rem"
+                    />
+                    <SelectChipGroup
+                        v-else
+                        v-model="selectedPaymentGateway"
+                        :items="paymentGateways.map(pg => ({
+                            ...pg,
+                            disabled: pg.status === 'inactive',
+                        }))"
+                        value-key="id"
+                    >
+                        <template #option="{ item }">
+                            {{ item.name }}
+                        </template>
+                    </SelectChipGroup>
+                    <InputError v-if="form.errors.payment_gateway_id" :message="form.errors.payment_gateway_id" />
+                </div>
+
                 <div class="flex flex-col items-start gap-1 self-stretch">
                     <InputLabel for="amount" :value="$t('public.amount')" />
                     <div class="relative w-full">
@@ -124,39 +247,13 @@ const closeDialog = () => {
                             {{ form.amount ? $t('public.clear') : $t('public.full_amount') }}
                         </div>
                     </div>
-                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount(50) }}</span>
+                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount((minAmount < 50 ? 50 : Math.round(minAmount)), 0) }}</span>
                     <InputError :message="form.errors.amount" />
                 </div>
 
-                <div class="flex flex-col items-start gap-1 self-stretch">
-                    <InputLabel for="receiving_wallet" :value="$t('public.receiving_wallet')" />
-                    <Dropdown
-                        v-model="selectedPaymentAccount"
-                        :options="walletOptions"
-                        :placeholder="$t('public.receiving_wallet_placeholder')"
-                        class="w-full"
-                        scroll-height="236px"
-                        :invalid="!!form.errors.payment_account_id"
-                        :loading="loadPaymentAccounts"
-                    >
-                        <template #value="slotProps">
-                            <div v-if="slotProps.value" class="flex items-center">
-                                <div>{{ slotProps.value.payment_account_name }}</div>
-                            </div>
-                            <span v-else>{{ slotProps.placeholder }}</span>
-                        </template>
-                        <template #option="slotProps">
-                            <div class="flex items-center w-[262px] md:max-w-[236px]">
-                                {{ slotProps.option.payment_account_name }}
-                            </div>
-                        </template>
-                    </Dropdown>
-                    <InputError :message="form.errors.payment_account_id" />
-                    <span class="self-stretch text-gray-500 text-xs">{{ walletOptions.length ? selectedPaymentAccount.account_no : $t('public.loading_caption')}}</span>
-                </div>
                 <div
-                    v-if="walletOptions.length && selectedPaymentAccount.payment_platform == 'crypto'"
-                    class="flex flex-col items-start self-stretch pt-2 border-t border-gray-20"
+                    v-if="walletOptions.length && selectedPaymentAccount.payment_platform === 'crypto'"
+                    class="flex flex-col items-start self-stretch pt-5 border-t border-gray-20"
                 >
                     <div class="flex justify-between items-start gap-1 self-stretch">
                         <span class="text-xs text-gray-500">
@@ -171,7 +268,7 @@ const closeDialog = () => {
                             {{ $t('public.withdrawal_fee') }} :
                         </span>
                         <span class="col-span-1 text-right text-gray-500 text-sm">
-                            ${{ formatAmount(selectedCryptoOption.fee ?? 0) }}
+                            ${{ formatAmount(txnFee ?? 0) }}
                         </span>
                     </div>
                     <div class="flex justify-between items-start gap-1 self-stretch">
@@ -184,18 +281,12 @@ const closeDialog = () => {
                     </div>
                 </div>
             </div>
-            <!-- <div class="text-left w-full text-gray-500 text-xs">{{ $t('public.agreement_text') }}
-                <TermsAndCondition
-                    :termsLabel="$t('public.warning_4_3')"
-                    :terms="terms"
-                />
-            </div> -->
         </div>
         <div class="flex justify-end items-center pt-5 gap-4 self-stretch sm:pt-7">
             <Button
                 type="button"
                 variant="gray-tonal"
-                class="w-full md:w-[120px]"
+                class="w-full"
                 @click.prevent="closeDialog()"
                 :disabled="form.processing"
             >
@@ -203,10 +294,11 @@ const closeDialog = () => {
             </Button>
             <Button
                 variant="primary-flat"
-                class="w-full md:w-[120px]"
+                class="flex gap-2 w-full"
                 @click.prevent="submitForm"
-                :disabled="form.processing"
+                :disabled="form.processing || loadingFee || loadPaymentAccounts || loadingPaymentGateways"
             >
+                <IconLoader2 v-if="form.processing" size="16" class="animate-spin w-4" />
                 {{ $t('public.confirm') }}
             </Button>
         </div>

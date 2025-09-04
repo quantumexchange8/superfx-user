@@ -311,7 +311,7 @@ class TradingAccountController extends Controller
     {
         $tradingAccount = TradingAccount::find($request->account_id)->load('account_type');
 
-        $minAmount = $tradingAccount->account_type->category === 'cent' ? 50 * $tradingAccount->account_type->balance_multiplier : 50;
+        $minAmount = $tradingAccount->account_type->category === 'cent' ? $request->min_amount * $tradingAccount->account_type->balance_multiplier : $request->min_amount;
 
         $validator = Validator::make($request->all(), [
             'account_id' => ['required', 'exists:trading_accounts,id'],
@@ -336,17 +336,18 @@ class TradingAccountController extends Controller
 
         $equity = $tradingAccount->balance + $floating;
 
-        if ($equity < $amount) {
+        $multiplier = $tradingAccount->account_type->balance_multiplier;
+        $adjusted_amount = $amount / $multiplier;
+
+        if ($equity < $adjusted_amount) {
             throw ValidationException::withMessages([
                 'amount' => trans('public.insufficient_balance'),
             ]);
         }
 
+        $transaction_amount = $adjusted_amount - $fee;
         $transaction_number = RunningNumberService::getID('transaction');
 
-        $multiplier = $tradingAccount->account_type->balance_multiplier;
-        $adjusted_amount = $amount / $multiplier;
-        $transaction_amount = $adjusted_amount - $fee;
         try {
             $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Withdraw From Account: " . $transaction_number, 'balance', '');
         } catch (Throwable $e) {

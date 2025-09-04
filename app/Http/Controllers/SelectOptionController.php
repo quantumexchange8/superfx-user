@@ -133,4 +133,55 @@ class SelectOptionController extends Controller
             ]);
         }
     }
+
+    public function getWithdrawalCondition(Request $request)
+    {
+        if ($request->type == 'bank') {
+            $typeMethodIds = PaymentMethod::where('type', $request->type)->pluck('id');
+        } else {
+            $typeMethodIds = PaymentMethod::where('slug', $request->type)->pluck('id');
+        }
+
+        $paymentGatewayMethods = PaymentGatewayMethod::with([
+            'payment_gateway:id,name',
+            'payment_method:id,name,slug,type',
+        ])
+            ->where('payment_gateway_id', $request->payment_gateway_id)
+            ->whereIn('payment_method_id', $typeMethodIds)
+            ->get();
+
+        $gatewayMethodData = [];
+
+        foreach ($paymentGatewayMethods as $method) {
+            $currency_rate = 1;
+            if ($method->currency !== 'USD') {
+                $currency_rate = CurrencyConversionRate::firstWhere(
+                    'base_currency',
+                    $method->currency
+                )->withdrawal_rate;
+            }
+
+            $gatewayMethodData[$method->payment_method_id] = [
+                'txn_charge' => $method->withdraw_fee,
+                'min_amount' => round($method->min_withdraw_amount / $currency_rate, 2),
+                'max_amount' => round($method->max_withdraw_amount / $currency_rate, 2),
+                'currency_rate' => "$method->currency_symbol$currency_rate",
+            ];
+        }
+
+        $targetMethod = $paymentGatewayMethods->firstWhere('payment_gateway_id', $request->payment_gateway_id);
+
+        if (!$targetMethod) {
+            return response()->json([
+                'error' => 'Payment method not supported by this gateway',
+            ], 422);
+        }
+
+        return response()->json([
+            'fee'       => $gatewayMethodData[$targetMethod->payment_method_id]['txn_charge'],
+            'minAmount' => $gatewayMethodData[$targetMethod->payment_method_id]['min_amount'],
+            'maxAmount' => $gatewayMethodData[$targetMethod->payment_method_id]['max_amount'],
+            'conversionRate' => $gatewayMethodData[$targetMethod->payment_method_id]['currency_rate'],
+        ]);
+    }
 }

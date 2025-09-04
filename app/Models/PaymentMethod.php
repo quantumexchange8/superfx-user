@@ -29,7 +29,6 @@ class PaymentMethod extends Model
     public function gateways(): BelongsToMany
     {
         return $this->belongsToMany(PaymentGateway::class, 'payment_gateway_methods')
-            ->withPivot(['min_amount', 'max_amount']);
+            ->withPivot(['min_amount', 'max_amount', 'min_withdraw_amount', 'max_withdraw_amount']);
     }
-
 }
