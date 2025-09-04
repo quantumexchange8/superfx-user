@@ -307,6 +307,10 @@ class TradingAccountController extends Controller
         return response()->json($transactions);
     }
 
+    /**
+     * @throws ConnectionException
+     * @throws Throwable
+     */
     public function withdrawal_from_account(Request $request)
     {
         $tradingAccount = TradingAccount::find($request->account_id)->load('account_type');
@@ -329,10 +333,9 @@ class TradingAccountController extends Controller
 
         (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
-        $floating = OpenTrade::where('meta_login', $tradingAccount->meta_login)
-            ->sum('trade_profit_usd');
-
-        $equity = $tradingAccount->balance + $floating;
+        $equity = ($tradingAccount->floating < 0)
+            ? $tradingAccount->balance - $tradingAccount->margin + $tradingAccount->floating
+            : $tradingAccount->balance - $tradingAccount->margin;
 
         if ($equity < $amount) {
             throw ValidationException::withMessages([
@@ -431,14 +434,13 @@ class TradingAccountController extends Controller
         ]);
         $validator->validate();
 
-         (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
+        (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
 
-         $amount = $request->input('amount');
+        $amount = $request->input('amount');
 
-        $floating = OpenTrade::where('meta_login', $tradingAccount->meta_login)
-            ->sum('trade_profit_usd');
-
-        $equity = $tradingAccount->balance + $floating;
+        $equity = ($tradingAccount->floating < 0)
+            ? $tradingAccount->balance - $tradingAccount->margin + $tradingAccount->floating
+            : $tradingAccount->balance - $tradingAccount->margin;
 
         if ($equity < $amount) {
             throw ValidationException::withMessages([

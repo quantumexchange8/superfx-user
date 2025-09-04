@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Services\Data\CreateTradingAccount;
 use App\Services\Data\CreateTradingUser;
+use App\Services\Data\UpdateAccountBalance;
 use App\Services\Data\UpdateTradingAccount;
 use App\Services\Data\UpdateTradingUser;
 use Illuminate\Http\Client\ConnectionException;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Models\User as UserModel;
+use Throwable;
 
 class MetaFourService {
     private string $port = "8443";
@@ -30,6 +32,9 @@ class MetaFourService {
         $this->token = hash('sha256', $token2);
     }
 
+    /**
+     * @throws ConnectionException
+     */
     public function getUser($meta_login)
     {
         $payload = [
@@ -42,15 +47,45 @@ class MetaFourService {
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $this->token,
             ])
-            ->withBody($jsonPayload, 'application/json')
-            ->get($this->baseURL . "/getuser");
+            ->withBody($jsonPayload)
+            ->post($this->baseURL . "/getuser");
 
         return $accountResponse->json();
     }
 
+    /**
+     * @throws ConnectionException
+     * @throws Throwable
+     */
+    public function getAccountEquity($meta_login)
+    {
+        $payload = [
+            'meta_login' => $meta_login,
+        ];
+
+        $jsonPayload = json_encode($payload);
+
+        $accountResponse = Http::acceptJson()
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $this->token,
+            ])
+            ->withBody($jsonPayload)
+            ->post($this->baseURL . "/getequity");
+
+        $data = $accountResponse->json();
+        (new UpdateAccountBalance())->execute($meta_login, $data);
+
+        return $data;
+    }
+
+    /**
+     * @throws ConnectionException
+     * @throws Throwable
+     */
     public function getUserInfo($meta_login): void
     {
         $data = $this->getUser($meta_login);
+        $this->getAccountEquity($meta_login);
 
         if ($data) {
             (new UpdateTradingUser)->execute($meta_login, $data);
