@@ -10,6 +10,8 @@ import {transactionFormat} from "@/Composables/index.js";
 import Skeleton from "primevue/skeleton";
 import SelectChipGroup from "@/Components/SelectChipGroup.vue";
 import {IconLoader2} from "@tabler/icons-vue";
+import {trans} from "laravel-vue-i18n";
+import Loader from "@/Components/Loader.vue";
 
 const props = defineProps({
     account: Object,
@@ -74,6 +76,7 @@ const minAmount = ref(null);
 const maxAmount = ref(null);
 const exchangeRate = ref(null);
 const loadingFee = ref(false);
+const steps = ref([]);
 
 const getFee = async () => {
     loadingFee.value = true;
@@ -86,6 +89,21 @@ const getFee = async () => {
         minAmount.value = response.data.minAmount;
         maxAmount.value = response.data.maxAmount;
         exchangeRate.value = response.data.conversionRate;
+
+        const stepsArray = [];
+        if (selectedPaymentAccount.value.payment_platform !== 'crypto') {
+            stepsArray.push(trans('public.withdrawal_info_message_1', { conversionRate: exchangeRate.value }));
+        }
+        stepsArray.push(trans('public.withdrawal_info_message_2', { minAmount: props.account.minimum_deposit > 0 ? props.account.minimum_deposit : (minAmount.value < 50 ? 50 : Math.round(minAmount.value)) }));
+        stepsArray.push(trans('public.withdrawal_info_message_3', { maxAmount: Math.floor(maxAmount.value) }));
+
+        if (Number(txnFee.value) > 0) {
+            stepsArray.push(trans('public.withdrawal_info_message_4', { txnFee: formatAmount(txnFee.value) }));
+        } else {
+            stepsArray.push(trans('public.deposit_no_fee'));
+        }
+
+        steps.value = stepsArray;
     } catch (error) {
         console.error('Error get payment fee:', error);
     } finally {
@@ -232,6 +250,22 @@ const closeDialog = () => {
                     </div>
                     <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount(account.category === 'cent' ? (minAmount < 50 ? 50 : Math.round(minAmount)) * account.balance_multiplier : (minAmount < 50 ? 50 : Math.round(minAmount)), 0) }}</span>
                     <InputError :message="form.errors.amount" />
+                </div>
+
+                <div class="flex flex-col items-center self-stretch">
+                    <div class="flex justify-center items-start gap-3 self-stretch">
+                        <div class="flex flex-col items-start gap-1 flex-grow">
+                            <span v-if="steps.length" class="self-stretch text-gray-950 text-sm font-semibold">{{ $t('public.withdrawal_info_header') }}</span>
+                            <div v-if="loadingFee" class="flex flex-col items-center justify-center w-full py-5">
+                                <Loader />
+                            </div>
+                            <div v-else class="flex flex-col items-start gap-1 flex-grow">
+                                <div v-for="(step, index) in steps" :key="index" class="self-stretch text-gray-500 text-xs">
+                                    {{ index + 1 }}. {{ step }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div

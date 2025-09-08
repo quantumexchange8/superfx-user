@@ -662,4 +662,9 @@ return [
     "current_platform_requires" => "Nền tảng hiện tại yêu cầu tên tiếng Trung.",
     "your_chinese_name" => "Tên tiếng Trung của bạn",
     "enter_chinese_name" => "Nhập tên tiếng Trung của bạn",
+    "withdrawal_info_header" => "Thông tin Rút tiền",
+    "withdrawal_info_message_1" => "Tỷ giá hối đoái rút tiền: :conversionRate.",
+    "withdrawal_info_message_2" => "Số tiền rút tối thiểu cho mỗi giao dịch là $:minAmount.",
+    "withdrawal_info_message_3" => "Số tiền rút tối đa cho mỗi giao dịch là $:maxAmount.",
+    "withdrawal_info_message_4" => "Việc rút tiền của bạn sẽ bị tính phí $:txnFee.",
 ];

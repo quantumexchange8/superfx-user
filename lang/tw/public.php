@@ -662,4 +662,9 @@ return [
     "current_platform_requires" => "目前平台要求使用中文姓名。",
     "your_chinese_name" => "您的中文姓名",
     "enter_chinese_name" => "輸入中文姓名",
+    "withdrawal_info_header" => "提款資訊",
+    "withdrawal_info_message_1" => "提款匯率: :conversionRate。",
+    "withdrawal_info_message_2" => "每筆交易最低提款金額為 $:minAmount.",
+    "withdrawal_info_message_3" => "每筆交易最高提款金額為 $:maxAmount.",
+    "withdrawal_info_message_4" => "您的提款將收取 $:txnFee 手續費。",
 ];

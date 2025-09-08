@@ -664,4 +664,9 @@ return [
     "current_platform_requires" => "Current platform requires Chinese Name to proceed.",
     "your_chinese_name" => "Your Chinese Name",
     "enter_chinese_name" => "Enter chinese name",
+    "withdrawal_info_header" => "Withdrawal Information",
+    "withdrawal_info_message_1" => "Withdrawal exchange rate: :conversionRate.",
+    "withdrawal_info_message_2" => "Minimum withdrawal amount per transaction is $:minAmount.",
+    "withdrawal_info_message_3" => "Maximum withdrawal amount per transaction is $:maxAmount.",
+    "withdrawal_info_message_4" => "Your withdrawal is subject to a fee of $:txnFee.",
 ];
