@@ -97,7 +97,7 @@ const getFee = async () => {
         if (selectedPaymentAccount.value.payment_platform !== 'crypto') {
             stepsArray.push(trans('public.withdrawal_info_message_1', { conversionRate: exchangeRate.value }));
         }
-        stepsArray.push(trans('public.withdrawal_info_message_2', { minAmount: props.account.minimum_deposit > 0 ? props.account.minimum_deposit : (minAmount.value < 50 ? 50 : Math.round(minAmount.value)) }));
+        stepsArray.push(trans('public.withdrawal_info_message_2', { minAmount: minAmount.value < 50 ? 50 : Math.round(minAmount.value) }));
         stepsArray.push(trans('public.withdrawal_info_message_3', { maxAmount: Math.floor(maxAmount.value) }));
 
         if (Number(txnFee.value) > 0) {
