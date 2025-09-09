@@ -1035,6 +1035,15 @@ class TradingAccountController extends Controller
             throw new Exception('Missing signature in callback');
         }
 
+        $transaction = Transaction::firstWhere('transaction_number', $dataArray['seqId']);
+
+        $status = $dataArray['stat'] == '0000' ? 'successful' : 'failed';
+
+        $transaction->update([
+            'status' => $status,
+            'approved_at' => now()
+        ]);
+
         unset($dataArray['sign']);
 
         $filtered = array_filter($dataArray, fn($v) => $v !== null && $v !== '');
@@ -1048,6 +1057,10 @@ class TradingAccountController extends Controller
         $isValid = openssl_verify($stringA, base64_decode($signature), $publicKey);
 
         if ($isValid !== 1) {
+            $transaction->update([
+                'status' => 'failed',
+            ]);
+
             Log::error('Signature verification failed', ['stringA' => $stringA, 'signature' => $signature]);
             return response()
                 ->json([
@@ -1056,18 +1069,13 @@ class TradingAccountController extends Controller
                 ]);
         }
 
-        $transaction = Transaction::firstWhere('transaction_number', $dataArray['seqId']);
-
-        $status = $dataArray['stat'] == '0000' ? 'successful' : 'failed';
-
-        $transaction->update([
-            'transaction_amount' => $transaction->amount,
-            'status' => $status,
-            'comment' => $dataArray['tradeNo'] ?? null,
-            'approved_at' => now()
-        ]);
-
         if ($transaction->status == 'successful') {
+
+            $transaction->update([
+                'transaction_amount' => $transaction->amount,
+                'comment' => $dataArray['tradeNo'] ?? null,
+            ]);
+
             if ($transaction->transaction_type == 'deposit') {
                 $this->proceed_deposit_to_account($transaction);
 
