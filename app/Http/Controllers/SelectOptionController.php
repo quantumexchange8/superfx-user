@@ -83,6 +83,17 @@ class SelectOptionController extends Controller
                 ->with(['methods' => function ($q) use ($methodIds) {
                     $q->whereIn('payment_methods.id', $methodIds);
                 }])
+                ->select([
+                    'id',
+                    'name',
+                    'platform',
+                    'environment',
+                    'payment_url',
+                    'can_withdraw',
+                    'status',
+                    'position'
+                ])
+                ->orderBy('position')
                 ->get();
         } else {
             $payments = PaymentGateway::whereHas('methods', function ($q) use ($request) {
@@ -96,7 +107,9 @@ class SelectOptionController extends Controller
                     'payment_url',
                     'can_withdraw',
                     'status',
+                    'position'
                 ])
+                ->orderBy('position')
                 ->get();
         }
 
