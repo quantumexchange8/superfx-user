@@ -393,6 +393,8 @@ return [
     "warning_4_2" => "“有限授權書” (LPOA)",
     "warning_4_3" => "的條款和條件.",
     "access_denied" => "拒絕訪問",
+    "access_denied_desc" => "您似乎沒有訪問此頁面的權限。請檢查您的憑證。",
+    "logout" => "登出",
     "apply_rebate_desc" => "您確定要申請您的返傭? 這將轉移您的返傭至返傭錢包.",
     "toast_apply_rebate_success" => "您已成功申請返傭!",
     "unable_to_apply_rebate" => "無法申請返傭！",

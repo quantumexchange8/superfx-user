@@ -395,6 +395,8 @@ return [
     "warning_4_2" => "Limited Power of Attorney (LPOA)",
     "warning_4_3" => "terms and conditions.",
     "access_denied" => "Access Denied",
+    "access_denied_desc" => "It looks like you don't have permission to access this page. Please check your credentials.",
+    "logout" => "Log Out",
     "apply_rebate_desc" => "Are you sure you want to apply your rebate? This will transfer your rebate instantly.",
     "toast_apply_rebate_success" => "You’ve successfully applied your rebate!",
     "unable_to_apply_rebate" => "Unable to Apply Rebate!",

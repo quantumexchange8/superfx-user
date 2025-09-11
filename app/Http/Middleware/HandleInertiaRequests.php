@@ -2,8 +2,9 @@
 
 namespace App\Http\Middleware;
 
-use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Models\SiteSetting;
+use Illuminate\Http\Request;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -41,6 +42,7 @@ class HandleInertiaRequests extends Middleware
             'locale' => session('locale') ? session('locale') : app()->getLocale(),
             'user_status' => session('user_status'),
             'permissions' => $request->user() ? $request->user()->getAllPermissions()->pluck('name')->toArray() : 'no permission',
+            'site_settings' => SiteSetting::pluck('status', 'name'),
         ];
     }
 }

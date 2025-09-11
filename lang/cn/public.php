@@ -393,6 +393,8 @@ return [
     "warning_4_2" => "“有限授权书” (LPOA)",
     "warning_4_3" => "的条款和条件.",
     "access_denied" => "拒绝访问",
+    "access_denied_desc" => "您似乎没有访问此页面的权限。请检查您的凭证。",
+    "logout" => "登出",
     "apply_rebate_desc" => "您确定要申请您的返佣? 这将转移您的返佣至返佣钱包.",
     "toast_apply_rebate_success" => "您已成功申请返佣!",
     "unable_to_apply_rebate" => "无法申请返佣！",

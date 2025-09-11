@@ -393,6 +393,8 @@ return [
     "warning_4_2" => "Giấy ủy quyền giới hạn (LPOA)",
     "warning_4_3" => ".",
     "access_denied" => "Từ chối truy cập",
+    "access_denied_desc" => "Có vẻ như bạn không có quyền truy cập vào trang này. Vui lòng kiểm tra thông tin xác thực của bạn.",
+    "logout" => "Đăng xuất",
     "apply_rebate_desc" => "Bạn có chắc chắn muốn yêu cầu hoàn lại không? Khoản hoàn lại sẽ được chuyển vào ví hoàn lại của bạn.",
     "toast_apply_rebate_success" => "Bạn đã yêu cầu hoàn lại thành công!",
     "unable_to_apply_rebate" => "Không thể yêu cầu hoàn lại!",

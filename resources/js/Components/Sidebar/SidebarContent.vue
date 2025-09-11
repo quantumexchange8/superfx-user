@@ -21,6 +21,7 @@ import {
 } from '@tabler/icons-vue';
 
 const user = usePage().props.auth.user;
+const siteSettings = usePage().props.site_settings;
 
 </script>
 
@@ -121,7 +122,7 @@ const user = usePage().props.auth.user;
 
         <!-- Rebate allocate -->
         <SidebarLink
-            v-if="user.role === 'ib'"
+            v-if="user.role === 'ib' && siteSettings.rebate_allocate === 'active'"
             :title="$t('public.rebate_allocate')"
             :href="route('rebate_allocate')"
             :active="route().current('rebate_allocate')"
