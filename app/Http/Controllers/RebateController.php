@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\RebateAllocation;
 use App\Models\User;
-use Auth;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
+use App\Models\RebateAllocation;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class RebateController extends Controller

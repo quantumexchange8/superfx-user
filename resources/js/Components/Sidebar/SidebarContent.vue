@@ -120,7 +120,7 @@ const user = usePage().props.auth.user;
        </SidebarLink>
 
         <!-- Rebate allocate -->
-        <!-- <SidebarLink
+        <SidebarLink
             v-if="user.role === 'ib'"
             :title="$t('public.rebate_allocate')"
             :href="route('rebate_allocate')"
@@ -129,7 +129,7 @@ const user = usePage().props.auth.user;
             <template #icon>
                 <IconBusinessplan :size="20" stroke-width="1.25" />
             </template>
-        </SidebarLink> -->
+        </SidebarLink>
 
         <!-- Billboard -->
 <!--        <SidebarLink-->
