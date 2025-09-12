@@ -1045,61 +1045,76 @@ class TradingAccountController extends Controller
 
         // Extract the signature
         $signature = $dataArray['sign'] ?? null;
-
         if (!$signature) {
-            throw new Exception('Missing signature in callback');
+            return response()->json([
+                'success' => false,
+                'message' => 'Missing signature'
+            ], 400);
         }
 
-        unset($dataArray['sign']);
+        // Find transaction
+        $transaction = Transaction::firstWhere('transaction_number', $dataArray['seqId']);
+        if (!$transaction) {
+            return response()->json(['success' => false, 'message' => 'Transaction not found'], 404);
+        }
 
+        // Prepare data for signature verification
+        unset($dataArray['sign']);
         $filtered = array_filter($dataArray, fn($v) => $v !== null && $v !== '');
         ksort($filtered);
-
         $stringA = urldecode(http_build_query($filtered));
 
         $publicKeyPath = storage_path('app/keys/psp_public.pem');
         $publicKey = file_get_contents($publicKeyPath);
 
         $isValid = openssl_verify($stringA, base64_decode($signature), $publicKey);
-
         if ($isValid !== 1) {
-            Log::error('Signature verification failed', ['stringA' => $stringA, 'signature' => $signature]);
-            return response()
-                ->json([
-                    'success' => false,
-                    'message' => 'Signature verification failed.',
-                ]);
+            // Signature invalid – mark failed and return
+            $transaction->update(['status' => 'failed']);
+
+            Log::error('Signature verification failed', [
+                'stringA' => $stringA,
+                'signature' => $signature
+            ]);
+
+            // Respond 200 so PSP stops retrying
+            return response("FAIL", 200)->header('Content-Type', 'text/plain');
         }
 
-        $transaction = Transaction::firstWhere('transaction_number', $dataArray['seqId']);
+        $status = $dataArray['stat'] === '0000' ? 'successful' : 'failed';
+        $transaction->status = $status;
+        $transaction->approved_at = now();
+        $transaction->save();
 
-        $status = $dataArray['stat'] == '0000' ? 'successful' : 'failed';
-
-        $transaction->update([
-            'status' => $status,
-            'approved_at' => now()
-        ]);
-
-        if ($transaction->status == 'successful') {
+        // Only proceed if successful
+        if ($status == 'successful') {
+            // Prevent double-processing using DB transaction + lock
             DB::transaction(function () use ($transaction, $dataArray) {
-                $transaction->lockForUpdate(); // ensure row lock
-                if ($transaction->processed_at) {
-                    return; // already processed
+                $locked = Transaction::where('id', $transaction->id)->lockForUpdate()->first();
+
+                // Skip if already processed
+                if ($locked->processed_at) {
+                    return;
                 }
 
-                $transaction->update([
-                    'processed_at' => now(),
-                    'transaction_amount' => $transaction->amount,
-                    'comment' => $dataArray['tradeNo'] ?? null,
+                $locked->update([
+                    'processed_at'       => now(),
+                    'transaction_amount' => $locked->amount,
+                    'comment'            => $dataArray['tradeNo'] ?? null,
                 ]);
 
-                if ($transaction->transaction_type === 'deposit') {
-                    $this->proceed_deposit_to_account($transaction);
+                if ($locked->transaction_type == 'deposit') {
+                    $this->proceed_deposit_to_account($locked);
                 }
             });
+
+            // Always return success for PSP
+            return response("SUCCESS", 200)
+                ->header('Content-Type', 'text/plain');
         }
 
-        return response()->json(['success' => false, 'message' => 'Deposit Failed']);
+        // Failed status case
+        return response("FAIL", 200)->header('Content-Type', 'text/plain');
     }
 
     /**
