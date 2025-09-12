@@ -45,6 +45,7 @@ class Transaction extends Model
         'comment',
         'remarks',
         'approved_at',
+        'processed_at',
         'handle_by',
     ];
 
@@ -52,6 +53,7 @@ class Transaction extends Model
     {
         return [
             'approved_at' => 'datetime',
+            'processed_at' => 'datetime',
         ];
     }
 
