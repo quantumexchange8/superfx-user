@@ -223,11 +223,13 @@ class TransactionController extends Controller
         $validator = Validator::make($request->all(), [
             'wallet_id' => ['required', 'exists:wallets,id'],
             'amount' => ['required', 'numeric', 'gte:'.$minAmount],
-            'payment_account_id' => ['required']
+            'payment_account_id' => ['required'],
+            'payment_gateway_id' => ['required'],
         ])->setAttributeNames([
             'wallet_id' => trans('public.wallet'),
             'amount' => trans('public.amount'),
             'payment_account_id' => trans('public.receiving_wallet'),
+            'payment_gateway_id' => trans('public.platform'),
         ]);
         $validator->validate();
 
