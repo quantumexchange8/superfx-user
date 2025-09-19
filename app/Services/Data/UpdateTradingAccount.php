@@ -35,20 +35,20 @@ class UpdateTradingAccount
                 $tradingAccount->margin_leverage = $data['leverage'];
             }
 
-            if (isset($data['margin_leverage'])) {
-                $tradingAccount->margin_leverage = $data['margin_leverage'];
+            if (isset($data['marginLeverage'])) {
+                $tradingAccount->margin_leverage = $data['marginLeverage'];
             }
 
             if (isset($data['margin'])) {
                 $tradingAccount->margin = $data['margin'];
             }
 
-            if (isset($data['margin_free'])) {
-                $tradingAccount->margin_free = $data['margin_free'];
+            if (isset($data['marginFree'])) {
+                $tradingAccount->margin_free = $data['marginFree'];
             }
 
-            if (isset($data['margin_level'])) {
-                $tradingAccount->margin_level = $data['margin_level'];
+            if (isset($data['marginLevel'])) {
+                $tradingAccount->margin_level = $data['marginLevel'];
             }
 
             if (isset($data['equity'])) {

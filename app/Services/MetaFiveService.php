@@ -197,19 +197,14 @@ class MetaFiveService implements TradingPlatformInterface
      */
     public function updateLeverage($meta_login, $leverage): void
     {
-        $payload = [
-            'meta_login' => $meta_login,
-            'leverage' => $leverage,
-        ];
-
-        $jsonPayload = json_encode($payload);
-
         Http::acceptJson()
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $this->token,
             ])
-            ->withBody($jsonPayload)
-            ->patch($this->baseURL . "/update_leverage");
+            ->patch($this->baseURL . "/update_leverage", [
+                'login' => $meta_login,
+                'leverage' => $leverage,
+            ]);
 
         $this->getUserInfo($meta_login);
     }
@@ -225,7 +220,7 @@ class MetaFiveService implements TradingPlatformInterface
                 'Authorization' => 'Bearer ' . $this->token,
             ])
             ->patch($this->baseURL . "/changemasterpassword", [
-                'meta_login' => $meta_login,
+                'login' => $meta_login,
                 'password' => $password,
             ]);
 
@@ -243,7 +238,7 @@ class MetaFiveService implements TradingPlatformInterface
                 'Authorization' => 'Bearer ' . $this->token,
             ])
             ->patch($this->baseURL . "/changeinvestorpassword", [
-                'meta_login' => $meta_login,
+                'login' => $meta_login,
                 'password' => $password,
             ]);
 
