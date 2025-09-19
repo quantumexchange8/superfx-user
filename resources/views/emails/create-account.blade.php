@@ -383,7 +383,7 @@
                                                             Clients Cabinet Login: <span style="word-break: break-word; color: #00c57d;"><strong>{{ $meta_login }}</strong></span><br/><br/>
                                                             Clients Cabinet Password: <strong><span style="word-break: break-word; color: #00c57d;">{{ $mainPassword }}</span></strong><br/><br/>
                                                             Investor Password (if required) : <span style="word-break: break-word; color: #00c57d;"><strong>{{ $investorPassword }}</strong></span><br/><br/>
-                                                            Trading Platform: <strong><span style="word-break: break-word; color: #00c57d;">MT4</span></strong><br/><br/>
+                                                            Trading Platform: <strong><span style="word-break: break-word; color: #00c57d;">{{ strtoupper($platform) }}</span></strong><br/><br/>
                                                             Server: <span style="word-break: break-word; color: #00c57d;"><strong>{{ $server }}</strong></span><br/>
                                                         </td>
                                                     </tr>
@@ -523,7 +523,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#101112;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><strong>2. Download the SuperFin MT4 trading platform.</strong></p>
+                                                    <p style="margin: 0;"><strong>2. Download the SuperFin {{ strtoupper($platform) }} trading platform.</strong></p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -548,7 +548,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#101112;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:14px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:16.8px;">
-                                                    <p style="margin: 0;">You can download the MT4 platform here. Login using the same credentials as for the Client's Cabinet.</p>
+                                                    <p style="margin: 0;">You can download the {{ strtoupper($platform) }} platform here. Login using the same credentials as for the Client's Cabinet.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -573,11 +573,11 @@
                                         <tr>
                                             <td class="pad">
                                                 <div align="center" class="alignment"><!--[if mso]>
-                                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://superfin.global/#mt4" style="height:32px;width:152px;v-text-anchor:middle;" arcsize="94%" stroke="false" fillcolor="#00e288">
+                                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ $platform == 'mt4' ? 'https://superfin.global/#mt4' : 'https://www.superfin.global/mt5' }}" style="height:32px;width:152px;v-text-anchor:middle;" arcsize="94%" stroke="false" fillcolor="#00e288">
                                                         <w:anchorlock/>
                                                         <v:textbox inset="0px,0px,0px,0px">
                                                             <center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:16px">
-                                                    <![endif]--><a class="button" href="https://superfin.global/#mt4" style="background-color:#00e288;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:30px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:inline-block;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;mso-border-alt:none;padding-bottom:0px;padding-top:0px;text-align:center;text-decoration:none;width:auto;word-break:keep-all;" target="_blank"><span style="word-break: break-word; padding-left: 20px; padding-right: 20px; font-size: 16px; display: inline-block; letter-spacing: normal;"><span style="word-break: break-word; line-height: 32px;"><strong>Download MT4</strong></span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
+                                                    <![endif]--><a class="button" href="{{ $platform == 'mt4' ? 'https://superfin.global/#mt4' : 'https://www.superfin.global/mt5' }}" style="background-color:#00e288;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:30px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:inline-block;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;mso-border-alt:none;padding-bottom:0px;padding-top:0px;text-align:center;text-decoration:none;width:auto;word-break:keep-all;" target="_blank"><span style="word-break: break-word; padding-left: 20px; padding-right: 20px; font-size: 16px; display: inline-block; letter-spacing: normal;"><span style="word-break: break-word; line-height: 32px;"><strong>Download {{ strtoupper($platform) }}</strong></span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
                                             </td>
                                         </tr>
                                     </table>
@@ -1481,7 +1481,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><a href="https://superfin.global/mt4" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Metatrader 4</a></p>
+                                                    <p style="margin: 0;"><a href="{{ $platform == 'mt4' ? 'https://superfin.global/#mt4' : 'https://www.superfin.global/mt5' }}" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Metatrader {{ $platform == 'mt4' ? '4' : '5' }}</a></p>
                                                 </div>
                                             </td>
                                         </tr>

@@ -1,14 +1,16 @@
 <script setup>
-import {ref, onMounted, watchEffect} from "vue";
+import {ref, onMounted, watchEffect, watch} from "vue";
 import Action from "@/Pages/TradingAccount/Partials/Action.vue";
 import ActionButton from "@/Pages/TradingAccount/Partials/ActionButton.vue";
 import Empty from '@/Components/Empty.vue';
 import {generalFormat, transactionFormat} from "@/Composables/index.js";
 import {usePage} from "@inertiajs/vue3";
+import Dropdown from "primevue/dropdown";
 
 const props = defineProps({
     user: Object,
     methods: Array,
+    tradingPlatforms: Array,
 })
 
 const isLoading = ref(false);
@@ -21,7 +23,7 @@ const { formatRgbaColor } = generalFormat();
 const fetchLiveAccounts = async () => {
     isLoading.value = true;
     try {
-        const response = await axios.get(`/account/getLiveAccount?accountType=${accountType.value}`);
+        const response = await axios.get(`/account/getLiveAccount?accountType=${accountType.value}&trading_platform=${selectedTradingPlatform.value}`);
         accounts.value = response.data;
     } catch (error) {
         console.error('Error fetching live accounts:', error);
@@ -30,17 +32,92 @@ const fetchLiveAccounts = async () => {
     }
 };
 
-// Fetch live accounts when the component is mounted
-onMounted(fetchLiveAccounts);
-
 watchEffect(() => {
     if (usePage().props.toast !== null || usePage().props.notification !== null) {
         fetchLiveAccounts();
     }
 });
+
+const selectedTradingPlatform = ref(props.tradingPlatforms[0].slug);
+const selectedAccountType = ref()
+const accountTypes = ref([])
+const loadingAccountTypes = ref(false);
+
+const getAccountTypeByPlatform = async () => {
+    loadingAccountTypes.value = true;
+
+    try {
+        const response = await axios.get(
+            `/getAccountTypeByPlatform?trading_platform=${selectedTradingPlatform.value}`
+        );
+
+        const allAccountTypes = response.data.accountTypes;
+
+        // Only keep account types where category === accountType.value
+        accountTypes.value = allAccountTypes.filter(
+            acc => acc.category === accountType.value
+        );
+    } catch (error) {
+        console.error('Error getting account types:', error);
+    } finally {
+        loadingAccountTypes.value = false;
+    }
+};
+
+watch(selectedTradingPlatform, () => {
+    getAccountTypeByPlatform()
+    fetchLiveAccounts();
+}, {immediate: true})
 </script>
 
 <template>
+    <div class="flex items-center gap-5 self-stretch w-full">
+        <Dropdown
+            v-model="selectedTradingPlatform"
+            :options="tradingPlatforms"
+            option-label="slug"
+            option-value="slug"
+            class="w-full md:w-60"
+            scroll-height="236px"
+            :placeholder="$t('public.leverages_placeholder')"
+        >
+            <template #value="{value, placeholder}">
+                <div v-if="value">
+                    <span class="uppercase">{{ value }}</span>
+                </div>
+                <div v-else>
+                    {{ placeholder }}
+                </div>
+            </template>
+            <template #option="{option}">
+                <span class="uppercase">{{ option.slug }}</span>
+            </template>
+        </Dropdown>
+
+        <Dropdown
+            v-model="selectedAccountType"
+            :options="accountTypes"
+            option-label="name"
+            option-value="name"
+            class="w-full md:w-60"
+            scroll-height="236px"
+            :placeholder="$t('public.account_type_placeholder')"
+            :loading="loadingAccountTypes"
+        >
+            <template #value="{value, placeholder}">
+                <div v-if="value">
+                    <span class="uppercase">{{ value }}</span>
+                </div>
+                <div v-else>
+                    {{ placeholder }}
+                </div>
+            </template>
+            <template #option="{option}">
+                <span class="uppercase">{{ option.name }}</span>
+            </template>
+        </Dropdown>
+    </div>
+
     <div
         v-if="isLoading"
         class="flex flex-col justify-center items-center py-4 pl-6 pr-3 gap-5 flex-grow md:pr-6 rounded-2xl border-l-8 bg-white shadow-toast w-1/2 animate-pulse"

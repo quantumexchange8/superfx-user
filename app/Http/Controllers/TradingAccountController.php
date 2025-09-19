@@ -12,8 +12,11 @@ use App\Models\OpenTrade;
 use App\Models\PaymentGatewayMethod;
 use App\Models\PaymentMethod;
 use App\Models\Term;
+use App\Models\TradingPlatform;
 use App\Models\User;
+use App\Services\MetaFiveService;
 use App\Services\PaymentService;
+use App\Services\TradingPlatform\TradingPlatformFactory;
 use DB;
 use Exception;
 use Illuminate\Http\Client\ConnectionException;
@@ -72,19 +75,36 @@ class TradingAccountController extends Controller
             ->orderBy('id')
             ->get();
 
+        $tradingPlatforms = TradingPlatform::query()
+            ->where('status', 'active')
+            ->whereHas('account_types.markupProfileToAccountTypes.markupProfile.userToMarkupProfiles', function ($query) {
+                $query->where('user_id', Auth::id());
+            })
+            ->select([
+                'platform_name',
+                'slug',
+            ])
+            ->get()
+            ->toArray();
+
         return Inertia::render('TradingAccount/Account', [
             'terms' => $structuredTerms,
             'methods' => $methods,
+            'tradingPlatforms' => $tradingPlatforms,
         ]);
     }
 
     public function getOptions()
     {
         $accountOptions = AccountType::query()
+            ->with('trading_platform:id,platform_name,slug')
             ->whereNot('account_group', 'Demo Account')
             ->where('status', 'active')
             ->whereHas('markupProfileToAccountTypes.markupProfile.userToMarkupProfiles', function ($query) {
                 $query->where('user_id', Auth::id());
+            })
+            ->whereHas('trading_platform', function ($query) {
+                $query->where('status', 'active');
             })
             ->select([
                 'id',
@@ -92,7 +112,8 @@ class TradingAccountController extends Controller
                 'slug',
                 DB::raw('member_display_name as member_display_name'),
                 'account_group',
-                'leverage'
+                'leverage',
+                'trading_platform_id',
             ])
             ->get()
             ->toArray();
@@ -106,19 +127,27 @@ class TradingAccountController extends Controller
         ]);
     }
 
+    /**
+     * @throws Throwable
+     * @throws ConnectionException
+     */
     public function create_live_account(Request $request)
     {
         // Validate the request data
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'accountType' => 'required|exists:account_types,account_group',
-            'leverage' => 'required|integer|min:1',
-        ]);
+        Validator::make($request->all(), [
+            'trading_platform' => ['required'],
+            'account_type_id' => ['required'],
+            'leverage' => ['required'],
+        ])->setAttributeNames([
+            'trading_platform' => trans('public.platform'),
+            'account_type_id' => trans('public.account_type'),
+            'leverage' => trans('public.leverage'),
+        ])->validate();
 
-        $user = User::with('country')->find($request->user_id);
+        $user = Auth::user();
 
         // Retrieve the account type by account_group
-        $accountType = AccountType::where('account_group', $request->accountType)->first();
+        $accountType = AccountType::find($request->account_type_id);
 
         // Check the number of existing trading accounts for this user and account type
         $existingAccountsCount = TradingAccount::where('user_id', $user->id)
@@ -134,11 +163,18 @@ class TradingAccountController extends Controller
             ]);
         }
 
-        $mainPassword = Str::random(8);
-        $investorPassword = Str::random(8);
-        $data = (new MetaFourService)->createUser($user, $accountType->account_group, $request->leverage, $mainPassword, $investorPassword);
+        if ($request->trading_platform == 'mt4') {
+            $mainPassword = Str::random(8);
+            $investorPassword = Str::random(8);
 
-        Mail::to($user->email)->send(new CreateAccountMail($user, $mainPassword, $investorPassword, $data['meta_login'], 'SuperFin-Live'));
+            $data = (new MetaFourService)->createUser($user, $accountType, $request->leverage, $mainPassword, $investorPassword);
+
+            Mail::to($user->email)->send(new CreateAccountMail($user, $mainPassword, $investorPassword, $data['meta_login'], 'SuperFin-Live', $request->trading_platform));
+        } else {
+            $data = (new MetaFiveService())->createUser($user, $accountType, $request->leverage);
+
+            Mail::to($user->email)->send(new CreateAccountMail($user, $data['mainPassword'], $data['investPassword'], $data['login'], $data['server'], $request->trading_platform));
+        }
 
         return back()->with('toast', [
             'title' => trans("public.toast_open_live_account_success"),
@@ -177,26 +213,35 @@ class TradingAccountController extends Controller
         $user = Auth::user();
         $accountType = $request->input('accountType');
 
-        $trading_accounts = $user->tradingAccounts()
-            ->whereHas('account_type', function($q) use ($accountType) {
-                $q->where('category', $accountType);
+        $tradingAccounts = $user->tradingAccounts()
+            ->whereHas('account_type', function ($query) use ($accountType, $request) {
+                $query->where('category', $accountType)
+                    ->whereHas('trading_platform', function ($query) use ($request) {
+                        $query->where('slug', $request->trading_platform);
+                    });
             })
             ->latest()
             ->get();
 
-        try {
-            foreach ($trading_accounts as $trading_account) {
-                (new MetaFourService)->getUserInfo($trading_account->meta_login);
+        $service = TradingPlatformFactory::make($request->trading_platform);
+
+        // Call the appropriate service
+        foreach ($tradingAccounts as $tradingAccount) {
+            try {
+                $service->getUserInfo($tradingAccount->meta_login);
+            } catch (Throwable $e) {
+                Log::error($e->getMessage());
             }
-        } catch (Throwable $e) {
-            Log::error($e->getMessage());
         }
 
         $liveAccounts = TradingAccount::with('account_type')
             ->where('user_id', $user->id)
-            ->when($accountType, function ($query) use ($accountType) {
-                return $query->whereHas('account_type', function ($query) use ($accountType) {
-                    $query->where('category', $accountType);
+            ->when($accountType, function ($query) use ($accountType, $request) {
+                return $query->whereHas('account_type', function ($query) use ($accountType, $request) {
+                    $query->where('category', $accountType)
+                        ->whereHas('trading_platform', function ($query) use ($request) {
+                            $query->where('slug', $request->trading_platform);
+                        });
                 });
             })
             ->latest()
@@ -333,7 +378,11 @@ class TradingAccountController extends Controller
         $amount = $request->amount;
         $fee = $request->fee ?? 0;
 
-        (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
+        $platform = TradingPlatform::find($tradingAccount->account_type->trading_platform_id);
+
+        $service = TradingPlatformFactory::make($platform->slug);
+
+        $service->getUserInfo($tradingAccount->meta_login);
 
         $equity = ($tradingAccount->floating < 0)
             ? $tradingAccount->balance - $tradingAccount->margin + $tradingAccount->floating
@@ -352,7 +401,7 @@ class TradingAccountController extends Controller
         $transaction_number = RunningNumberService::getID('transaction');
 
         try {
-            $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Withdraw From Account: " . $transaction_number, 'balance', '');
+            $trade = $service->createDeal($tradingAccount->meta_login, -$amount, "Withdraw From Account: " . $transaction_number, 'balance', '');
         } catch (Throwable $e) {
             if ($e->getMessage() == "Not found") {
                 TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
@@ -449,7 +498,11 @@ class TradingAccountController extends Controller
         ]);
         $validator->validate();
 
-        (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
+        $platform = TradingPlatform::find($tradingAccount->account_type->trading_platform_id);
+
+        $service = TradingPlatformFactory::make($platform->slug);
+
+        $service->getUserInfo($tradingAccount->meta_login);
 
         $amount = $request->input('amount');
 
@@ -470,9 +523,9 @@ class TradingAccountController extends Controller
         $to_adjusted_amount = $adjusted_amount * $to_multiplier;
 
         try {
-            $tradeFrom = (new MetaFourService)->createTrade($tradingAccount->meta_login, -$amount, "Transfer to #$to_meta_login", 'balance', '');
+            $tradeFrom = $service->createDeal($tradingAccount->meta_login, -$amount, "Transfer to #$to_meta_login", 'balance', '');
 
-            $tradeTo = (new MetaFourService)->createTrade($to_meta_login, $to_adjusted_amount, "Transfer from #$tradingAccount->meta_login", 'balance', '');
+            $tradeTo = $service->createDeal($to_meta_login, $to_adjusted_amount, "Transfer from #$tradingAccount->meta_login", 'balance', '');
         } catch (Throwable $e) {
              if ($e->getMessage() == "Not found") {
                  TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
@@ -1179,8 +1232,12 @@ class TradingAccountController extends Controller
         $multiplier = $tradingAccount->account_type->balance_multiplier;
         $adjusted_amount = $transaction->transaction_amount * $multiplier;
 
+        $platform = TradingPlatform::find($tradingAccount->account_type->trading_platform_id);
+
+        $service = TradingPlatformFactory::make($platform->slug);
+
         try {
-            $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, $adjusted_amount, "Deposit: " . $transaction->comment, 'balance', '');
+            $trade = $service->createDeal($tradingAccount->meta_login, $adjusted_amount, "Deposit: " . $transaction->comment, 'balance', '');
         } catch (Throwable $e) {
             if ($e->getMessage() == "Not found") {
                 TradingUser::firstWhere('meta_login', $transaction->to_meta_login)->update(['acc_status' => 'Inactive']);
@@ -1188,6 +1245,7 @@ class TradingAccountController extends Controller
                 Log::error($e->getMessage());
             }
         }
+
         $ticket = $trade['ticket'] ?? null;
         $transaction->ticket = $ticket;
         $transaction->save();

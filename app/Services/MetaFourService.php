@@ -7,6 +7,7 @@ use App\Services\Data\CreateTradingUser;
 use App\Services\Data\UpdateAccountBalance;
 use App\Services\Data\UpdateTradingAccount;
 use App\Services\Data\UpdateTradingUser;
+use App\Services\TradingPlatform\TradingPlatformInterface;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +15,7 @@ use Carbon\Carbon;
 use App\Models\User as UserModel;
 use Throwable;
 
-class MetaFourService {
+class MetaFourService implements TradingPlatformInterface {
     private string $port = "8443";
     private string $login = "10012";
     private string $password = "Test1234.";
@@ -35,10 +36,10 @@ class MetaFourService {
     /**
      * @throws ConnectionException
      */
-    public function getUser($meta_login)
+    public function getUser($metaLogin): array
     {
         $payload = [
-            'meta_login' => $meta_login,
+            'meta_login' => $metaLogin,
         ];
 
         $jsonPayload = json_encode($payload);
@@ -51,6 +52,11 @@ class MetaFourService {
             ->post($this->baseURL . "/getuser");
 
         return $accountResponse->json();
+    }
+
+    public function getAccount($metaLogin): array
+    {
+        return [];
     }
 
     /**
@@ -94,7 +100,7 @@ class MetaFourService {
     }
 
     /**
-     * @throws ConnectionException
+     * @throws ConnectionException|Throwable
      */
     public function createUser(UserModel $user, $group, $leverage, $mainPassword, $investorPassword)
     {
@@ -102,7 +108,7 @@ class MetaFourService {
             'master_password' => $mainPassword,
             'investor_password' => $investorPassword,
             'name' => $user->name,
-            'group' => $group,
+            'group' => $group->account_group,
             'leverage' => $leverage,
             'email' => $user->email,
         ];
@@ -113,7 +119,7 @@ class MetaFourService {
             ->withHeaders([
                 'Authorization' => 'Bearer ' . $this->token,
             ])
-            ->withBody($jsonPayload, 'application/json')
+            ->withBody($jsonPayload)
             ->post($this->baseURL . "/createuser");
 
         (new CreateTradingAccount)->execute($user, $accountResponse, $group);
@@ -122,9 +128,9 @@ class MetaFourService {
     }
 
     /**
-     * @throws ConnectionException
+     * @throws ConnectionException|Throwable
      */
-    public function createTrade($meta_login, $amount, $comment, $type, $expire_date)
+    public function createDeal($meta_login, $amount, $comment, $type, $expire_date): array
     {
         $payload = [
             'meta_login' => $meta_login,

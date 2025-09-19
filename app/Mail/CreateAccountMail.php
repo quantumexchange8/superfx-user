@@ -20,13 +20,14 @@ class CreateAccountMail extends Mailable implements ShouldQueue
     private $meta_login;
     private $server;
 
-    public function __construct($user, $mainPassword, $investorPassword, $meta_login, $server)
+    public function __construct($user, $mainPassword, $investorPassword, $meta_login, $server, $platform)
     {
         $this->user = $user;
         $this->mainPassword = $mainPassword;
         $this->investorPassword = $investorPassword;
         $this->meta_login = $meta_login;
         $this->server = $server;
+        $this->platform = $platform;
 
         // queue
         $this->queue = 'create_account_email';
@@ -41,6 +42,7 @@ class CreateAccountMail extends Mailable implements ShouldQueue
                 'investorPassword' => $this->investorPassword,
                 'meta_login' => $this->meta_login,
                 'server' => $this->server,
+                'platform' => $this->platform,
             ])
             ->subject('Welcome to SuperFin');
     }

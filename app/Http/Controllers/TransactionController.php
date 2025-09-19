@@ -176,7 +176,7 @@ class TransactionController extends Controller
         $multiplier = $tradingAccount->account_type->balance_multiplier;
         $adjusted_amount = $amount * $multiplier;
         try {
-            $trade = (new MetaFourService)->createTrade($tradingAccount->meta_login, $adjusted_amount, "Rebate to account", 'balance', '');
+            $trade = (new MetaFourService)->createDeal($tradingAccount->meta_login, $adjusted_amount, "Rebate to account", 'balance', '');
         } catch (\Throwable $e) {
             if ($e->getMessage() == "Not found") {
                 TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
@@ -494,7 +494,7 @@ class TransactionController extends Controller
                 $adjusted_amount = $transaction->amount * $multiplier;
 
                 try {
-                    $trade = (new MetaFourService)->createTrade($transaction->from_meta_login, $adjusted_amount, 'Cancelled from ' . $transaction->transaction_number, 'balance', '');
+                    $trade = (new MetaFourService)->createDeal($transaction->from_meta_login, $adjusted_amount, 'Cancelled from ' . $transaction->transaction_number, 'balance', '');
 
                     $transaction->update([
                         'ticket' => $trade['ticket'] ?? null,

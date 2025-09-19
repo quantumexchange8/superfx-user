@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AccountType;
 use App\Models\Bank;
 use App\Models\CurrencyConversionRate;
 use App\Models\PaymentAccount;
@@ -10,6 +11,7 @@ use App\Models\PaymentGatewayHasBank;
 use App\Models\PaymentGatewayMethod;
 use App\Models\PaymentMethod;
 use App\Models\Setting;
+use App\Models\SettingLeverage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -195,6 +197,46 @@ class SelectOptionController extends Controller
             'minAmount' => $gatewayMethodData[$targetMethod->payment_method_id]['min_amount'],
             'maxAmount' => $gatewayMethodData[$targetMethod->payment_method_id]['max_amount'],
             'conversionRate' => $gatewayMethodData[$targetMethod->payment_method_id]['currency_rate'],
+        ]);
+    }
+
+    public function getAccountTypeByPlatform(Request $request)
+    {
+        $accountTypes = AccountType::whereHas('trading_platform', function ($query) use ($request) {
+            $query->where('slug', $request->trading_platform)
+                ->where('status', 'active');
+        })
+            ->whereHas('markupProfileToAccountTypes.markupProfile.userToMarkupProfiles', function ($query) {
+                $query->where('user_id', Auth::id());
+            })
+            ->select([
+                'id', 'name', 'account_group', 'category'
+            ])
+            ->get()
+            ->toArray();
+
+        return response()->json([
+            'accountTypes' => $accountTypes,
+        ]);
+    }
+
+    public function getLeverages(Request $request)
+    {
+        $leveragesQuery = SettingLeverage::where('status', 'active')
+            ->select(['display', 'value']);
+
+        if ($request->filled('account_type_id')) {
+            $accountType = AccountType::findOrFail($request->account_type_id);
+
+            if ($accountType->leverage != 0) {
+                $leveragesQuery->where('value', $accountType->leverage);
+            }
+        }
+
+        $leverages = $leveragesQuery->get();
+
+        return response()->json([
+            'leverages' => $leverages,
         ]);
     }
 }

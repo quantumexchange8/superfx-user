@@ -1,45 +1,28 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import Button from "@/Components/Button.vue";
-import {ref, h, watch, computed} from "vue";
+import {ref, h, watch} from "vue";
 import TabView from 'primevue/tabview';
 import TabPanel from 'primevue/tabpanel';
 import DollarAccounts from '@/Pages/TradingAccount/Partials/DollarAccounts.vue';
 import CentAccounts from '@/Pages/TradingAccount/Partials/CentAccounts.vue';
-import { usePage, useForm } from "@inertiajs/vue3";
-import Dialog from 'primevue/dialog';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import InputText from 'primevue/inputtext';
-import IconField from 'primevue/iconfield';
-import Dropdown from "primevue/dropdown";
-import {IconCircleCheckFilled, IconInfoOctagonFilled, IconX} from '@tabler/icons-vue';
+import { usePage } from "@inertiajs/vue3";
+import {IconInfoOctagonFilled, IconX} from '@tabler/icons-vue';
 import { wTrans } from "laravel-vue-i18n";
 import OpenDemoAccount from "@/Pages/TradingAccount/Partials/OpenDemoAccount.vue";
+import OpenLiveAccount from "@/Pages/TradingAccount/Partials/OpenLiveAccount.vue";
 
 const props = defineProps({
     terms: Object,
-    methods: Array
+    methods: Array,
+    tradingPlatforms: Array,
 })
 
 // Initialize the form with user data
 const user = usePage().props.auth.user;
 
-const liveAccountForm = useForm({
-    user_id: user.id,
-    accountType: '',
-    leverage: '',
-});
-
-const demoAccountForm = useForm({
-    user_id: user.id,
-    amount: '',
-    leverage: '',
-});
-
 const tabs = ref([
-    { title: wTrans('public.dollar'), component: h(DollarAccounts, {methods: props.methods}), type: 'dollar' },
-    { title: wTrans('public.cent'), component: h(CentAccounts, {methods: props.methods}), type: 'cent' },
+    { title: wTrans('public.dollar'), component: h(DollarAccounts, {methods: props.methods, tradingPlatforms: props.tradingPlatforms}), type: 'dollar' },
+    { title: wTrans('public.cent'), component: h(CentAccounts, {methods: props.methods, tradingPlatforms: props.tradingPlatforms}), type: 'cent' },
     // { title: wTrans('public.demo'), component: h(DemoAccounts), type: 'demo' },
 ]);
 
@@ -58,76 +41,6 @@ function updateType(event) {
     const selectedTab = tabs.value[event.index];
     selectedType.value = selectedTab.type;
 }
-
-const showLiveAccountDialog = ref(false);
-const showDemoAccountDialog = ref(false);
-
-// Functions to open and close the dialog
-const openDialog = (dialogRef, formRef = null) => {
-    if (formRef) formRef.reset();
-    if (dialogRef === 'live') {
-        selectedAccountType.value = '';
-        showLiveAccountDialog.value = true;
-    } else if (dialogRef === 'demo') {
-        showDemoAccountDialog.value = true;
-    }
-};
-
-const closeDialog = (dialogName, formRef = null) => {
-    if (formRef) formRef.reset();
-    if (dialogName === 'live') {
-        showLiveAccountDialog.value = false;
-    } else if (dialogName === 'demo') {
-        showDemoAccountDialog.value = false;
-    }
-};
-
-
-const leverages = ref();
-const transferOptions = ref();
-const accountOptions = ref([]);
-const selectedAccountType = ref('');
-
-const getOptions = async () => {
-    try {
-        const response = await axios.get('/account/getOptions');
-        leverages.value = response.data.leverages;
-        accountOptions.value = response.data.accountOptions;
-    } catch (error) {
-        console.error('Error changing locale:', error);
-    }
-};
-
-getOptions();
-
-// Handle selection of an account
-function selectAccount(type) {
-    selectedAccountType.value = type;
-    liveAccountForm.accountType = type;
-
-    // Find selected account and update leverage
-    const selectedAccount = accountOptions.value.find(account => account.account_group === type);
-    if (selectedAccount && selectedAccount.leverage) {
-        liveAccountForm.leverage = selectedAccount.leverage;
-    } else {
-        liveAccountForm.leverage = ''; // Clear leverage if no value
-    }
-}
-
-const openLiveAccount = () => {
-    liveAccountForm.post(route('account.create_live_account'), {
-        onSuccess: () => {
-            closeDialog('live', liveAccountForm);
-        },
-        onError: (error) => {
-            console.error('Failed to open live account.', error);
-        },
-    });
-};
-
-const buttonSize = computed(() => {
-    return window.innerWidth < 768 ? 'sm' : 'base';
-})
 
 const noticeVisible = ref(true);
 </script>
@@ -181,16 +94,9 @@ const noticeVisible = ref(true);
                             <span class="self-stretch text-gray-700 text-xs md:text-sm">{{ $t('public.account_banner_message') }}</span>
                         </div>
                         <div class="flex flex-col justify-center items-start gap-3 self-stretch md:flex-row md:justify-start md:items-center md:gap-5">
-                            <Button
-                                type="button"
-                                variant="primary-flat"
-                                class="w-[142px] md:w-full"
-                                :size="buttonSize"
-                                @click="openDialog('live', liveAccountForm)"
-                                :disabled="!accountOptions.length"
-                            >
-                                {{ $t('public.live_account') }}
-                            </Button>
+                            <OpenLiveAccount
+                                :tradingPlatforms="tradingPlatforms"
+                            />
                             <OpenDemoAccount />
                         </div>
                     </div>
@@ -209,72 +115,4 @@ const noticeVisible = ref(true);
 
         </div>
     </AuthenticatedLayout>
-
-    <Dialog v-model:visible="showLiveAccountDialog" modal :header="$t('public.open_live_account')" class="dialog-sm sm:dialog-md">
-        <div class="flex flex-col items-center gap-8 self-stretch sm:gap-10">
-            <div class="flex flex-col items-center gap-5 self-stretch">
-                <div class="flex flex-col items-start gap-2 self-stretch">
-                    <InputLabel for="accountType" :value="$t('public.account_type_placeholder')" />
-                    <div class="grid grid-cols-2 items-start gap-3 self-stretch">
-                        <div
-                            v-for="(account, index) in accountOptions"
-                            :key="account.account_group"
-                            @click="selectAccount(account.account_group)"
-                            class="group col-span-1 items-start py-3 px-4 gap-1 self-stretch rounded-lg border shadow-input transition-colors duration-300 select-none cursor-pointer"
-                            :class="{
-                                'bg-primary-50 border-primary-500': selectedAccountType === account.account_group,
-                                'bg-white border-gray-300 hover:bg-primary-50 hover:border-primary-500': selectedAccountType !== account.account_group,
-                                'border-error-500': liveAccountForm.errors.leverage,
-                            }"
-                        >
-                            <div class="flex items-center gap-3 self-stretch">
-                                <span
-                                    class="flex-grow text-sm font-semibold transition-colors duration-300 group-hover:text-primary-700"
-                                    :class="{
-                                        'text-primary-700': selectedAccountType === account.account_group,
-                                        'text-gray-950': selectedAccountType !== account.account_group
-                                    }"
-                                >
-                                    {{ (account.member_display_name ?? account.name) }}
-                                </span>
-                                <IconCircleCheckFilled v-if="selectedAccountType === account.account_group" size="20" stroke-width="1.25" color="#2970FF" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 items-start gap-1 self-stretch">
-                    <InputLabel for="leverage" :value="$t('public.leverages')" class="col-span-2"/>
-                    <Dropdown
-                        v-model="liveAccountForm.leverage"
-                        :options="leverages"
-                        optionLabel="name"
-                        optionValue="value"
-                        class="col-span-1"
-                        scroll-height="236px"
-                        :invalid="!!liveAccountForm.errors.leverage"
-                        :disabled="!accountOptions.find(account => account.account_group === selectedAccountType) || accountOptions.find(account => account.account_group === selectedAccountType)?.leverage !== 0"
-                        >
-                    <template #value="slotProps">
-                        <span :class="{
-                            'text-gray-400': !accountOptions.find(account => account.account_group === selectedAccountType) || accountOptions.find(account => account.account_group === selectedAccountType)?.leverage !== 0
-                        }">
-                            {{ leverages.find(option => option.value === slotProps.value)?.name || slotProps.value || $t('public.leverages_placeholder') }}
-                        </span>
-                    </template>
-                    </Dropdown>
-                </div>
-            </div>
-            <!-- <div class="self-stretch">
-                <div class="text-gray-500 text-xs">{{ $t('public.agreement_text') }}
-                    <TermsAndCondition
-                        :termsLabel="$t('public.trading_account_agreement')"
-                        :terms="terms"
-                    />.
-                </div>
-            </div> -->
-        </div>
-        <div class="flex justify-end items-center pt-5 gap-4 self-stretch md:pt-7">
-            <Button variant="primary-flat" type="button" :class="{ 'opacity-25': liveAccountForm.processing }" :disabled="liveAccountForm.processing" @click.prevent="openLiveAccount">{{ $t('public.open_live_account') }}</Button>
-        </div>
-    </Dialog>
 </template>
