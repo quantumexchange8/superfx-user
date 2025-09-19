@@ -18,13 +18,15 @@ class TransferMoneySuccessMail extends Mailable implements ShouldQueue
     private $from_meta_login;
     private $to_meta_login;
     private $amount;
+    private $platform;
 
-    public function __construct($user, $from_meta_login, $to_meta_login, $amount)
+    public function __construct($user, $from_meta_login, $to_meta_login, $amount, $platform)
     {
         $this->user = $user;
         $this->from_meta_login = $from_meta_login;
         $this->to_meta_login = $to_meta_login;
         $this->amount = $amount;
+        $this->platform = $platform;
 
         // queue
         $this->queue = 'transfer_money_success_email';
@@ -38,6 +40,7 @@ class TransferMoneySuccessMail extends Mailable implements ShouldQueue
                 'from_meta_login' => $this->from_meta_login,
                 'to_meta_login' => $this->to_meta_login,
                 'amount' => $this->amount,
+                'platform' => $this->platform,
             ])
             ->subject('Transfer Money Successfully');
     }

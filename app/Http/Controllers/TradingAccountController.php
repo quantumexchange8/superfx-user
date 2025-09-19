@@ -200,7 +200,7 @@ class TradingAccountController extends Controller
 
         (new MetaFourService)->createDemoTrade($data['meta_login'], $request->amount, "Demo Deposit #" . $data['meta_login'], 'balance', '');
 
-        Mail::to($user->email)->send(new CreateAccountMail($user, $mainPassword, $investorPassword, $data['meta_login'], 'SuperFin-Demo'));
+        Mail::to($user->email)->send(new CreateAccountMail($user, $mainPassword, $investorPassword, $data['meta_login'], 'SuperFin-Demo', 'mt4'));
 
         return back()->with('toast', [
             'title' => trans("public.toast_open_demo_account_success"),
@@ -234,7 +234,7 @@ class TradingAccountController extends Controller
             }
         }
 
-        $liveAccounts = TradingAccount::with('account_type')
+        $liveAccounts = TradingAccount::with('account_type.trading_platform')
             ->where('user_id', $user->id)
             ->when($accountType, function ($query) use ($accountType, $request) {
                 return $query->whereHas('account_type', function ($query) use ($accountType, $request) {
@@ -281,6 +281,7 @@ class TradingAccountController extends Controller
                     'asset_master_name' => $following_master->asset_master->asset_name ?? null,
                     'remaining_days' => intval($remaining_days),
                     'status' => $following_master->status ?? null,
+                    'trading_platform' => $account->account_type->trading_platform->slug ?? null,
                 ];
             });
 
@@ -455,10 +456,10 @@ class TradingAccountController extends Controller
 
         if ($paymentWallet->payment_platform == 'crypto') {
             $transaction->update(['status' => 'required_confirmation']);
-            Mail::to($user->email)->queue(new WithdrawalRequestUsdtMail($user, $tradingAccount->meta_login, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no)));
+            Mail::to($user->email)->queue(new WithdrawalRequestUsdtMail($user, $tradingAccount->meta_login, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no), $platform->slug));
         } else {
             $transaction->update(['status' => 'processing']);
-            Mail::to($user->email)->queue(new WithdrawalRequestMail($user, $transaction));
+            Mail::to($user->email)->queue(new WithdrawalRequestMail($user, $transaction, $platform->slug));
         }
 
         // Set notification data in the session
@@ -556,7 +557,7 @@ class TradingAccountController extends Controller
 
          $user = Auth::user();
 
-         Mail::to($user->email)->send(new TransferMoneySuccessMail($user, $tradingAccount->meta_login, $to_meta_login, $adjusted_amount));
+         Mail::to($user->email)->send(new TransferMoneySuccessMail($user, $tradingAccount->meta_login, $to_meta_login, $adjusted_amount, $platform->slug));
 
         return back()->with('toast', [
             'title' => trans('public.toast_internal_transfer_success'),
@@ -570,10 +571,14 @@ class TradingAccountController extends Controller
             'account_id' => 'required',
         ]);
 
-        $account = TradingAccount::find($request->account_id);
+        $account = TradingAccount::with('account_type.trading_platform')->find($request->account_id);
+
+        $service = TradingPlatformFactory::make($account->account_type->trading_platform->slug);
+
+        $service->getUserInfo($account->meta_login);
 
         try {
-            (new MetaFourService)->updateLeverage($account->meta_login, $request->leverage);
+            $service->updateLeverage($account->meta_login, $request->leverage);
         } catch (Throwable $e) {
             Log::error($e->getMessage());
             return back()
@@ -605,14 +610,16 @@ class TradingAccountController extends Controller
         ]);
         $validator->validate();
 
-        $account = TradingAccount::find($request->account_id);
+        $account = TradingAccount::with('account_type.trading_platform')->find($request->account_id);
         $user = Auth::user();
+
+        $service = TradingPlatformFactory::make($account->account_type->trading_platform->slug);
 
         try {
             if ($account) {
                 if ($request->password_type == 'master') {
-                    (new MetaFourService)->changeMasterPassword($account->meta_login, $request->password);
-                    Mail::to($user->email)->send(new ChangePasswordMail($user, $request->password_type, $request->password, $account->meta_login));
+                    $service->changeMasterPassword($account->meta_login, $request->password);
+                    Mail::to($user->email)->send(new ChangePasswordMail($user, $request->password_type, $request->password, $account->meta_login, $account->account_type->trading_platform->slug));
 
                     return back()->with('toast', [
                         'title' => trans('public.toast_change_master_password_success'),
@@ -621,8 +628,8 @@ class TradingAccountController extends Controller
 
                 }
                 else {
-                    (new MetaFourService)->changeInvestorPassword($account->meta_login, $request->password);
-                    Mail::to($user->email)->send(new ChangePasswordMail($user, $request->password_type, $request->password, $account->meta_login));
+                    $service->changeInvestorPassword($account->meta_login, $request->password);
+                    Mail::to($user->email)->send(new ChangePasswordMail($user, $request->password_type, $request->password, $account->meta_login, $account->account_type->trading_platform->slug));
 
                     return back()->with('toast', [
                         'title' => trans('public.toast_change_investor_password_success'),

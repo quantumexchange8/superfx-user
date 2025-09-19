@@ -168,15 +168,12 @@ class MetaFourService implements TradingPlatformInterface {
     //     ]);
     // }
 
+    /**
+     * @throws Throwable
+     * @throws ConnectionException
+     */
     public function updateLeverage($meta_login, $leverage): void
     {
-        $payload = [
-            'meta_login' => $meta_login,
-            'leverage' => $leverage,
-        ];
-
-        $jsonPayload = json_encode($payload);
-
         Http::acceptJson()
         ->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
@@ -189,6 +186,10 @@ class MetaFourService implements TradingPlatformInterface {
         $this->getUserInfo($meta_login);
     }
 
+    /**
+     * @throws Throwable
+     * @throws ConnectionException
+     */
     public function changeMasterPassword($meta_login, $password): void
     {
         $payload = [
@@ -210,6 +211,10 @@ class MetaFourService implements TradingPlatformInterface {
         $this->getUserInfo($meta_login);
     }
 
+    /**
+     * @throws Throwable
+     * @throws ConnectionException
+     */
     public function changeInvestorPassword($meta_login, $password): void
     {
         $payload = [

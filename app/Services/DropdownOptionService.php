@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PaymentAccount;
+use App\Models\TradingPlatform;
 use App\Models\User;
 use App\Models\Bank;
 use App\Models\Group;
@@ -11,6 +12,7 @@ use App\Models\Transaction;
 use App\Models\GroupHasUser;
 use App\Models\SettingLeverage;
 use App\Models\TradingAccount;
+use App\Services\TradingPlatform\TradingPlatformFactory;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -98,10 +100,17 @@ class DropdownOptionService
     {
         $user = Auth::user();
 
-        $trading_accounts = $user->tradingAccounts;
+        $trading_accounts = TradingAccount::with('account_type.trading_platform')
+            ->where('user_id', $user->id)
+            ->get();
+
         try {
             foreach ($trading_accounts as $trading_account) {
-                (new MetaFourService)->getUserInfo($trading_account->meta_login);
+                $platform = TradingPlatform::find($trading_account->account_type->trading_platform_id);
+
+                $service = TradingPlatformFactory::make($platform->slug);
+
+                $service->getUserInfo($trading_account->meta_login);
             }
         } catch (\Throwable $e) {
             Log::error($e->getMessage());
@@ -115,6 +124,7 @@ class DropdownOptionService
                 'category' => $trading_account->account_type->category,
                 'minimum_deposit' => $trading_account->account_type->minimum_deposit,
                 'balance_multiplier' => $trading_account->account_type->balance_multiplier,
+                'trading_platform' => $trading_account->account_type->trading_platform->slug,
             ];
         });
     }

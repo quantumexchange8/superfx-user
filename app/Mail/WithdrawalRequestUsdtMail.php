@@ -21,8 +21,9 @@ class WithdrawalRequestUsdtMail extends Mailable implements ShouldQueue
     private $wallet_address;
     private $hashed_token;
     private $transaction_number;
+    private $platform;
 
-    public function __construct($user, $meta_login, $amount, $created_at, $wallet_address, $transaction_number, $hashed_token)
+    public function __construct($user, $meta_login, $amount, $created_at, $wallet_address, $transaction_number, $hashed_token, $platform)
     {
         $this->user = $user;
         $this->meta_login = $meta_login;
@@ -31,6 +32,7 @@ class WithdrawalRequestUsdtMail extends Mailable implements ShouldQueue
         $this->wallet_address = $wallet_address;
         $this->transaction_number = $transaction_number;
         $this->hashed_token = $hashed_token;
+        $this->platform = $platform;
 
         // queue
         $this->queue = 'withdrawal_request_usdt_email';
@@ -65,6 +67,7 @@ class WithdrawalRequestUsdtMail extends Mailable implements ShouldQueue
                 'wallet_address' => $this->wallet_address,
                 'transaction_number' => $this->transaction_number,
                 'hashed_token' => $this->hashed_token,
+                'platform' => $this->platform,
             ],
         );
     }

@@ -40,7 +40,17 @@ const filteredTransferOptions = computed(() => {
         return [];
     }
 
-    return transferOptions.value.filter(option => option.name !== props.account.meta_login);
+    console.log(transferOptions.value)
+
+    return transferOptions.value.filter(option => {
+        // ensure we exclude current meta_login
+        const notSameAccount = option.name !== props.account.meta_login;
+
+        // ensure trading_platform.slug matches
+        const samePlatform = option.trading_platform === props.account.trading_platform;
+
+        return notSameAccount && samePlatform;
+    });
 });
 
 const openDialog = (dialogRef) => {

@@ -18,13 +18,15 @@ class ChangePasswordMail extends Mailable implements ShouldQueue
     private $passwordType;
     private $password;
     private $meta_login;
+    private $platform;
 
-    public function __construct($user, $passwordType, $password, $meta_login)
+    public function __construct($user, $passwordType, $password, $meta_login, $platform)
     {
         $this->user = $user;
         $this->passwordType = $passwordType;
         $this->password = $password;
         $this->meta_login = $meta_login;
+        $this->platform = $platform;
 
         // queue
         $this->queue = 'change_password_email';
@@ -38,6 +40,7 @@ class ChangePasswordMail extends Mailable implements ShouldQueue
                 'passwordType' => $this->passwordType,
                 'password' => $this->password,
                 'meta_login' => $this->meta_login,
+                'platform' => $this->platform,
             ])
             ->subject('Change Password Successful');
     }

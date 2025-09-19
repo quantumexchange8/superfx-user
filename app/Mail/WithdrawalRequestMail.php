@@ -16,11 +16,13 @@ class WithdrawalRequestMail extends Mailable implements ShouldQueue
 
     private $user;
     private $transaction;
+    private $platform;
 
-    public function __construct($user, $transaction)
+    public function __construct($user, $transaction, $platform)
     {
         $this->user = $user;
         $this->transaction = $transaction;
+        $this->platform = $platform;
 
         // queue
         $this->queue = 'withdrawal_request_email';
@@ -50,6 +52,7 @@ class WithdrawalRequestMail extends Mailable implements ShouldQueue
             with: [
                 'user' => $this->user,
                 'transaction' => $this->transaction,
+                'platform' => $this->platform,
             ],
         );
     }

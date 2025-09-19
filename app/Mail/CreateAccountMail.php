@@ -19,6 +19,7 @@ class CreateAccountMail extends Mailable implements ShouldQueue
     private $investorPassword;
     private $meta_login;
     private $server;
+    private $platform;
 
     public function __construct($user, $mainPassword, $investorPassword, $meta_login, $server, $platform)
     {

@@ -291,7 +291,7 @@
                                                             <span style="word-break: break-word; color: #000000;">Full Name:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $user->name }}</strong></span><br/><br/>
                                                             <span style="word-break: break-word; color: #000000;">{{ !empty($meta_login) ? 'Account Number' : 'Email' }}:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $meta_login ?? $user->email }}</strong></span><br/><br/>
                                                             @if($meta_login)
-                                                            <span style="word-break: break-word; color: #000000;">Account Type:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ 'MT4' }}</strong></span><br/><br/>
+                                                            <span style="word-break: break-word; color: #000000;">Account Type:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ strtoupper($platform) }}</strong></span><br/><br/>
                                                             @endif
                                                             <span style="word-break: break-word; color: #000000;">Withdrawal Amount:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $amount }}</strong></span><br/><br/>
                                                             <span style="word-break: break-word; color: #000000;">Currency:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ 'USD' }}</strong></span><br/><br/>
@@ -948,7 +948,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><a href="https://superfin.global/mt4" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Metatrader 4</a></p>
+                                                    <p style="margin: 0;"><a href="{{ $platform == 'mt4' ? 'https://superfin.global/#mt4' : 'https://www.superfin.global/mt5' }}" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Metatrader {{ $platform == 'mt4' ? '4' : '5' }}</a></p>
                                                 </div>
                                             </td>
                                         </tr>

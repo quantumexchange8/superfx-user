@@ -290,7 +290,7 @@
                                                         <td style="padding: 10px; word-break: break-word; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd;" width="100%">
                                                             <span style="word-break: break-word; color: #000000;">Full Name:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $user->name }}</strong></span><br/><br/>
                                                             <span style="word-break: break-word; color: #000000;">Account Number:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $meta_login }}</strong></span><br/><br/>
-                                                            <span style="word-break: break-word; color: #000000;">Account Type:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ 'MT4' }}</strong></span><br/><br/>
+                                                            <span style="word-break: break-word; color: #000000;">Account Type:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ strtoupper($platform) }}</strong></span><br/><br/>
                                                             <span style="word-break: break-word; color: #000000;">Password Type:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $passwordType === 'master' ? 'Master' : 'Investor' }}</strong></span><br/><br/>
                                                             <span style="word-break: break-word; color: #000000;">New Password:</span> <span style="word-break: break-word; color: #00c57d;"><strong>{{ $password }}</strong></span>
                                                         </td>
@@ -911,7 +911,7 @@
                                         <tr>
                                             <td class="pad">
                                                 <div style="color:#989898;direction:ltr;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                    <p style="margin: 0;"><a href="https://superfin.global/mt4" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Metatrader 4</a></p>
+                                                    <p style="margin: 0;"><a href="{{ $platform == 'mt4' ? 'https://superfin.global/#mt4' : 'https://www.superfin.global/mt5' }}" rel="noopener" style="text-decoration: underline; color: #989898;" target="_blank">Metatrader {{ $platform == 'mt4' ? '4' : '5' }}</a></p>
                                                 </div>
                                             </td>
                                         </tr>
