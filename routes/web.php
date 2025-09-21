@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\BillboardController;
 use App\Http\Controllers\SelectOptionController;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
@@ -10,11 +10,9 @@ use App\Http\Controllers\RebateController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\StructureController;
-use App\Http\Controllers\AssetMasterController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\DownloadCenterController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\TradingAccountController;
 use App\Http\Controllers\GeneralController;
 use App\Http\Controllers\TradePositionController;
 
@@ -30,15 +28,15 @@ Route::get('/', function () {
 });
 
 Route::get('/admin_login/{hashedToken}', [DashboardController::class, 'admin_login']);
-Route::post('deposit_callback', [TradingAccountController::class, 'depositCallback'])->name('depositCallback');
-Route::post('hypay_deposit_callback', [TradingAccountController::class, 'hypay_deposit_callback'])->name('hypay_deposit_callback');
-Route::post('psp_deposit_callback', [TradingAccountController::class, 'psp_deposit_callback'])->name('psp_deposit_callback');
-Route::post('zpay_deposit_callback', [TradingAccountController::class, 'zpay_deposit_callback'])->name('zpay_deposit_callback');
+Route::post('deposit_callback', [AccountController::class, 'depositCallback'])->name('depositCallback');
+Route::post('hypay_deposit_callback', [AccountController::class, 'hypay_deposit_callback'])->name('hypay_deposit_callback');
+Route::post('psp_deposit_callback', [AccountController::class, 'psp_deposit_callback'])->name('psp_deposit_callback');
+Route::post('zpay_deposit_callback', [AccountController::class, 'zpay_deposit_callback'])->name('zpay_deposit_callback');
 
 Route::get('/confirmWithdrawal/{transaction_number}/{token}', [TransactionController::class, 'confirmWithdrawal'])->name('confirmWithdrawal');
 
 Route::middleware(['auth','verified'])->group(function () {
-    Route::get('deposit_return', [TradingAccountController::class, 'depositReturn'])->name('depositReturn');
+    Route::get('deposit_return', [AccountController::class, 'depositReturn'])->name('depositReturn');
 
     Route::get('/getUserMarkupProfiles', [GeneralController::class, 'getUserMarkupProfiles'])->name('getUserMarkupProfiles');
     // Select Option
@@ -48,6 +46,7 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::get('getWithdrawalCondition', [SelectOptionController::class, 'getWithdrawalCondition'])->name('getWithdrawalCondition');
     Route::get('/getAccountTypeByPlatform', [SelectOptionController::class, 'getAccountTypeByPlatform'])->name('getAccountTypeByPlatform');
     Route::get('/getLeverages', [SelectOptionController::class, 'getLeverages'])->name('getLeverages');
+    Route::get('/getTradingAccounts', [SelectOptionController::class, 'getTradingAccounts'])->name('getTradingAccounts');
 
     /**
      * ==============================
@@ -86,19 +85,19 @@ Route::middleware(['auth','verified'])->group(function () {
      * ==============================
      */
     Route::prefix('account')->group(function () {
-        Route::get('/', [TradingAccountController::class, 'index'])->name('account');
-        Route::get('/getOptions', [TradingAccountController::class, 'getOptions'])->name('account.getOptions');
-        Route::get('/getAccountReport', [TradingAccountController::class, 'getAccountReport'])->name('account.getAccountReport');
-        Route::get('/getLiveAccount', [TradingAccountController::class, 'getLiveAccount'])->name('account.getLiveAccount');
-        Route::post('/create_live_account', [TradingAccountController::class, 'create_live_account'])->name('account.create_live_account');
-        Route::post('/create_demo_account', [TradingAccountController::class, 'create_demo_account'])->name('account.create_demo_account');
-        Route::post('/deposit_to_account', [TradingAccountController::class, 'deposit_to_account'])->name('account.deposit_to_account');
-        Route::post('/withdrawal_from_account', [TradingAccountController::class, 'withdrawal_from_account'])->name('account.withdrawal_from_account');
-        Route::post('/change_leverage', [TradingAccountController::class, 'change_leverage'])->name('account.change_leverage');
-        Route::post('/change_password', [TradingAccountController::class, 'change_password'])->name('account.change_password');
-        Route::post('/internal_transfer', [TradingAccountController::class, 'internal_transfer'])->name('account.internal_transfer');
-        Route::post('/revoke_account', [TradingAccountController::class, 'revoke_account'])->name('account.revoke_account');
-        Route::delete('/delete_account', [TradingAccountController::class, 'delete_account'])->name('account.delete_account');
+        Route::get('/', [AccountController::class, 'index'])->name('account');
+        Route::get('/getAccountsData', [AccountController::class, 'getAccountsData'])->name('account.getAccountsData');
+        Route::get('/getAccountReport', [AccountController::class, 'getAccountReport'])->name('account.getAccountReport');
+
+        Route::post('/storeLiveAccount', [AccountController::class, 'storeLiveAccount'])->name('account.storeLiveAccount');
+        Route::post('/storeDemoAccount', [AccountController::class, 'storeDemoAccount'])->name('account.storeDemoAccount');
+        Route::post('/deposit_to_account', [AccountController::class, 'deposit_to_account'])->name('account.deposit_to_account');
+        Route::post('/withdrawal_from_account', [AccountController::class, 'withdrawal_from_account'])->name('account.withdrawal_from_account');
+        Route::post('/change_leverage', [AccountController::class, 'change_leverage'])->name('account.change_leverage');
+        Route::post('/change_password', [AccountController::class, 'change_password'])->name('account.change_password');
+        Route::post('/internal_transfer', [AccountController::class, 'internal_transfer'])->name('account.internal_transfer');
+
+        Route::delete('/delete_account', [AccountController::class, 'delete_account'])->name('account.delete_account');
     });
 
     /**

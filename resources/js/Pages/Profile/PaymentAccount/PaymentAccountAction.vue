@@ -8,7 +8,6 @@ import {h, ref} from "vue";
 import TieredMenu from "primevue/tieredmenu";
 import Dialog from "primevue/dialog";
 import UpdatePaymentAccount from "@/Pages/Profile/PaymentAccount/UpdatePaymentAccount.vue";
-import ChangeLeverage from "@/Pages/TradingAccount/Partials/ChangeLeverage.vue";
 
 const props = defineProps({
     paymentAccount: Object,

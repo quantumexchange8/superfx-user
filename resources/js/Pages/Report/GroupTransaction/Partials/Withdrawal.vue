@@ -17,6 +17,7 @@ import MultiSelect from 'primevue/multiselect';
 import StatusBadge from "@/Components/StatusBadge.vue";
 import Slider from "primevue/slider";
 import RadioButton from "primevue/radiobutton";
+import Tag from "primevue/tag";
 
 const { formatDate, formatAmount } = transactionFormat();
 const {formatRgbaColor} = generalFormat();
@@ -367,20 +368,26 @@ const exportListing = () => {
                                 <DefaultProfilePhoto />
                             </div>
                             <div class="flex flex-col items-start">
-                                <div class="flex gap-1 items-center">
-                                    <div class="font-medium">
-                                        {{ slotProps.data.name }}
-                                    </div>
-                                    <div class="flex py-1.5 items-center flex-1">
-                                        <StatusBadge :value="slotProps.data.role">
-                                            {{ $t(`public.${slotProps.data.role}`) }}
-                                        </StatusBadge>
-                                    </div>
+                                <div class="font-medium">
+                                    {{ slotProps.data.name }}
                                 </div>
                                 <div class="text-gray-500 text-xs">
                                     {{ slotProps.data.email }}
                                 </div>
                             </div>
+                        </div>
+                    </template>
+                </Column>
+                <Column
+                    field="role"
+                    :header="$t('public.role')"
+                    class="hidden md:table-cell"
+                >
+                    <template #body="slotProps">
+                        <div class="flex items-start">
+                            <StatusBadge :value="slotProps.data.role">
+                                {{ $t(`public.${slotProps.data.role}`) }}
+                            </StatusBadge>
                         </div>
                     </template>
                 </Column>
@@ -403,6 +410,21 @@ const exportListing = () => {
                         <span v-else-if="slotProps.data.meta_login === 'bonus'">{{ $t('public.bonus') }}</span>
                         <div v-else class="flex items-center content-center gap-3 flex-grow relative">
                             <span >{{ slotProps.data.meta_login }}</span>
+                        </div>
+                    </template>
+                </Column>
+                <Column
+                    field="account_type"
+                    :header="`${$t('public.account_type')}`"
+                    class="hidden md:table-cell"
+                >
+                    <template #body="slotProps">
+                        <div v-if="slotProps.data.account_type" class="flex items-center gap-2">
+                            <Tag
+                                :severity="slotProps.data.account_type.trading_platform.slug === 'mt4' ? 'secondary' : 'info'"
+                                class="uppercase"
+                                :value="slotProps.data.account_type.trading_platform.slug"
+                            />
                             <div
                                 class="flex px-2 py-1 justify-center items-center text-xs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
                                 :style="{
@@ -412,6 +434,9 @@ const exportListing = () => {
                             >
                                 {{ $t(`public.${slotProps.data.account_type.slug}`) }}
                             </div>
+                        </div>
+                        <div v-else>
+                            -
                         </div>
                     </template>
                 </Column>

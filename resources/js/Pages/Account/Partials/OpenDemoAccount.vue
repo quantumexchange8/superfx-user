@@ -59,7 +59,7 @@ const buttonSize = computed(() => {
     <Button
         type="button"
         variant="primary-outlined"
-        class="w-[142px] md:w-full"
+        class="w-[142px] md:w-full text-nowrap"
         :size="buttonSize"
         @click="openDialog"
     >

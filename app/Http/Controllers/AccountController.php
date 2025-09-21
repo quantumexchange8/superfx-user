@@ -2,68 +2,47 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ChangePasswordMail;
 use App\Mail\CreateAccountMail;
 use App\Mail\DepositSuccessMail;
 use App\Mail\TransferMoneySuccessMail;
 use App\Mail\WithdrawalRequestMail;
 use App\Mail\WithdrawalRequestUsdtMail;
-use App\Mail\ChangePasswordMail;
-use App\Models\OpenTrade;
+use App\Models\AccountType;
+use App\Models\Bank;
+use App\Models\CurrencyConversionRate;
+use App\Models\PaymentAccount;
+use App\Models\PaymentGateway;
 use App\Models\PaymentGatewayMethod;
 use App\Models\PaymentMethod;
-use App\Models\Term;
+use App\Models\TradingAccount;
 use App\Models\TradingPlatform;
+use App\Models\TradingUser;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Services\MetaFiveService;
+use App\Services\MetaFourService;
 use App\Services\PaymentService;
+use App\Services\RunningNumberService;
 use App\Services\TradingPlatform\TradingPlatformFactory;
 use DB;
 use Exception;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Support\Facades\Mail;
-use Inertia\Inertia;
-use App\Models\AccountType;
-use App\Models\AssetRevoke;
-use App\Models\TradingUser;
-use App\Models\Transaction;
-use App\Models\Bank;
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use App\Models\PaymentAccount;
-use App\Models\TradingAccount;
 use Illuminate\Support\Carbon;
-use App\Services\MetaFourService;
-use App\Models\AssetSubscription;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
-use App\Services\RunningNumberService;
-use App\Services\DropdownOptionService;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use App\Models\PaymentGateway;
-use App\Models\CurrencyConversionRate;
-use Storage;
+use Inertia\Inertia;
 use Throwable;
 
-class TradingAccountController extends Controller
+class AccountController extends Controller
 {
     public function index()
     {
-        $terms = Term::where('slug', 'trading-account-agreement')->get();
-
-        $structuredTerms = [];
-
-        foreach ($terms as $term) {
-            $locale = $term->locale;
-            $structuredTerms[$locale] = [
-                'title' => $term->title,
-                'contents' => $term->contents,
-            ];
-        }
-
         $methods = PaymentMethod::query()
             ->where('type', '!=', 'bank')
             ->union(
@@ -87,51 +66,74 @@ class TradingAccountController extends Controller
             ->get()
             ->toArray();
 
-        return Inertia::render('TradingAccount/Account', [
-            'terms' => $structuredTerms,
+        $accountsCount = DB::table('trading_accounts as ta')
+            ->join('account_types as at', 'at.id', '=', 'ta.account_type_id')
+            ->join('trading_platforms as tp', 'tp.id', '=', 'at.trading_platform_id')
+            ->where('ta.user_id', Auth::id())
+            ->whereNull('ta.deleted_at')
+            ->select('tp.slug', DB::raw('COUNT(*) as total'))
+            ->groupBy('tp.slug')
+            ->pluck('total', 'tp.slug')
+            ->toArray();
+
+        return Inertia::render('Account/Account', [
             'methods' => $methods,
             'tradingPlatforms' => $tradingPlatforms,
+            'accountsCount' => $accountsCount
         ]);
     }
 
-    public function getOptions()
+    public function getAccountsData(Request $request)
     {
-        $accountOptions = AccountType::query()
-            ->with('trading_platform:id,platform_name,slug')
-            ->whereNot('account_group', 'Demo Account')
-            ->where('status', 'active')
-            ->whereHas('markupProfileToAccountTypes.markupProfile.userToMarkupProfiles', function ($query) {
-                $query->where('user_id', Auth::id());
-            })
-            ->whereHas('trading_platform', function ($query) {
-                $query->where('status', 'active');
-            })
-            ->select([
-                'id',
-                'name',
-                'slug',
-                DB::raw('member_display_name as member_display_name'),
-                'account_group',
-                'leverage',
-                'trading_platform_id',
-            ])
-            ->get()
-            ->toArray();
+        if ($request->has('lazyEvent')) {
+            $data = json_decode($request->only(['lazyEvent'])['lazyEvent'], true);
+            $trading_platform = $data['filters']['trading_platform']['value'];
 
-        return response()->json([
-            'leverages' => (new DropdownOptionService())->getLeveragesOptions(),
-            'transferOptions' => (new DropdownOptionService())->getInternalTransferOptions(),
-            'walletOptions' => (new DropdownOptionService())->getWalletOptions(),
-            'downlineOptions' => (new DropdownOptionService())->getDownlines(),
-            'accountOptions' => $accountOptions,
-        ]);
+            $baseQuery = TradingAccount::with([
+                'account_type:id,name,trading_platform_id,color,account_group,leverage',
+                'account_type.trading_platform:id,platform_name,slug',
+                'trading_user:id,meta_login,category,acc_status'
+            ])
+                ->where('user_id', Auth::id())
+                ->whereHas('account_type.trading_platform', function ($query) use ($trading_platform) {
+                    $query->where('slug', $trading_platform);
+                });
+
+            $tradingAccounts = (clone $baseQuery)->get();
+
+            $service = TradingPlatformFactory::make($trading_platform);
+
+            foreach ($tradingAccounts as $tradingAccount) {
+                try {
+                    $service->getUserInfo($tradingAccount->meta_login);
+                } catch (\Throwable $e) {
+                    Log::error($e->getMessage());
+                }
+            }
+
+            if (!empty($data['filters']['account_type']['value'])) {
+                $baseQuery->whereHas('account_type', function ($query) use ($data) {
+                    $query->where('account_group', $data['filters']['account_type']['value']);
+                });
+            }
+
+            $accounts = $baseQuery->latest()->paginate($data['rows']);
+
+            return response()->json([
+                'success' => true,
+                'data' => $accounts,
+            ]);
+
+        }
+
+        return response()->json(['success' => false, 'data' => []]);
     }
 
     /**
      * @throws Throwable
      * @throws ConnectionException
      */
-    public function create_live_account(Request $request)
+    public function storeLiveAccount(Request $request)
     {
         // Validate the request data
         Validator::make($request->all(), [
@@ -182,7 +184,7 @@ class TradingAccountController extends Controller
         ]);
     }
 
-    public function create_demo_account(Request $request)
+    public function storeDemoAccount(Request $request)
     {
         Validator::make($request->all(), [
             'amount' => ['required'],
@@ -208,84 +210,150 @@ class TradingAccountController extends Controller
         ]);
     }
 
-    public function getLiveAccount(Request $request)
+    public function deposit_to_account(Request $request)
     {
+        $tradingAccount = TradingAccount::with('account_type')
+            ->where('meta_login', $request->meta_login)
+            ->first();
+
+        $minAmount = $tradingAccount->account_type->minimum_deposit > 0 ? $tradingAccount->account_type->minimum_deposit : ($request->min_amount < 50 ? 50 : $request->min_amount);
+
+        //change cryptoType validation as bank won't work
+        Validator::make($request->all(), [
+            'meta_login' => ['required', 'exists:trading_accounts,meta_login'],
+            'payment_method' => ['required'],
+            'payment_gateway' => ['required'],
+            'amount' => ['required', 'numeric', "gte:" . round($minAmount)],
+        ])->setAttributeNames([
+            'meta_login' => trans('public.account'),
+            'payment_method' => trans('public.select_payment'),
+            'payment_gateway' => trans('public.payment_gateway'),
+            'amount' => trans('public.amount'),
+        ])->validate();
+
         $user = Auth::user();
-        $accountType = $request->input('accountType');
 
-        $tradingAccounts = $user->tradingAccounts()
-            ->whereHas('account_type', function ($query) use ($accountType, $request) {
-                $query->where('category', $accountType)
-                    ->whereHas('trading_platform', function ($query) use ($request) {
-                        $query->where('slug', $request->trading_platform);
-                    });
-            })
+        $payment_method = $request->payment_method;
+        $payment_gateway = PaymentGateway::find($request->payment_gateway);
+
+        $latest_transaction = Transaction::where('user_id', $user->id)
+            ->where('category', 'trading_account')
+            ->where('transaction_type', 'deposit')
+            ->where('status', 'processing')
             ->latest()
-            ->get();
+            ->first();
 
-        $service = TradingPlatformFactory::make($request->trading_platform);
+        $amount = number_format(floatval($request->amount), 2, '.', '');
 
-        // Call the appropriate service
-        foreach ($tradingAccounts as $tradingAccount) {
-            try {
-                $service->getUserInfo($tradingAccount->meta_login);
-            } catch (Throwable $e) {
-                Log::error($e->getMessage());
+        if ($request->amount > $request->max_amount) {
+            throw ValidationException::withMessages([
+                'amount' => trans('public.amount_cannot_larger_than_max_amount', [
+                    'max_amount' => floor($request->max_amount),
+                ]),
+            ]);
+        }
+
+        // Check if the latest transaction exists and its created_at time is within the last 30 seconds
+        if ($latest_transaction && Carbon::parse($latest_transaction->created_at)->diffInSeconds(Carbon::now()) < 30) {
+
+            $remainingSeconds = 30 - Carbon::parse($latest_transaction->created_at)->diffInSeconds(Carbon::now());
+
+            return redirect()->back()
+                ->with('title', trans('public.invalid_action'))
+                ->with('warning', trans('public.please_wait_for_seconds', ['seconds' => $remainingSeconds]));
+        }
+
+        $conversion_rate = null;
+        $conversion_amount = null;
+        $fee = $request->txn_fee ?? 0;
+
+        $baseMethod = PaymentMethod::select(['id', 'type'])->findOrFail($payment_method['id']);
+
+        $typeMethodIds = PaymentMethod::where('type', $baseMethod->type)->pluck('id');
+
+        $paymentGatewayMethod = PaymentGatewayMethod::with([
+            'payment_gateway:id,name',
+            'payment_method:id,name,slug,type',
+        ])
+            ->where('payment_gateway_id', $payment_gateway->id)
+            ->whereIn('payment_method_id', $typeMethodIds)
+            ->firstOrFail();
+
+        // Check chinese name for HyPay requirements
+        if ($paymentGatewayMethod->payment_method->slug == 'hypay' && !$user->chinese_name && !$request->chinese_name) {
+            throw ValidationException::withMessages([
+                'chinese_name' => trans('public.current_platform_requires'),
+            ]);
+        }
+
+        if ($request->chinese_name) {
+            $user->update([
+                'chinese_name' => $request->chinese_name
+            ]);
+        }
+
+        if ($paymentGatewayMethod->payment_method->type == 'crypto') {
+            $targetMethod = PaymentGatewayMethod::firstWhere('payment_method_id', $payment_method['id']);
+
+            $payment_gateway = PaymentGateway::find($targetMethod->payment_gateway_id);
+        } else {
+            $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', $paymentGatewayMethod->currency)->deposit_rate;
+            $conversion_amount = round($amount * $conversion_rate, 2);
+
+            if ($payment_gateway->payment_app_name == 'hypay') {
+                $conversion_amount = round($conversion_amount);
             }
         }
 
-        $liveAccounts = TradingAccount::with('account_type.trading_platform')
-            ->where('user_id', $user->id)
-            ->when($accountType, function ($query) use ($accountType, $request) {
-                return $query->whereHas('account_type', function ($query) use ($accountType, $request) {
-                    $query->where('category', $accountType)
-                        ->whereHas('trading_platform', function ($query) use ($request) {
-                            $query->where('slug', $request->trading_platform);
-                        });
-                });
-            })
-            ->latest()
-            ->get()
-            ->map(function ($account) {
+        $transaction = Transaction::create([
+            'category' => 'trading_account',
+            'user_id' => $user->id,
+            'to_meta_login' => $request->meta_login,
+            'transaction_number' => RunningNumberService::getID('transaction'),
+            'payment_platform' => $request->payment_platform,
+            'transaction_type' => 'deposit',
+            'amount' => $amount,
+            'from_currency' => $conversion_rate ? $paymentGatewayMethod->currency : 'USD',
+            'to_currency' => 'USD',
+            'conversion_rate' => $conversion_rate ?? null,
+            'conversion_amount' => $conversion_amount ?? null,
+            'transaction_amount' => $amount - $fee,
+            'transaction_charges' => $fee,
+            'status' => 'processing',
+            'payment_gateway_id' => $payment_gateway->id,
+            'payment_account_type' => $payment_method['slug'] ?? null,
+        ]);
 
-                $following_master = AssetSubscription::with('asset_master:id,asset_name')
-                    ->where('meta_login', $account->meta_login)
-                    ->whereIn('status', ['ongoing', 'pending'])
-                    ->first();
+        try {
+            $redirect_url = (new PaymentService())->getPaymentUrl($payment_gateway, $transaction);
 
-                $remaining_days = null;
+            if ($redirect_url) {
 
-                if ($following_master && $following_master->matured_at) {
-                    $matured_at = Carbon::parse($following_master->matured_at);
-                    $remaining_days = Carbon::now()->diffInDays($matured_at);
-                }
+                return response()->json([
+                    'success'       => true,
+                    'payment_url'   => $redirect_url,
+                    'toast_title'   => trans('public.successful'),
+                    'toast_message' => trans('public.toast_deposit_request_success_message'),
+                    'toast_type'    => 'success'
+                ]);
+            }
 
-                return [
-                    'id' => $account->id,
-                    'user_id' => $account->user_id,
-                    'meta_login' => $account->meta_login,
-                    'balance' => $account->balance,
-                    'credit' => $account->credit,
-                    'leverage' => $account->margin_leverage,
-                    'equity' => $account->equity,
-                    'account_type' => $account->account_type->slug,
-                    'account_type_name' => $account->account_type->name,
-                    'member_display_name' => $account->account_type->member_display_name ?? null,
-                    'account_type_leverage' => $account->account_type->leverage,
-                    'account_type_color' => $account->account_type->color,
-                    'group' => $account->account_type->account_group,
-                    'category' => $account->account_type->category,
-                    'minimum_deposit' => $account->account_type->minimum_deposit,
-                    'balance_multiplier' => $account->account_type->balance_multiplier,
-                    'asset_master_id' => $following_master->asset_master->id ?? null,
-                    'asset_master_name' => $following_master->asset_master->asset_name ?? null,
-                    'remaining_days' => intval($remaining_days),
-                    'status' => $following_master->status ?? null,
-                    'trading_platform' => $account->account_type->trading_platform->slug ?? null,
-                ];
-            });
+            return response()->json([
+                'success'       => false,
+                'toast_title'   => trans('public.gateway_error'),
+                'toast_message' => trans('public.please_try_again_later'),
+                'toast_type'    => 'error'
+            ]);
+        } catch (Exception $e) {
+            Log::error('Deposit error: ' . $e->getMessage());
 
-        return response()->json($liveAccounts);
+            return response()->json([
+                'success'       => false,
+                'toast_title'   => trans('public.gateway_error'),
+                'toast_message' => $e->getMessage(),
+                'toast_type'    => 'error',
+            ], 400);
+        }
     }
 
     public function getAccountReport(Request $request)
@@ -444,15 +512,15 @@ class TradingAccountController extends Controller
             'transaction_amount' => $transaction_amount,
         ]);
 
-         if ($payment_gateway->payment_app_name == 'zpay') {
-             $bank = Bank::firstWhere('bank_code', $paymentWallet->bank_code);
+        if ($payment_gateway->payment_app_name == 'zpay') {
+            $bank = Bank::firstWhere('bank_code', $paymentWallet->bank_code);
 
-             if ($bank->alias_bank_code) {
-                 $transaction->update([
-                     'bank_code' => $bank->alias_bank_code,
-                 ]);
-             }
-         }
+            if ($bank->alias_bank_code) {
+                $transaction->update([
+                    'bank_code' => $bank->alias_bank_code,
+                ]);
+            }
+        }
 
         if ($paymentWallet->payment_platform == 'crypto') {
             $transaction->update(['status' => 'required_confirmation']);
@@ -472,44 +540,37 @@ class TradingAccountController extends Controller
 
     public function internal_transfer(Request $request)
     {
-        $tradingAccount = TradingAccount::find($request->account_id)->load('account_type');
-
         $validator = Validator::make($request->all(), [
-            'account_id' => ['required', 'exists:trading_accounts,id'],
-            'to_meta_login' => ['required', 'exists:trading_accounts,meta_login'], // Ensure `to_meta_login` exists
+            'from_login' => ['required', 'exists:trading_accounts,meta_login'],
+            'to_login' => ['required', 'exists:trading_accounts,meta_login'],
+            'amount' => ['required', 'numeric', 'min:1'],
         ])->setAttributeNames([
-            'account_id' => trans('public.account'),
-            'to_meta_login' => trans('public.transfer_to'),
-        ]);
-        $validator->validate();
-
-        $to_meta_login = $request->input('to_meta_login');
-        $to_tradingAccount = TradingAccount::with('account_type')
-            ->where('meta_login', $to_meta_login)
-            ->first();
-
-        $minAmount = $to_tradingAccount->account_type->account_group === 'PRIME' ? $to_tradingAccount->account_type->minimum_deposit : 0;
-
-        $minAmount = $tradingAccount->account_type->category === 'cent' ? $minAmount * $tradingAccount->account_type->balance_multiplier : $minAmount;
-
-        $validator = Validator::make($request->all(), [
-            'amount' => ['required', 'numeric', "gte:$minAmount"],
-        ])->setAttributeNames([
+            'from_login' => trans('public.account'),
+            'to_login' => trans('public.transfer_to'),
             'amount' => trans('public.amount'),
         ]);
         $validator->validate();
 
-        $platform = TradingPlatform::find($tradingAccount->account_type->trading_platform_id);
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 422);
+        }
 
-        $service = TradingPlatformFactory::make($platform->slug);
+        $to_account = TradingAccount::with('account_type.trading_platform')->where('meta_login', $request->to_login)->first();
+        $from_account = TradingAccount::with('account_type.trading_platform')->where('meta_login', $request->from_login)->first();
 
-        $service->getUserInfo($tradingAccount->meta_login);
+        // Check balance before withdraw
+        $from_service = TradingPlatformFactory::make($from_account->account_type->trading_platform->slug);
+        $to_service = TradingPlatformFactory::make($to_account->account_type->trading_platform->slug);
+
+        $from_service->getUserInfo($from_account->meta_login);
 
         $amount = $request->input('amount');
 
-        $equity = ($tradingAccount->floating < 0)
-            ? $tradingAccount->balance - $tradingAccount->margin + $tradingAccount->floating
-            : $tradingAccount->balance - $tradingAccount->margin;
+        $equity = ($from_account->floating < 0)
+            ? $from_account->balance - $from_account->margin + $from_account->floating
+            : $from_account->balance - $from_account->margin;
 
         if ($equity < $amount) {
             throw ValidationException::withMessages([
@@ -517,33 +578,44 @@ class TradingAccountController extends Controller
             ]);
         }
 
-        $multiplier = $tradingAccount->account_type->balance_multiplier;
+        // Check min amount to transfer
+        $minAmount = $to_account->account_type->account_group === 'PRIME' ? $to_account->account_type->minimum_deposit : 0;
+
+        $minAmount = $to_account->account_type->category === 'cent' ? $minAmount * $to_account->account_type->balance_multiplier : $minAmount;
+
+        if ($amount < $minAmount) {
+            throw ValidationException::withMessages([
+                'amount' => trans('validation.gt.numeric', ['attribute' => trans('public.amount'), 'value' => $minAmount]),
+            ]);
+        }
+
+        $multiplier = $from_account->account_type->balance_multiplier;
         $adjusted_amount = $amount / $multiplier;
 
-        $to_multiplier = $to_tradingAccount->account_type->balance_multiplier;
+        $to_multiplier = $to_account->account_type->balance_multiplier;
         $to_adjusted_amount = $adjusted_amount * $to_multiplier;
 
         try {
-            $tradeFrom = $service->createDeal($tradingAccount->meta_login, -$amount, "Transfer to #$to_meta_login", 'balance', '');
+            $tradeFrom = $from_service->createDeal($from_account->meta_login, -$amount, "Transfer to #$to_account->meta_login", 'balance', '');
 
-            $tradeTo = $service->createDeal($to_meta_login, $to_adjusted_amount, "Transfer from #$tradingAccount->meta_login", 'balance', '');
+            $tradeTo = $to_service->createDeal($to_account->meta_login, $to_adjusted_amount, "Transfer from #$from_account->meta_login", 'balance', '');
         } catch (Throwable $e) {
-             if ($e->getMessage() == "Not found") {
-                 TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
-             } else {
-                 Log::error($e->getMessage());
-             }
-             return response()->json(['success' => false, 'message' => $e->getMessage()]);
-         }
+            if ($e->getMessage() == "Not found") {
+                TradingUser::firstWhere('meta_login', $from_account->meta_login)->update(['acc_status' => 'Inactive']);
+            } else {
+                Log::error($e->getMessage());
+            }
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        }
 
-         $ticketFrom = $tradeFrom['ticket'] ?? null;
-         $ticketTo = $tradeTo['ticket'] ?? null;
-         Transaction::create([
+        $ticketFrom = $tradeFrom['ticket'] ?? null;
+        $ticketTo = $tradeTo['ticket'] ?? null;
+        Transaction::create([
             'user_id' => Auth::id(),
             'category' => 'trading_account',
             'transaction_type' => 'account_to_account',
-            'from_meta_login' => $tradingAccount->meta_login,
-            'to_meta_login' => $to_meta_login,
+            'from_meta_login' => $from_account->meta_login,
+            'to_meta_login' => $to_account->meta_login,
             'ticket' => $ticketFrom . ','. $ticketTo,
             'transaction_number' => RunningNumberService::getID('transaction'),
             'from_currency' => 'USD',
@@ -552,12 +624,12 @@ class TradingAccountController extends Controller
             'transaction_charges' => 0,
             'transaction_amount' => $adjusted_amount,
             'status' => 'successful',
-            'comment' => 'Transfer from ' . $tradingAccount->meta_login . ' to ' . $to_meta_login
-         ]);
+            'comment' => 'Transfer from ' . $from_account->meta_login . ' to ' . $to_account->meta_login,
+        ]);
 
-         $user = Auth::user();
+        $user = Auth::user();
 
-         Mail::to($user->email)->send(new TransferMoneySuccessMail($user, $tradingAccount->meta_login, $to_meta_login, $adjusted_amount, $platform->slug));
+        Mail::to($user->email)->send(new TransferMoneySuccessMail($user, $from_account->meta_login, $to_account->meta_login, $adjusted_amount, $from_account->account_type->trading_platform->slug));
 
         return back()->with('toast', [
             'title' => trans('public.toast_internal_transfer_success'),
@@ -645,252 +717,6 @@ class TradingAccountController extends Controller
                     'type' => 'error'
                 ]);
         }
-
-    }
-
-    public function revoke_account(Request $request)
-    {
-        // Validate the request
-        $request->validate([
-            'account_id' => 'required|exists:trading_accounts,id',
-        ]);
-
-
-        // Retrieve the TradingAccount by its ID
-        $tradingAccount = TradingAccount::findOrFail($request->account_id);
-
-        // Find the AssetSubscription record
-        $assetSubscription = AssetSubscription::with('asset_master')
-            ->where('user_id', $tradingAccount->user_id)
-            ->where('meta_login', $tradingAccount->meta_login)
-            ->where('status', 'ongoing')
-            ->first();
-
-        // Check if the AssetSubscription is null
-        if ($assetSubscription === null) {
-            return back()->with('toast', [
-                'title' => trans('public.toast_revoke_account_error_title'),
-                'message' => trans('public.toast_revoke_account_error_message'),
-                'type' => 'warning',
-            ]);
-        }
-
-        try {
-            // Get latest user info from MetaFourService and update the TradingAccount
-            (new MetaFourService)->getUserInfo($tradingAccount);
-
-            // Retrieve the updated TradingAccount to get the latest balance
-            $tradingAccount = TradingAccount::findOrFail($request->account_id);
-
-            // Calculate the penalty fee
-            $penaltyPercentage = $assetSubscription->asset_master->penalty_fee;
-            $penaltyFee = ($penaltyPercentage / 100) * $tradingAccount->balance;
-
-            // Create a new AssetRevoke record
-            AssetRevoke::create([
-                'user_id' => $tradingAccount->user_id,
-                'asset_subscription_id' => $assetSubscription->id,
-                'asset_master_id' => $assetSubscription->asset_master->id,
-                'meta_login' => $tradingAccount->meta_login,
-                'balance_on_revoke' => $tradingAccount->balance,
-                'penalty_percentage' => $penaltyPercentage,
-                'penalty_fee' => $penaltyFee,
-                'status' => 'pending',
-            ]);
-
-            // Update the status of the AssetSubscription to 'pending'
-            $assetSubscription->update(['status' => 'pending']);
-
-            // Redirect back with success message
-            return back()->with('toast', [
-                'title' => trans('public.toast_revoke_account_success'),
-                'type' => 'success',
-            ]);
-        } catch (Exception $e) {
-            Log::error('Revoke Account Error: ' . $e->getMessage());
-        }
-    }
-
-    public function delete_account(Request $request)
-    {
-        $request->validate([
-            'account_id' => ['required', 'exists:trading_accounts,id'],
-            'type' => ['nullable', 'string']
-        ]);
-
-        $account = TradingAccount::find($request->account_id);
-        $trading_user = TradingUser::where('meta_login', $account->meta_login)
-            ->first();
-
-        try {
-            (new MetaFourService)->deleteTrader($account->meta_login);
-
-            $account->delete();
-            $trading_user->delete();
-        } catch (Throwable $e) {
-            Log::error($e->getMessage());
-
-            return back()->with('toast', [
-                'title' => 'CTrader connection error',
-                'type' => 'error',
-            ]);
-        }
-
-        $successTitle = trans('public.toast_delete_account_success');
-        if ($request->type === 'demo') {
-            $successTitle = trans('public.toast_delete_demo_account_success');
-        }
-
-        return back()->with('toast', [
-            'title' => $successTitle,
-            'type' => 'success',
-        ]);
-    }
-
-    public function deposit_to_account(Request $request)
-    {
-        $tradingAccount = TradingAccount::with('account_type')
-                ->where('meta_login', $request->meta_login)
-                ->first();
-
-        $minAmount = $tradingAccount->account_type->minimum_deposit > 0 ? $tradingAccount->account_type->minimum_deposit : ($request->min_amount < 50 ? 50 : $request->min_amount);
-
-        //change cryptoType validation as bank won't work
-        Validator::make($request->all(), [
-            'meta_login' => ['required', 'exists:trading_accounts,meta_login'],
-            'payment_method' => ['required'],
-            'payment_gateway' => ['required'],
-            'amount' => ['required', 'numeric', "gte:" . round($minAmount)],
-        ])->setAttributeNames([
-            'meta_login' => trans('public.account'),
-            'payment_method' => trans('public.select_payment'),
-            'payment_gateway' => trans('public.payment_gateway'),
-            'amount' => trans('public.amount'),
-        ])->validate();
-
-        $user = Auth::user();
-
-        $payment_method = $request->payment_method;
-        $payment_gateway = PaymentGateway::find($request->payment_gateway);
-
-        $latest_transaction = Transaction::where('user_id', $user->id)
-            ->where('category', 'trading_account')
-            ->where('transaction_type', 'deposit')
-            ->where('status', 'processing')
-            ->latest()
-            ->first();
-
-        $amount = number_format(floatval($request->amount), 2, '.', '');
-
-        if ($request->amount > $request->max_amount) {
-            throw ValidationException::withMessages([
-                'amount' => trans('public.amount_cannot_larger_than_max_amount', [
-                    'max_amount' => floor($request->max_amount),
-                ]),
-            ]);
-        }
-
-        // Check if the latest transaction exists and its created_at time is within the last 30 seconds
-        if ($latest_transaction && Carbon::parse($latest_transaction->created_at)->diffInSeconds(Carbon::now()) < 30) {
-
-            $remainingSeconds = 30 - Carbon::parse($latest_transaction->created_at)->diffInSeconds(Carbon::now());
-
-            return redirect()->back()
-                ->with('title', trans('public.invalid_action'))
-                ->with('warning', trans('public.please_wait_for_seconds', ['seconds' => $remainingSeconds]));
-        }
-
-        $conversion_rate = null;
-        $conversion_amount = null;
-        $fee = $request->txn_fee ?? 0;
-
-        $baseMethod = PaymentMethod::select(['id', 'type'])->findOrFail($payment_method['id']);
-
-        $typeMethodIds = PaymentMethod::where('type', $baseMethod->type)->pluck('id');
-
-        $paymentGatewayMethod = PaymentGatewayMethod::with([
-            'payment_gateway:id,name',
-            'payment_method:id,name,slug,type',
-        ])
-            ->where('payment_gateway_id', $payment_gateway->id)
-            ->whereIn('payment_method_id', $typeMethodIds)
-            ->firstOrFail();
-
-        // Check chinese name for HyPay requirements
-        if ($paymentGatewayMethod->payment_method->slug == 'hypay' && !$user->chinese_name && !$request->chinese_name) {
-            throw ValidationException::withMessages([
-                'chinese_name' => trans('public.current_platform_requires'),
-            ]);
-        }
-
-        if ($request->chinese_name) {
-            $user->update([
-                'chinese_name' => $request->chinese_name
-            ]);
-        }
-
-        if ($paymentGatewayMethod->payment_method->type == 'crypto') {
-            $targetMethod = PaymentGatewayMethod::firstWhere('payment_method_id', $payment_method['id']);
-
-            $payment_gateway = PaymentGateway::find($targetMethod->payment_gateway_id);
-        } else {
-            $conversion_rate = CurrencyConversionRate::firstWhere('base_currency', $paymentGatewayMethod->currency)->deposit_rate;
-            $conversion_amount = round($amount * $conversion_rate, 2);
-
-            if ($payment_gateway->payment_app_name == 'hypay') {
-                $conversion_amount = round($conversion_amount);
-            }
-        }
-
-        $transaction = Transaction::create([
-            'category' => 'trading_account',
-            'user_id' => $user->id,
-            'to_meta_login' => $request->meta_login,
-            'transaction_number' => RunningNumberService::getID('transaction'),
-            'payment_platform' => $request->payment_platform,
-            'transaction_type' => 'deposit',
-            'amount' => $amount,
-            'from_currency' => $conversion_rate ? $paymentGatewayMethod->currency : 'USD',
-            'to_currency' => 'USD',
-            'conversion_rate' => $conversion_rate ?? null,
-            'conversion_amount' => $conversion_amount ?? null,
-            'transaction_amount' => $amount - $fee,
-            'transaction_charges' => $fee,
-            'status' => 'processing',
-            'payment_gateway_id' => $payment_gateway->id,
-            'payment_account_type' => $payment_method['slug'] ?? null,
-        ]);
-
-        try {
-            $redirect_url = (new PaymentService())->getPaymentUrl($payment_gateway, $transaction);
-
-            if ($redirect_url) {
-
-                return response()->json([
-                    'success'       => true,
-                    'payment_url'   => $redirect_url,
-                    'toast_title'   => trans('public.successful'),
-                    'toast_message' => trans('public.toast_deposit_request_success_message'),
-                    'toast_type'    => 'success'
-                ]);
-            }
-
-            return response()->json([
-                'success'       => false,
-                'toast_title'   => trans('public.gateway_error'),
-                'toast_message' => trans('public.please_try_again_later'),
-                'toast_type'    => 'error'
-            ]);
-        } catch (Exception $e) {
-            Log::error('Deposit error: ' . $e->getMessage());
-
-            return response()->json([
-                'success'       => false,
-                'toast_title'   => trans('public.gateway_error'),
-                'toast_message' => $e->getMessage(),
-                'toast_type'    => 'error',
-            ], 400);
-        }
     }
 
     public function depositCallback(Request $request)
@@ -905,10 +731,10 @@ class TradingAccountController extends Controller
             ->where('transaction_number', $response['partner_order_code'])
             ->where('status', 'processing')
             ->first();
-            // ->whereHas('payment_gateway', function ($query) use ($result) {
-            //     $query->where('payment_app_number', $result['partner_id']);
-            // })
-            // ->first();
+        // ->whereHas('payment_gateway', function ($query) use ($result) {
+        //     $query->where('payment_app_number', $result['partner_id']);
+        // })
+        // ->first();
 
         if ($transaction->payment_gateway->platform === 'crypto') {
             //crypto
@@ -1005,41 +831,9 @@ class TradingAccountController extends Controller
         return response()->json(['success' => false, 'message' => 'Deposit Failed']);
     }
 
-    //payment gateway return function
     public function depositReturn(Request $request)
     {
         return to_route('dashboard');
-    }
-
-    public function generate_link(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'accountType' => ['required', 'exists:account_types,account_group'],
-            'downline_id' => ['required']
-        ])->setAttributeNames([
-            'accountType' => trans('public.account_type'),
-            'downline_id' => trans('public.downline'),
-        ]);
-        $validator->validate();
-
-        // Retrieve the account type by account_group
-        $accountType = AccountType::where('account_group', $request->accountType)->first();
-        $user = User::where('id', $request->downline_id)->first();
-
-        $access = AccountTypeAccess::firstOrCreate([
-            'account_type_id' => $accountType->id,
-            'user_id' => $request->downline_id,
-        ]);
-
-        $link = md5($user->email . $accountType->account_group);
-
-        return redirect()->back()->with([
-            'success' => true,
-            'message' => 'Link generated successfully.',
-            'notification' => [
-                'link' => $link,
-            ],
-        ]);
     }
 
     public function hypay_deposit_callback(Request $request)
@@ -1262,22 +1056,39 @@ class TradingAccountController extends Controller
         Mail::to($user->email)->send(new DepositSuccessMail($user, $transaction->to_meta_login, $transaction->amount, $transaction->created_at));
     }
 
-    protected function formatErrorMessage($message, $gatewayName)
+    public function delete_account(Request $request)
     {
-        // Attempt to clean up escaped junk
-        $clean = stripslashes($message); // remove extra backslashes
+        $request->validate([
+            'account_id' => ['required', 'exists:trading_accounts,id'],
+            'type' => ['nullable', 'string']
+        ]);
 
-        $decoded = json_decode($clean, true);
+        $account = TradingAccount::find($request->account_id);
+        $trading_user = TradingUser::where('meta_login', $account->meta_login)
+            ->first();
 
-        if (json_last_error() === JSON_ERROR_NONE && isset($decoded['msg'])) {
-            return $decoded['msg']; // clean Chinese message
+        try {
+            (new MetaFourService)->deleteTrader($account->meta_login);
+
+            $account->delete();
+            $trading_user->delete();
+        } catch (Throwable $e) {
+            Log::error($e->getMessage());
+
+            return back()->with('toast', [
+                'title' => 'CTrader connection error',
+                'type' => 'error',
+            ]);
         }
 
-        // If Hypay expects array
-        if ($gatewayName === 'hypay') {
-            return [$message];
+        $successTitle = trans('public.toast_delete_account_success');
+        if ($request->type === 'demo') {
+            $successTitle = trans('public.toast_delete_demo_account_success');
         }
 
-        return $message;
+        return back()->with('toast', [
+            'title' => $successTitle,
+            'type' => 'success',
+        ]);
     }
 }

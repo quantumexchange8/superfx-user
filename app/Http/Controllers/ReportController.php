@@ -135,7 +135,7 @@ class ReportController extends Controller
         if ($request->has('lazyEvent')) {
             $data = json_decode($request->only(['lazyEvent'])['lazyEvent'], true);
 
-            $query = TradeRebateSummary::with('user', 'accountType')
+            $query = TradeRebateSummary::with('user', 'accountType.trading_platform')
             ->where('upline_user_id', Auth::id());
 
             if ($data['filters']['global']['value']) {
@@ -217,6 +217,7 @@ class ReportController extends Controller
                     'rebate' => $item->rebate,
                     'slug' => $item->accountType->slug,
                     'color' => $item->accountType->color,
+                    'trading_platform' => $item->accountType->trading_platform->slug,
                 ];
             });
 
@@ -283,6 +284,7 @@ class ReportController extends Controller
                     'summary' => $summary,
                     'slug' => $group->first()['slug'],
                     'color' => $group->first()['color'],
+                    'trading_platform' => $group->first()['trading_platform'],
                 ];
             })->values();
 
@@ -330,8 +332,8 @@ class ReportController extends Controller
             $query = Transaction::with([
                 'to_account',
                 'from_account',
-                'to_account.account_type',
-                'from_account.account_type',
+                'to_account.account_type.trading_platform',
+                'from_account.account_type.trading_platform',
             ])
                 ->where('status', 'successful')
                 ->whereIn('user_id', $groupIds);
@@ -522,7 +524,8 @@ class ReportController extends Controller
             $query = TradeRebateHistory::with([
                 'upline:id,name,email,id_number,hierarchyList',
                 'downline:id,name,email,id_number,hierarchyList',
-                'of_account_type'
+                'of_account_type:id,name,trading_platform_id,slug,color',
+                'of_account_type.trading_platform:id,platform_name,slug'
             ])
                 ->whereIn('upline_user_id', array_merge([Auth::id()], Auth::user()->getChildrenIds()))
                 ->where('t_status', 'approved');

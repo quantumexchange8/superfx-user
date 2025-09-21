@@ -346,7 +346,7 @@ const exportHistory = () => {
                         field="created_at"
                         sortable
                         :header="`${$t('public.date')}`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             {{ dayjs(slotProps.data.created_at).format('YYYY/MM/DD') }}
@@ -355,7 +355,7 @@ const exportHistory = () => {
                     <Column
                         field="upline"
                         :header="$t('public.upline')"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             <div class="flex items-center gap-3">
@@ -376,7 +376,7 @@ const exportHistory = () => {
                     <Column
                         field="upline_id"
                         :header="`${$t('public.upline_id')}`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             {{ slotProps.data.upline.id_number }}
@@ -386,7 +386,7 @@ const exportHistory = () => {
                         field="deal_id"
                         sortable
                         :header="`${$t('public.ticket')}`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             {{ slotProps.data.deal_id }}
@@ -396,7 +396,7 @@ const exportHistory = () => {
                         field="open_time"
                         sortable
                         :header="`${$t('public.open_time')}`"
-                        class="hidden md:table-cell min-w-32"
+                        class="hidden text-nowrap md:table-cell min-w-32"
                     >
                         <template #body="slotProps">
                             {{ slotProps.data.open_time }}
@@ -406,7 +406,7 @@ const exportHistory = () => {
                         field="closed_time"
                         sortable
                         :header="`${$t('public.closed_time')}`"
-                        class="hidden md:table-cell min-w-32"
+                        class="hidden text-nowrap md:table-cell min-w-32"
                     >
                         <template #body="slotProps">
                             {{ slotProps.data.closed_time }}
@@ -416,7 +416,7 @@ const exportHistory = () => {
                         field="trade_open_price"
                         sortable
                         :header="`${$t('public.open_price')}&nbsp;($)`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             {{ slotProps.data.trade_open_price ?? 0 }}
@@ -426,7 +426,7 @@ const exportHistory = () => {
                         field="trade_close_price"
                         sortable
                         :header="`${$t('public.close_price')}&nbsp;($)`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             {{ slotProps.data.trade_close_price ?? 0 }}
@@ -435,7 +435,7 @@ const exportHistory = () => {
                     <Column
                         field="t_type"
                         :header="`${$t('public.type')}`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             {{ $t(`public.${slotProps.data.t_type}`) }}
@@ -444,7 +444,7 @@ const exportHistory = () => {
                     <Column
                         field="name"
                         :header="$t('public.name')"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             <div class="flex items-center gap-3">
@@ -465,7 +465,7 @@ const exportHistory = () => {
                     <Column
                         field="id_number"
                         :header="`${$t('public.id_number')}`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             {{ slotProps.data.downline.id_number }}
@@ -475,7 +475,7 @@ const exportHistory = () => {
                         field="trade_profit"
                         sortable
                         :header="`${$t('public.profit')}&nbsp;($)`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             {{ formatAmount(slotProps.data.trade_profit ?? 0) }}
@@ -484,11 +484,26 @@ const exportHistory = () => {
                     <Column
                         field="meta_login"
                         :header="`${$t('public.account')}`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             <div class="flex items-center content-center gap-3 flex-grow relative">
                                 <span >{{ slotProps.data.meta_login }}</span>
+                            </div>
+                        </template>
+                    </Column>
+                    <Column
+                        field="account_type"
+                        :header="`${$t('public.account_type')}`"
+                        class="hidden text-nowrap md:table-cell"
+                    >
+                        <template #body="slotProps">
+                            <div class="flex items-center gap-2">
+                                <Tag
+                                    :severity="slotProps.data.of_account_type.trading_platform.slug === 'mt4' ? 'secondary' : 'info'"
+                                    class="uppercase"
+                                    :value="slotProps.data.of_account_type.trading_platform.slug"
+                                />
                                 <div
                                     class="flex px-2 py-1 justify-center items-center text-xs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
                                     :style="{
@@ -504,7 +519,7 @@ const exportHistory = () => {
                     <Column
                         field="symbol"
                         :header="`${$t('public.product')}`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             {{ slotProps.data.symbol }}
@@ -514,7 +529,7 @@ const exportHistory = () => {
                         field="volume"
                         sortable
                         :header="`${$t('public.volume')}&nbsp;(Ł)`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             {{ formatAmount(slotProps.data.volume) }}
@@ -524,7 +539,7 @@ const exportHistory = () => {
                         field="revenue"
                         sortable
                         :header="`${$t('public.rebate')}&nbsp;($)`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             {{ formatAmount(slotProps.data.revenue, 3) }}
@@ -533,7 +548,7 @@ const exportHistory = () => {
                     <Column
                         field="t_status"
                         :header="`${$t('public.status')}`"
-                        class="hidden md:table-cell"
+                        class="hidden text-nowrap md:table-cell"
                     >
                         <template #body="slotProps">
                             <StatusBadge value="success">

@@ -669,4 +669,6 @@ return [
     "withdrawal_info_message_2" => "Số tiền rút tối thiểu cho mỗi giao dịch là $:minAmount.",
     "withdrawal_info_message_3" => "Số tiền rút tối đa cho mỗi giao dịch là $:maxAmount.",
     "withdrawal_info_message_4" => "Việc rút tiền của bạn sẽ bị tính phí $:txnFee.",
+    "credit_in" => "thu nhập tín dụng",
+    "credit_out" => "chi tiêu tín dụng",
 ];

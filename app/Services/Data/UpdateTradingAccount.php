@@ -26,10 +26,18 @@ class UpdateTradingAccount
             ->first();
 
         // Safely pick status
-        $status = $data['status'] ?? $data['requestStatus'] ?? null;
+        $status = !empty($data['status'])
+            ? $data['status']
+            : ($data['requestStatus'] ?? null);
+
         if ($status == 'success') {
-            $tradingAccount->balance = $data['balance'];
-            $tradingAccount->credit = $data['credit'];
+            if (isset($data['balance'])) {
+                $tradingAccount->balance = $data['balance'];
+            }
+
+            if (isset($data['credit'])) {
+                $tradingAccount->credit = $data['credit'];
+            }
 
             if (isset($data['leverage'])) {
                 $tradingAccount->margin_leverage = $data['leverage'];

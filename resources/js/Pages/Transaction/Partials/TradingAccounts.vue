@@ -11,7 +11,7 @@ import {
     IconCloudDownload,
     IconX,
 } from '@tabler/icons-vue';
-import {transactionFormat} from "@/Composables/index.js";
+import {generalFormat, transactionFormat} from "@/Composables/index.js";
 import {onMounted, ref, watch, watchEffect} from "vue";
 import { wTrans } from 'laravel-vue-i18n';
 import Button from '@/Components/Button.vue';
@@ -24,11 +24,12 @@ import Calendar from 'primevue/calendar';
 import Dialog from 'primevue/dialog';
 import TransactionDetails from '@/Pages/Transaction/Partials/TransactionDetails.vue';
 import Slider from 'primevue/slider';
-import dayjs from 'dayjs'
+import Tag from 'primevue/tag'
 import Empty from '@/Components/Empty.vue';
 import debounce from "lodash/debounce.js";
 
 const { formatDateTime, formatAmount } = transactionFormat();
+const {formatRgbaColor} = generalFormat();
 
 const props = defineProps({
     maxAccountAmount: Number,
@@ -63,7 +64,7 @@ watch(() => props.maxAccountAmount, (newValue) => {
         filters.value.amount.value[1] = maxFilterAmount.value;
     }
   },
-  { immediate: true } 
+  { immediate: true }
 );
 
 const loadLazyData = (event) => {
@@ -173,7 +174,7 @@ watch(filters, debounce(() => {
         return filter.value !== null;
     }).length;
 
-    loadLazyData(); 
+    loadLazyData();
 }, 500), { deep: true });
 
 const clearFilter = () => {
@@ -210,9 +211,9 @@ const exportTransaction = () => {
     lazyParams.value = { ...lazyParams.value, first: event?.first || first.value };
 
     if (filters.value) {
-        lazyParams.value.filters = { ...filters.value }; 
+        lazyParams.value.filters = { ...filters.value };
     } else {
-        lazyParams.value.filters = {}; 
+        lazyParams.value.filters = {};
     }
 
     let params = {
@@ -225,12 +226,12 @@ const exportTransaction = () => {
 
     try {
 
-        window.location.href = url; 
+        window.location.href = url;
     } catch (e) {
-        console.error('Error occurred during export:', e);  
+        console.error('Error occurred during export:', e);
     } finally {
-        loading.value = false;  
-        exportStatus.value = false; 
+        loading.value = false;
+        exportStatus.value = false;
     }
 };
 </script>
@@ -316,7 +317,7 @@ const exportTransaction = () => {
                     field="created_at"
                     sortable
                     :header="$t('public.date')"
-                    class="w-1/6"
+                    class="text-nowrap"
                 >
                     <template #body="slotProps">
                         {{ formatDateTime(slotProps.data.created_at) }}
@@ -325,7 +326,7 @@ const exportTransaction = () => {
                 <Column
                     field="transaction_number"
                     sortable
-                    class="w-auto"
+                    class="text-nowrap"
                     :header="$t('public.id')"
                 >
                     <template #body="slotProps">
@@ -334,7 +335,7 @@ const exportTransaction = () => {
                 </Column>
                 <Column
                     field="description"
-                    class="w-auto"
+                    class="text-nowrap"
                     :header="$t('public.description')"
                 >
                     <template #body="slotProps">
@@ -343,7 +344,7 @@ const exportTransaction = () => {
                 </Column>
                 <Column
                     field="account"
-                    class="w-auto"
+                    class="text-nowrap"
                     :header="$t('public.account')"
                 >
                     <template #body="slotProps">
@@ -360,9 +361,33 @@ const exportTransaction = () => {
                     </template>
                 </Column>
                 <Column
+                    field="account_type"
+                    class="text-nowrap"
+                    :header="$t('public.account_type')"
+                >
+                    <template #body="slotProps">
+                        <div class="flex items-center gap-2">
+                            <Tag
+                                :severity="slotProps.data.trading_platform_name === 'mt4' ? 'secondary' : 'info'"
+                                class="uppercase"
+                                :value="slotProps.data.trading_platform_name"
+                            />
+                            <div
+                                class="flex px-2 py-1 justify-center items-center text-xs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
+                                :style="{
+                                        backgroundColor: formatRgbaColor(slotProps.data.account_type_color, 0.15),
+                                        color: `#${slotProps.data.account_type_color}`,
+                                    }"
+                            >
+                                {{ slotProps.data.account_type_name }}
+                            </div>
+                        </div>
+                    </template>
+                </Column>
+                <Column
                     field="amount"
                     sortable
-                    class="w-auto"
+                    class="text-nowrap"
                     :header="`${$t('public.amount')} ($)`"
                 >
                     <template #body="slotProps">

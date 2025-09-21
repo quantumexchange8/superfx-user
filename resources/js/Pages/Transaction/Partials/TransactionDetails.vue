@@ -1,7 +1,7 @@
 <script setup>
 import StatusBadge from '@/Components/StatusBadge.vue';
 import Tag from 'primevue/tag';
-import {transactionFormat} from "@/Composables/index.js";
+import {generalFormat, transactionFormat} from "@/Composables/index.js";
 import { ref } from 'vue';
 import Button from "@/Components/Button.vue";
 import InputText from "primevue/inputtext";
@@ -11,6 +11,7 @@ import TextArea from "primevue/textarea";
 import {useLangObserver} from "@/Composables/localeObserver.js";
 
 const { formatDateTime, formatAmount } = transactionFormat();
+const {formatRgbaColor} = generalFormat();
 
 const props = defineProps({
     data: Object,
@@ -129,6 +130,27 @@ const isJson = (str) => {
                     <template v-if="data.category === 'trading_account'">{{ data.transaction_type === 'deposit' ? data.to_meta_login : data.from_meta_login }}</template>
                     <template v-else>{{ $t(`public.${data.category}`) }}</template>
                 </span>
+            </div>
+            <div class="flex items-center gap-1 self-stretch">
+                <span class="w-[120px] text-gray-500 text-xs font-medium">
+                    {{ $t('public.account_type') }}
+                </span>
+                <div class="flex items-center gap-2">
+                    <Tag
+                        :severity="data.trading_platform_name === 'mt4' ? 'secondary' : 'info'"
+                        class="uppercase"
+                        :value="data.trading_platform_name"
+                    />
+                    <div
+                        class="flex px-2 py-1 justify-center items-center text-xs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
+                        :style="{
+                                        backgroundColor: formatRgbaColor(data.account_type_color, 0.15),
+                                        color: `#${data.account_type_color}`,
+                                    }"
+                    >
+                        {{ data.account_type_name }}
+                    </div>
+                </div>
             </div>
             <div class="flex items-center gap-1 self-stretch">
                 <span class="w-[120px] text-gray-500 text-xs font-medium">{{ $t('public.description') }}</span>

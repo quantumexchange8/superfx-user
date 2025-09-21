@@ -12,6 +12,7 @@ use App\Models\PaymentGatewayMethod;
 use App\Models\PaymentMethod;
 use App\Models\Setting;
 use App\Models\SettingLeverage;
+use App\Models\TradingAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -237,6 +238,22 @@ class SelectOptionController extends Controller
 
         return response()->json([
             'leverages' => $leverages,
+        ]);
+    }
+
+    public function getTradingAccounts(Request $request)
+    {
+        $trading_accounts = TradingAccount::with([
+            'account_type',
+            'account_type.trading_platform:id,platform_name,slug',
+        ])
+            ->where('user_id', Auth::id())
+            ->whereNot('meta_login', $request->from_login)
+            ->orderBy('balance')
+            ->get();
+
+        return response()->json([
+            'accounts' => $trading_accounts,
         ]);
     }
 }

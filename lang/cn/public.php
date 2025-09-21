@@ -669,4 +669,6 @@ return [
     "withdrawal_info_message_2" => "每笔交易最低提款金额为 $:minAmount.",
     "withdrawal_info_message_3" => "每笔交易最高提款金额为 $:maxAmount.",
     "withdrawal_info_message_4" => "您的提款将收取 $:txnFee 手续费.",
+    "credit_in" => "信用收入",
+    "credit_out" => "信用支出",
 ];

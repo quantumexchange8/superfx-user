@@ -513,15 +513,20 @@ const clearFilter = () => {
                                 class="hidden md:table-cell"
                             >
                                 <template #body="slotProps">
-                                    <div class="flex justify-center items-center">
+                                    <div class="flex items-center gap-2">
+                                        <Tag
+                                            :severity="slotProps.data.trading_platform_name === 'mt4' ? 'secondary' : 'info'"
+                                            class="uppercase"
+                                            :value="slotProps.data.trading_platform_name"
+                                        />
                                         <div
                                             class="flex px-2 py-1 justify-center items-center text-xs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
                                             :style="{
-                                                backgroundColor: formatRgbaColor(slotProps.data.account_type_color, 0.15),
-                                                color: `#${slotProps.data.account_type_color}`,
-                                            }"
+                                        backgroundColor: formatRgbaColor(slotProps.data.account_type_color, 0.15),
+                                        color: `#${slotProps.data.account_type_color}`,
+                                    }"
                                         >
-                                            {{ $t(`public.${slotProps.data.account_type_slug}`) }}
+                                            {{ slotProps.data.account_type_name }}
                                         </div>
                                     </div>
                                 </template>

@@ -1,22 +1,35 @@
 <script setup>
-import InputLabel from "@/Components/InputLabel.vue";
-import InputNumber from 'primevue/inputnumber';
-import {useForm} from "@inertiajs/vue3";
-import Button from "@/Components/Button.vue"
-import InputError from "@/Components/InputError.vue";
-import Dropdown from "primevue/dropdown";
+import Button from "@/Components/Button.vue";
+import {SwitchHorizontal01Icon} from "@/Components/Icons/outline.jsx";
 import {ref} from "vue";
-import {generalFormat, transactionFormat} from "@/Composables/index.js";
+import Dialog from "primevue/dialog";
+import InputLabel from "@/Components/InputLabel.vue";
+import Dropdown from "primevue/dropdown";
+import InputError from "@/Components/InputError.vue";
+import InputNumber from "primevue/inputnumber";
 import Tag from "primevue/tag";
+import {generalFormat, transactionFormat} from "@/Composables/index.js";
+import toast from "@/Composables/toast.js";
+import {useForm} from "@inertiajs/vue3";
 
 const props = defineProps({
-    rebateWallet: Object,
-})
+    account: Object,
+});
 
-const transferOptions = ref([]);
-const {formatAmount} = transactionFormat();
-const {formatRgbaColor} = generalFormat()
-const emit = defineEmits(['update:visible'])
+const visible = ref(false);
+const {formatAmount} = transactionFormat()
+const { formatRgbaColor } = generalFormat();
+
+const openDialog = () => {
+    visible.value = true;
+    getAccounts();
+}
+
+const form = useForm({
+    from_login: props.account.meta_login,
+    to_login: '',
+    amount: null
+})
 
 const accounts = ref([]);
 const selectedAccount = ref()
@@ -26,11 +39,14 @@ const getAccounts = async () => {
     loadingAccounts.value = true;
 
     try {
-        const response = await axios.get('/getTradingAccounts');
+        const response = await axios.get(
+            `/getTradingAccounts?login=${props.account.meta_login}`
+        );
 
         // All groups from API
         accounts.value = response.data.accounts;
         selectedAccount.value = accounts.value[0];
+
     } catch (error) {
         console.error('Error getting accounts:', error);
     } finally {
@@ -38,48 +54,57 @@ const getAccounts = async () => {
     }
 };
 
-getAccounts()
-
-const form = useForm({
-    wallet_id: props.rebateWallet.id,
-    amount: 0,
-    meta_login: '',
-})
-
 const toggleFullAmount = () => {
     if (form.amount) {
-        form.amount = 0;
+        form.amount = null;
     } else {
-        form.amount = Number(props.rebateWallet.balance);
+        form.amount = props.account.balance;
     }
 };
 
-const submitForm = () => {
-    form.meta_login = selectedAccount.value.meta_login;
-    form.post(route('dashboard.walletTransfer'), {
+const submitForm = async () => {
+    form.to_login = selectedAccount?.value?.meta_login;
+
+    form.post(route('account.internal_transfer'), {
         onSuccess: () => {
             closeDialog();
+            form.reset();
         }
-    });
+    })
 }
 
 const closeDialog = () => {
-    emit('update:visible', false)
-}
+    visible.value = false;
+};
 </script>
 
 <template>
-    <form>
-        <div class="flex flex-col items-center gap-8 self-stretch md:gap-10">
-            <div class="flex flex-col items-center gap-5 self-stretch">
-                <div class="flex flex-col justify-center items-center py-4 px-8 gap-2 self-stretch bg-logo">
-                    <span class="w-full text-gray-100 text-center text-xs font-medium">{{ $t('public.available_rebate_balance') }}</span>
-                    <span class="w-full text-white text-center text-xl font-semibold">$ {{ formatAmount(rebateWallet.balance) }}</span>
-                </div>
+    <Button
+        type="button"
+        variant="gray-outlined"
+        size="sm"
+        pill
+        iconOnly
+        @click="openDialog"
+        :disabled="account.trading_user.acc_status !== 'active'"
+    >
+        <SwitchHorizontal01Icon class="w-4 text-gray-950" />
+    </Button>
 
-                <!-- input fields -->
+    <Dialog
+        v-model:visible="visible"
+        :header="$t('public.transfer')"
+        modal
+        class="dialog-xs sm:dialog-sm"
+    >
+        <form @submit.prevent="submitForm">
+            <div class="flex flex-col items-center gap-5 self-stretch">
+                <div class="flex flex-col justify-center items-center py-4 px-8 gap-2 self-stretch bg-gray-200">
+                    <span class="text-gray-500 text-center text-xs font-medium">#{{ account.meta_login }} - {{ $t('public.current_account_balance') }}</span>
+                    <span class="text-gray-950 text-center text-xl font-semibold">$ {{ account.balance }}</span>
+                </div>
                 <div class="flex flex-col items-start gap-1 self-stretch">
-                    <InputLabel for="receiving_wallet" :value="$t('public.transfer_to')" />
+                    <InputLabel for="to_meta_login" :value="$t('public.transfer_to')" />
                     <Dropdown
                         v-model="selectedAccount"
                         :options="accounts"
@@ -87,7 +112,7 @@ const closeDialog = () => {
                         :placeholder="$t('public.transfer_to_placeholder')"
                         class="w-full"
                         scroll-height="236px"
-                        :invalid="!!form.errors.meta_login"
+                        :invalid="!!form.errors.to_meta_login"
                         :loading="loadingAccounts"
                     >
                         <template #value="{value, placeholder}">
@@ -99,14 +124,14 @@ const closeDialog = () => {
                                     class="text-xxs uppercase"
                                 />
                                 <div
-                                    class="flex px-2 py-1 justify-center items-center text-xxs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
-                                    :style="{
+                        class="flex px-2 py-1 justify-center items-center text-xxs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
+                        :style="{
                             backgroundColor: formatRgbaColor(value.account_type.color, 0.15),
                             color: `#${value.account_type.color}`,
                         }"
-                                >
-                                    {{ (value.account_type.member_display_name ?? value.account_type.name) }}
-                                </div>
+                    >
+                        {{ (value.account_type.member_display_name ?? value.account_type.name) }}
+                    </div>
                             </div>
                             <div v-else>
                                 {{ placeholder }}
@@ -121,19 +146,19 @@ const closeDialog = () => {
                                     class="text-xxs uppercase"
                                 />
                                 <div
-                                    class="flex px-2 py-1 justify-center items-center text-xxs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
-                                    :style="{
+                        class="flex px-2 py-1 justify-center items-center text-xxs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
+                        :style="{
                             backgroundColor: formatRgbaColor(option.account_type.color, 0.15),
                             color: `#${option.account_type.color}`,
                         }"
-                                >
-                                    {{ (option.account_type.member_display_name ?? option.account_type.name) }}
-                                </div>
+                    >
+                        {{ (option.account_type.member_display_name ?? option.account_type.name) }}
+                    </div>
                             </div>
                         </template>
                     </Dropdown>
-                    <InputError :message="form.errors.meta_login" />
                     <span class="self-stretch text-gray-500 text-xs">{{ $t('public.balance') }}: $ {{ formatAmount(selectedAccount?.balance ?? 0) }}</span>
+                    <InputError :message="form.errors.to_login" />
                 </div>
 
                 <div class="flex flex-col items-start gap-1 self-stretch">
@@ -163,29 +188,31 @@ const closeDialog = () => {
                             {{ form.amount ? $t('public.clear') : $t('public.full_amount') }}
                         </div>
                     </div>
-                    <span class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount( selectedAccount?.account_type.account_group === 'PRIME' ? selectedAccount?.account_type.minimum_deposit : 30,0) }}</span>
+                    <span v-if="loadingAccounts" class="text-xs text-gray-500">{{ $t('public.loading_caption') }}</span>
+                    <span v-else-if="selectedAccount.account_type.account_group === 'PRIME'" class="self-stretch text-gray-500 text-xs">{{ $t('public.minimum_amount') }}: ${{ formatAmount( account.account_type.category === 'cent' ? selectedAccount.account_type.minimum_deposit * account.account_type.balance_multiplier : selectedAccount.account_type.minimum_deposit , 0) }}</span>
                     <InputError :message="form.errors.amount" />
                 </div>
             </div>
-        </div>
-        <div class="flex justify-end items-center pt-5 gap-4 self-stretch sm:pt-7">
-            <Button
-                type="button"
-                variant="gray-tonal"
-                class="w-full md:w-[120px]"
-                @click.prevent="closeDialog()"
-                :disabled="form.processing"
-            >
-                {{ $t('public.cancel') }}
-            </Button>
-            <Button
-                variant="primary-flat"
-                class="w-full md:w-[120px]"
-                @click.prevent="submitForm"
-                :disabled="form.processing || loadingAccounts"
-            >
-                {{ $t('public.confirm') }}
-            </Button>
-        </div>
-    </form>
+            <div class="flex justify-end items-center pt-5 gap-4 self-stretch sm:pt-7">
+                <Button
+                    type="button"
+                    variant="gray-tonal"
+                    class="w-full sm:w-[120px]"
+                    @click.prevent="closeDialog('transfer')"
+                    :disabled="form.processing || loadingAccounts"
+                >
+                    {{ $t('public.cancel') }}
+                </Button>
+                <Button
+                    type="submit"
+                    variant="primary-flat"
+                    class="w-full sm:w-[120px]"
+                    @click.prevent="submitForm"
+                    :disabled="form.processing || loadingAccounts"
+                >
+                    {{ $t('public.confirm') }}
+                </Button>
+            </div>
+        </form>
+    </Dialog>
 </template>

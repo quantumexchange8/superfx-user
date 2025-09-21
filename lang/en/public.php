@@ -671,4 +671,6 @@ return [
     "withdrawal_info_message_2" => "Minimum withdrawal amount per transaction is $:minAmount.",
     "withdrawal_info_message_3" => "Maximum withdrawal amount per transaction is $:maxAmount.",
     "withdrawal_info_message_4" => "Your withdrawal is subject to a fee of $:txnFee.",
+    "credit_in" => "Credit In",
+    "credit_out" => "Credit Out",
 ];

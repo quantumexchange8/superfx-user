@@ -18,7 +18,7 @@ const emit = defineEmits(['update:visible'])
 
 const getOptions = async () => {
     try {
-        const response = await axios.get('/account/getOptions');
+        const response = await axios.get(`/getLeverages?account_type_id=${props.account.account_type_id}`);
         leverages.value = response.data.leverages;
     } catch (error) {
         console.error('Error changing locale:', error);
@@ -64,14 +64,23 @@ const closeDialog = () => {
                     <Dropdown
                         v-model="form.leverage"
                         :options="leverages"
-                        optionLabel="name"
+                        optionLabel="display"
                         optionValue="value"
                         :placeholder="$t('public.leverages_placeholder')"
                         class="w-full"
                         scroll-height="236px"
                         :invalid="!!form.errors.leverage"
                         :disabled="!leverages.length"
-                    />
+                    >
+                        <template #value="{value, placeholder}">
+                            <div v-if="value">
+                                1:{{ value }}
+                            </div>
+                            <div v-else>
+                                {{ placeholder }}
+                            </div>
+                        </template>
+                    </Dropdown>
                     <InputError :message="form.errors.leverage" />
                 </div>
             </div>

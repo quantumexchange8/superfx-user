@@ -8,8 +8,8 @@ export default {
             'border-0',
 
             // Color
-            'text-surface-700 dark:text-white/80',
-            'bg-surface-0 dark:bg-surface-900'
+            'text-gray-950',
+            'bg-gray-25'
         ]
     },
     grid: {
@@ -21,20 +21,17 @@ export default {
             'ml-0 mr-0 mt-0',
 
             // Color
-            'bg-surface-0 dark:bg-surface-900'
+            'bg-white'
         ]
     },
     header: {
         class: [
-            'font-semibold',
-
             // Spacing
-            'py-3 px-4',
+            'py-5',
 
             // Color
-            'text-surface-800 dark:text-white/80',
-            'bg-surface-00 dark:bg-surface-900',
-            'border-b border-surface-200 dark:border-surface-700'
+            'text-gray-800',
+            'bg-white0',
         ]
     }
 };

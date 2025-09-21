@@ -1,29 +1,27 @@
 <script setup>
-import {ref, h, computed} from 'vue';
-import { usePage, useForm } from "@inertiajs/vue3";
-import Dialog from 'primevue/dialog';
+import TieredMenu from 'primevue/tieredmenu';
+import {ref, h} from 'vue';
 import Button from "@/Components/Button.vue";
+import {useForm, usePage} from "@inertiajs/vue3";
+import {useConfirm} from "primevue/useconfirm";
+import {trans} from "laravel-vue-i18n";
 import {
     IconDots,
     IconCreditCardPay,
     IconScale,
     IconHistory,
-    IconDatabaseMinus,
-    IconTrash,
     IconKey
 } from '@tabler/icons-vue';
 import toast from '@/Composables/toast';
-import AccountReport from '@/Pages/TradingAccount/Partials/AccountReport.vue';
-import { useConfirm } from 'primevue/useconfirm';
-import { trans } from "laravel-vue-i18n";
-import TieredMenu from "primevue/tieredmenu";
-import AccountWithdrawal from "@/Pages/TradingAccount/Partials/AccountWithdrawal.vue";
-import ChangeLeverage from "@/Pages/TradingAccount/Partials/ChangeLeverage.vue";
-import ChangePassword from "@/Pages/TradingAccount/Partials/ChangePassword.vue";
+import ChangePassword from "@/Pages/Account/Partials/ChangePassword.vue";
+import Dialog from "primevue/dialog";
+import AccountWithdrawal from "@/Pages/Account/Partials/AccountWithdrawal.vue";
+import AccountReport from "@/Pages/Account/Partials/AccountReport.vue";
+import ChangeLeverage from "@/Pages/Account/Partials/ChangeLeverage.vue";
 
 const props = defineProps({
     account: Object,
-    type: String,
+    methods: Array,
 });
 
 const paymentAccounts = usePage().props.auth.payment_account;
@@ -48,7 +46,7 @@ const items = ref([
         label: 'change_leverage',
         icon: h(IconScale),
         command: () => {
-            if (props.account.account_type_leverage === 0) {
+            if (props.account.account_type.leverage === 0) {
                 visible.value = true;
                 dialogType.value = 'change_leverage';
             } else {
@@ -68,15 +66,6 @@ const items = ref([
         },
     },
     {
-        label: 'revoke_pamm',
-        icon: h(IconDatabaseMinus),
-        command: () => {
-            requireAccountConfirmation('revoke');
-        },
-        account_type: 'premium_account',
-        disabled: props.account.status === 'pending' || props.account.status === null,
-    },
-    {
         label: 'account_report',
         icon: h(IconHistory),
         command: () => {
@@ -84,31 +73,7 @@ const items = ref([
             dialogType.value = 'account_report';
         },
     },
-    {
-        separator: true,
-    },
-    {
-        label: 'delete_account',
-        icon: h(IconTrash),
-        command: () => {
-            requireAccountConfirmation('live');
-        },
-        account_type: 'temp_account',
-    },
 ]);
-
-const filteredItems = computed(() => {
-    return items.value.filter(item => {
-        if (props.account.asset_master_id) {
-            return !(item.label === 'withdrawal' || item.label === 'change_leverage' || item.label === 'change_password' || item.label === 'delete_account' || item.separator);
-        }
-
-        if (item.account_type) {
-            return item.account_type === props.account.account_type;
-        }
-        return true;
-    });
-});
 
 const toggle = (event) => {
     menu.value.toggle(event);
@@ -193,7 +158,6 @@ const requireAccountConfirmation = (accountType) => {
 
 <template>
     <Button
-        v-if="props.type !== 'demo'"
         variant="gray-text"
         size="sm"
         type="button"
@@ -206,20 +170,7 @@ const requireAccountConfirmation = (accountType) => {
         <IconDots size="16" stroke-width="1.25" color="#667085" />
     </Button>
 
-    <Button
-        v-if="props.type === 'demo'"
-        variant="gray-text"
-        size="sm"
-        type="button"
-        iconOnly
-        pill
-        @click="requireAccountConfirmation('demo')"
-    >
-        <IconTrash size="16" stroke-width="1.25" color="#667085" />
-    </Button>
-
-    <!-- Menu -->
-    <TieredMenu ref="menu" id="overlay_tmenu" :model="filteredItems" popup>
+    <TieredMenu ref="menu" id="overlay_tmenu" :model="items" popup>
         <template #item="{ item, props }">
             <div
                 class="flex items-center gap-3 self-stretch"
@@ -262,7 +213,7 @@ const requireAccountConfirmation = (accountType) => {
 
         <template v-if="dialogType === 'account_report'">
             <AccountReport
-                :account="props.account"
+                :account="account"
                 @update:visible="visible = false"
             />
         </template>

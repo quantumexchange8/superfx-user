@@ -6,6 +6,7 @@ use App\Mail\WithdrawalRequestMail;
 use App\Mail\WithdrawalRequestUsdtMail;
 use App\Models\Bank;
 use App\Models\PaymentGateway;
+use App\Services\TradingPlatform\TradingPlatformFactory;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AccountType;
 use App\Models\PaymentAccount;
@@ -55,8 +56,13 @@ class TransactionController extends Controller
     {
         if ($request->has('lazyEvent')) {
             $data = json_decode($request->only(['lazyEvent'])['lazyEvent'], true);
-            $query = Transaction::where('user_id', Auth::id())
-            ->where('category', '!=', 'rebate_wallet');
+
+            $query = Transaction::with([
+                'to_account.account_type.trading_platform',
+                'from_account.account_type.trading_platform',
+            ])
+                ->where('user_id', Auth::id())
+                ->where('category', '!=', 'rebate_wallet');
 
             if ($data['filters']['global']['value']) {
                 $keyword = $data['filters']['global']['value'];
@@ -110,6 +116,7 @@ class TransactionController extends Controller
             $transactions = $query->paginate($data['rows']);
 
             $transactions->getCollection()->transform(function ($transaction) {
+                $account = $transaction->to_account ?? $transaction->from_account;
                 return [
                     'category' => $transaction->category,
                     'transaction_type' => $transaction->transaction_type,
@@ -133,6 +140,9 @@ class TransactionController extends Controller
                     'remarks' => $transaction->remarks,
                     'created_at' => $transaction->created_at,
                     'wallet_name' => $transaction->payment_account_name ?? $transaction->payment_account->payment_account_name ?? '-',
+                    'account_type_name'           => $account?->account_type?->member_display_name ?? $account?->account_type->account_group,
+                    'account_type_color'           => $account?->account_type?->color,
+                    'trading_platform_name'       => $account?->account_type?->trading_platform?->slug,
                 ];
             });
 
@@ -147,9 +157,9 @@ class TransactionController extends Controller
 
     public function walletTransfer(Request $request)
     {
-        $tradingAccount = TradingAccount::with('account_type')
-                ->where('meta_login', $request->meta_login)
-                ->first();
+        $tradingAccount = TradingAccount::with('account_type.trading_platform')
+            ->where('meta_login', $request->meta_login)
+            ->first();
 
         $minAmount = $tradingAccount->account_type->account_group === 'PRIME' ? $tradingAccount->account_type->minimum_deposit : 30;
 
@@ -167,7 +177,7 @@ class TransactionController extends Controller
         $amount = $request->amount;
         $wallet = Wallet::find($request->wallet_id);
 
-        (new MetaFourService)->getUserInfo($tradingAccount->meta_login);
+        $service = TradingPlatformFactory::make($tradingAccount->account_type->trading_platform->slug);
 
         if ($wallet->balance < $amount) {
             throw ValidationException::withMessages(['amount' => trans('public.insufficient_balance')]);
@@ -176,7 +186,7 @@ class TransactionController extends Controller
         $multiplier = $tradingAccount->account_type->balance_multiplier;
         $adjusted_amount = $amount * $multiplier;
         try {
-            $trade = (new MetaFourService)->createDeal($tradingAccount->meta_login, $adjusted_amount, "Rebate to account", 'balance', '');
+            $trade = $service->createDeal($tradingAccount->meta_login, $adjusted_amount, "Rebate to account", 'balance', '');
         } catch (\Throwable $e) {
             if ($e->getMessage() == "Not found") {
                 TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);

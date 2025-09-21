@@ -41,7 +41,8 @@ class TradePositionController extends Controller
             $query = OpenTrade::with([
                     'user:id,name,email,id_number,upline_id,hierarchyList',
                     'trading_account:id,meta_login,account_type_id',
-                    'trading_account.account_type:id,name,slug,account_group,currency,color',
+                    'trading_account.account_type:id,name,trading_platform_id,slug,account_group,currency,color',
+                    'trading_account.account_type.trading_platform:id,slug'
                 ])
                 ->whereIn('trade_type', ['buy', 'sell'])
                 ->whereIn('user_id', $child_ids)
@@ -137,6 +138,7 @@ class TradePositionController extends Controller
                         $openTrade->account_type_slug = $accountType->slug ?? null;
                         $openTrade->account_type_currency = $accountType->currency ?? null;
                         $openTrade->account_type_color = $accountType->color ?? null;
+                        $openTrade->trading_platform_name = $openTrade->trading_account->account_type->trading_platform->slug ?? null;
                     }
                 }
 
@@ -183,7 +185,8 @@ class TradePositionController extends Controller
             $query = TradeBrokerHistory::with([
                     'user:id,name,email,id_number,upline_id,hierarchyList',
                     'trading_account:id,meta_login,account_type_id',
-                    'trading_account.account_type:id,name,slug,account_group,currency,color',
+                    'trading_account.account_type:id,name,trading_platform_id,slug,account_group,currency,color',
+                    'trading_account.account_type.trading_platform:id,slug'
                 ])
                 ->whereIn('user_id', $child_ids);
 
@@ -288,6 +291,7 @@ class TradePositionController extends Controller
                         $closeTrade->account_type_slug = $accountType->slug ?? null;
                         $closeTrade->account_type_currency = $accountType->currency ?? null;
                         $closeTrade->account_type_color = $accountType->color ?? null;
+                        $closeTrade->trading_platform_name = $closeTrade->trading_account->account_type->trading_platform->slug ?? null;
                     }
                 }
 
