@@ -89,6 +89,7 @@ class SelectOptionController extends Controller
                     'platform',
                     'environment',
                     'payment_url',
+                    'can_deposit',
                     'can_withdraw',
                     'status',
                     'position'
