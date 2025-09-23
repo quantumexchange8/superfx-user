@@ -49,9 +49,12 @@ const getPaymentGateways = async () => {
         const response = await axios.get(`/getPaymentGateways?slug=${selectedMethod.value.slug}`);
         paymentGateways.value = response.data.payment_gateways;
 
-        paymentGateways.value = response.data.payment_gateways.filter(
-            gateway => gateway.can_deposit
-        );
+        paymentGateways.value = response.data.payment_gateways.filter(gateway => {
+            if (gateway.platform === 'bank') {
+                return gateway.can_deposit;
+            }
+            return true;
+        });
 
         if (paymentGateways.value.length === 1) {
             selectedPaymentGateway.value = paymentGateways.value[0].id;
