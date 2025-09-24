@@ -11,6 +11,8 @@ import Empty from '@/Components/Empty.vue';
 
 const props = defineProps({
     tab: Number,
+    maxLevels: Number,
+    tradingPlatforms: Array
 })
 
 const user = usePage().props.auth.user;
@@ -23,7 +25,7 @@ const tabs = ref([
         },
         {
             title: wTrans('public.listing'),
-            component: h(Listing),
+            component: h(Listing, {maxLevels: props.maxLevels}),
         }
 ]);
 
@@ -46,14 +48,14 @@ const handleNoData = () => {
             >
                 <TabPanel v-for="(tab, index) in tabs" :key="index" :header="tab.title">
                     <component
-                        v-if="index === 0" 
-                        :is="tab.component" 
-                        @noData="handleNoData" 
+                        v-if="index === 0"
+                        :is="tab.component"
+                        @noData="handleNoData"
                     />
                     <!-- Render Listing component -->
-                    <component 
+                    <component
                         v-else
-                        :is="tab.component" 
+                        :is="tab.component"
                     />
                 </TabPanel>
             </TabView>

@@ -12,9 +12,13 @@ import { usePage } from '@inertiajs/vue3';
 import { trans } from 'laravel-vue-i18n';
 import Vue3Autocounter from 'vue3-autocounter';
 import Avatar from "primevue/avatar";
+import TabView from "primevue/tabview";
+import TabPanel from "primevue/tabpanel";
+import AccountView from "@/Pages/Account/AccountView.vue";
 
 const props = defineProps({
     user: Object,
+    tradingPlatforms: Array,
 })
 
 const { formatAmount } = transactionFormat();
@@ -110,7 +114,31 @@ const filteredDataOverviews = computed(() => {
     return dataOverviews.value;
 });
 
+const activeIndex = ref(0);
 
+// Generate tabs dynamically from tradingPlatforms
+const tabs = computed(() => {
+    return props.tradingPlatforms.map((platform) => ({
+        title: platform.slug,
+        value: platform.slug
+    }));
+});
+
+const filteredTradingAccounts = computed(() => {
+    // if tradingAccounts not loaded yet, return []
+    if (!tradingAccounts.value || tradingAccounts.value.length === 0) {
+        return [];
+    }
+
+    const currentPlatformSlug = tabs.value[activeIndex.value]?.value;
+
+    // safety check for currentPlatformSlug
+    if (!currentPlatformSlug) return [];
+
+    return tradingAccounts.value.filter(
+        (account) => account.trading_platform === currentPlatformSlug
+    );
+});
 </script>
 
 <template>
@@ -298,72 +326,81 @@ const filteredDataOverviews = computed(() => {
                 </div>
             </div>
 
-            <!-- Trading Accounts -->
-            <div class="pt-3 flex flex-col items-start gap-5 self-stretch">
-                <div class="self-stretch text-gray-950 font-bold">
-                    {{ $t('public.all_trading_accounts') }}
-                </div>
-
-                <template v-if="tradingAccountsLength > 0 && tradingAccounts">
-                    <div class="w-full grid grid-cols-1 gap-5 md:grid-cols-2">
-                        <div
-                            v-for="(tradingAccount, index) in tradingAccounts"
-                            :key="index"
-                            class="min-w-[300px] py-4 pl-6 pr-3 flex flex-col justify-center gap-3 md:gap-5 rounded-2xl border-l-8 bg-white shadow-toast"
-                            :style="{'borderColor': `#${tradingAccount.account_type_color}`}"
-                        >
-                            <div class="flex items-start gap-4">
+            <TabView v-model:activeIndex="activeIndex" class="w-full">
+                <TabPanel
+                    v-for="(tab, index) in tabs"
+                    :key="tab.value"
+                >
+                    <template #header>
+                        <div class="flex gap-2 items-center">
+                            <img :src="`/img/trading/${tab.title}.png`" alt="mt" class="w-9 h-9 rounded-full grow-0 shrink-0" />
+                            <span class="uppercase">{{ tab.title }}</span>
+                        </div>
+                    </template>
+                    <!-- Trading Accounts -->
+                    <div class="pt-3 flex flex-col items-start gap-5 self-stretch">
+                        <template v-if="filteredTradingAccounts.length > 0 && filteredTradingAccounts">
+                            <div class="w-full grid grid-cols-1 gap-5 md:grid-cols-2">
+                                <div
+                                    v-for="(tradingAccount, index) in filteredTradingAccounts"
+                                    :key="index"
+                                    class="min-w-[300px] py-4 pl-6 pr-3 flex flex-col justify-center gap-3 md:gap-5 rounded-2xl border-l-8 bg-white shadow-toast"
+                                    :style="{'borderColor': `#${tradingAccount.account_type_color}`}"
+                                >
+                                    <div class="flex items-start gap-4">
                                 <span class="text-gray-950 font-semibold md:text-lg self-stretch">
                                     # {{ tradingAccount.meta_login }}
                                 </span>
-                                <div
-                                    class="flex px-2 py-1 justify-center items-center text-xs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
-                                    :style="{
+                                        <div
+                                            class="flex px-2 py-1 justify-center items-center text-xs font-semibold hover:-translate-y-1 transition-all duration-300 ease-in-out rounded"
+                                            :style="{
                                         backgroundColor: formatRgbaColor(tradingAccount.account_type_color, 0.15),
                                         color: `#${tradingAccount.account_type_color}`,
                                     }"
-                                >
-                                    {{ tradingAccount.account_type }}
-                                </div>
-                            </div>
+                                        >
+                                            {{ tradingAccount.account_type }}
+                                        </div>
+                                    </div>
 
-                            <div class="flex justify-between content-center gap-2 self-stretch">
-                                <div class="flex flex-col md:flex-row md:gap-2 justify-start items-center w-full">
-                                    <div class="text-gray-500 text-xs">
-                                        {{ $t('public.balance_shortname') }}:
-                                    </div>
-                                    <div class="text-gray-950 text-xs font-medium">
-                                        $ {{ formatAmount(tradingAccount.balance ?? 0) }}
-                                    </div>
-                                </div>
-                                <div class="flex flex-col md:flex-row md:gap-2 justify-start items-center w-full">
-                                    <div class="text-gray-500 text-xs">
-                                        {{ $t('public.equity_shortname') }}:
-                                    </div>
-                                    <div class="text-gray-950 text-xs font-medium">
-                                        $ {{ formatAmount(tradingAccount.equity ?? 0) }}
-                                    </div>
-                                </div>
-                                <div
-                                    v-if="tradingAccount.account_type !== 'Premium Account'"
-                                    class="flex flex-col md:flex-row md:gap-2 justify-start items-center w-full"
-                                >
-                                    <div class="text-gray-500 text-xs">
-                                        {{ $t('public.credit_shortname') }}:
-                                    </div>
-                                    <div class="text-gray-950 text-xs font-medium">
-                                        $ {{ formatAmount(tradingAccount.credit ?? 0) }}
+                                    <div class="flex justify-between content-center gap-2 self-stretch">
+                                        <div class="flex flex-col md:flex-row md:gap-2 justify-start items-center w-full">
+                                            <div class="text-gray-500 text-xs">
+                                                {{ $t('public.balance_shortname') }}:
+                                            </div>
+                                            <div class="text-gray-950 text-xs font-medium">
+                                                $ {{ formatAmount(tradingAccount.balance ?? 0) }}
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col md:flex-row md:gap-2 justify-start items-center w-full">
+                                            <div class="text-gray-500 text-xs">
+                                                {{ $t('public.equity_shortname') }}:
+                                            </div>
+                                            <div class="text-gray-950 text-xs font-medium">
+                                                $ {{ formatAmount(tradingAccount.equity ?? 0) }}
+                                            </div>
+                                        </div>
+                                        <div
+                                            v-if="tradingAccount.account_type !== 'Premium Account'"
+                                            class="flex flex-col md:flex-row md:gap-2 justify-start items-center w-full"
+                                        >
+                                            <div class="text-gray-500 text-xs">
+                                                {{ $t('public.credit_shortname') }}:
+                                            </div>
+                                            <div class="text-gray-950 text-xs font-medium">
+                                                $ {{ formatAmount(tradingAccount.credit ?? 0) }}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </template>
+
+                        <template v-else>
+                            <Empty :message="$t('public.trading_account_empty_caption')"/>
+                        </template>
                     </div>
-                </template>
-
-                <template v-else>
-                    <Empty :message="$t('public.trading_account_empty_caption')"/>
-                </template>
-            </div>
+                </TabPanel>
+            </TabView>
         </div>
     </AuthenticatedLayout>
 </template>

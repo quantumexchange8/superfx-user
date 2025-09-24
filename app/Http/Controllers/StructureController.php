@@ -2,23 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\StructureListingExport;
+use App\Models\TradingAccount;
+use App\Models\TradingPlatform;
 use App\Models\User;
-use App\Services\MetaFourService;
 use App\Services\DropdownOptionService;
+use App\Services\TradingPlatform\TradingPlatformFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Exception;
+use Throwable;
 
 class StructureController extends Controller
 {
     public function show(Request $request)
     {
         $tab_index = 0;
-        if($request->tab == 'listing') {
+        if ($request->tab == 'listing') {
             $tab_index = 1;
         }
-        return Inertia::render('Structure/Structure', ['tab' => $tab_index]);
+
+        return Inertia::render('Structure/Structure', [
+            'tab' => $tab_index,
+            'maxLevels' => $this->calculateLevel($this->getMaxHierarchy()),
+        ]);
     }
 
     public function getDownlineData(Request $request)
@@ -52,7 +62,7 @@ class StructureController extends Controller
             ->find($parent_id);
 
         $upline = $upline_id && $upline_id != Auth::user()->upline_id ? User::select('id', 'name', 'id_number', 'upline_id', 'role', 'hierarchyList')->find($upline_id) : null;
-        
+
         $parent_data = $this->formatUserData($parent);
         $upline_data = $upline ? $this->formatUserData($upline) : null;
 
@@ -91,12 +101,12 @@ class StructureController extends Controller
             return 0;
         }
 
-        $split = explode('-'.Auth::id().'-', $hierarchyList);
+        $split = explode('-' . Auth::id() . '-', $hierarchyList);
 
         if (!isset($split[1])) {
-            return 1; 
+            return 1;
         }
-        
+
         return substr_count($split[1], '-') + 1;
     }
 
@@ -107,40 +117,127 @@ class StructureController extends Controller
             ->count();
     }
 
-    public function getDownlineListingData()
+    /**
+     * @throws Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
+    public function getDownlineListingData(Request $request)
     {
-        $children_ids = User::find(Auth::id())->getChildrenIds();
-        $query = User::whereIn('id', $children_ids)
-            ->latest()
-            ->get()
-            ->map(function ($user) {
-                $level = $this->calculateLevel($user->hierarchyList);
+        if ($request->has('lazyEvent')) {
+            $data = json_decode($request->input('lazyEvent'), true);
 
-                $email = $user->email;
+            $user = Auth::user();
+            $userIds = $user->getChildrenIds();
+            $userIds[] = $user->id;
 
-                if ($level > 1) {
-                    $email = substr($email, 0, 2) . '*******' . strstr($email, '@');
+            $authId = Auth::id();
+
+            $query = User::query()
+                ->with([
+                    'upline:id,name,email',
+                    'upline.media' => function ($q) {
+                        $q->where('collection_name', 'profile_photo');
+                    },
+                    'media' => function ($q) {
+                        $q->where('collection_name', 'profile_photo');
+                    },
+                ])
+                ->whereIn('id', $userIds);
+
+            /** ────── Filters ────── */
+            // Global search
+            if (!empty($data['filters']['global']['value'])) {
+                $keyword = $data['filters']['global']['value'];
+                $query->where(function ($query) use ($keyword) {
+                    $query->where('name', 'like', "%{$keyword}%")
+                        ->orWhere('email', 'like', "%{$keyword}%")
+                        ->orWhere('id_number', 'like', "%{$keyword}%");
+                });
+            }
+
+            // Role filter
+            if (!empty($data['filters']['role']['value'])) {
+                $query->where('role', $data['filters']['role']['value']);
+            }
+
+            // Level filter (calculate level in SQL)
+            $selectColumns = [
+                'users.id', 'users.name', 'users.email', 'users.hierarchyList',
+                'users.role', 'users.upline_id', 'users.created_at', 'users.id_number', 'users.phone'
+            ];
+
+            $levelSelect = "CASE
+        WHEN hierarchyList IS NULL OR hierarchyList = '' THEN 0
+        WHEN LOCATE(CONCAT('-', {$authId} ,'-'), hierarchyList) = 0 THEN 1
+        ELSE
+            LENGTH(SUBSTRING_INDEX(hierarchyList, CONCAT('-', {$authId} ,'-'), -1))
+            - LENGTH(REPLACE(SUBSTRING_INDEX(hierarchyList, CONCAT('-', {$authId} ,'-'), -1), '-', ''))
+            + 1
+    END as level";
+
+            $query->selectRaw(implode(',', $selectColumns) . ', ' . $levelSelect);
+
+            if (!empty($data['filters']['level']['value'])) {
+                $query->having('level', $data['filters']['level']['value']);
+            }
+
+            // Upline filter
+            if (!empty($data['filters']['upline']['value'])) {
+                $query->where('upline_id', $data['filters']['upline']['value']['id']);
+            }
+
+            /** ────── Sort ────── */
+            if (!empty($data['sortField']) && !empty($data['sortOrder'])) {
+                $order = $data['sortOrder'] == 1 ? 'asc' : 'desc';
+                $query->orderBy($data['sortField'], $order);
+            } else {
+                $query->orderByDesc('created_at');
+            }
+
+            /** ────── Export ────── */
+            if ($request->has('exportStatus')) {
+                $accounts = $query->get();
+
+                // ensure level for Auth::id()
+                $accounts->each(function ($user) {
+                    if ($user->id == Auth::id()) {
+                        $user->level = 1;
+                    }
+                });
+
+                return Excel::download(
+                    new StructureListingExport($accounts),
+                    now()->format('Y-m-d') . '-structure-listing.xlsx'
+                );
+            }
+
+            /** ────── Pagination ────── */
+            $accounts = $query->paginate($data['rows']);
+
+            $accounts->each(function ($user) {
+                // Make sure level 1 for auth user
+                if ($user->id == Auth::id()) {
+                    $user->level = 1;
                 }
 
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $email,
-                    'kyc_status' => $user->kyc_status,
-                    'profile_photo' => $user->getFirstMediaUrl('profile_photo'),
-                    'upline_id' => $user->upline_id,
-                    'upline_name' => $user->upline->name,
-                    'upline_profile_photo' => $user->upline->getFirstMediaUrl('profile_photo'),
-                    'role' => $user->role,
-                    'id_number' => $user->id_number,
-                    'joined_date' => $user->created_at,
-                    'level' => $level,
-                ];
+                // Mask sensitive data for level >= 2
+                if ($user->level >= 2) {
+                    $user->email = substr($user->email, 0, 2) . '*******' . strstr($user->email, '@');
+
+                    if (!empty($user->phone)) {
+                        $last3 = substr($user->phone, -3);
+                        $user->phone = '*******' . $last3;
+                    }
+                }
             });
 
-        return response()->json([
-            'users' => $query
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $accounts,
+            ]);
+        }
+
+        return response()->json(['success' => false, 'data' => []]);
     }
 
     public function getFilterData()
@@ -162,7 +259,7 @@ class StructureController extends Controller
             $parts = explode('-', trim($hierarchy, '-'));
             $length = count($parts);
 
-            if($length > $max_length) {
+            if ($length > $max_length) {
                 $hierarchy_list = $hierarchy;
                 $max_length = count($parts);
             }
@@ -175,8 +272,21 @@ class StructureController extends Controller
     {
         $user = User::where('id_number', $id_number)->select('id', 'name', 'role')->first();
 
+        $tradingPlatforms = TradingPlatform::query()
+            ->where('status', 'active')
+            ->whereHas('account_types.markupProfileToAccountTypes.markupProfile.userToMarkupProfiles', function ($query) {
+                $query->where('user_id', Auth::id());
+            })
+            ->select([
+                'platform_name',
+                'slug',
+            ])
+            ->get()
+            ->toArray();
+
         return Inertia::render('Structure/ViewDownline', [
             'user' => $user,
+            'tradingPlatforms' => $tradingPlatforms,
         ]);
     }
 
@@ -209,16 +319,24 @@ class StructureController extends Controller
             'upline_name' => $user->upline->name,
         ];
 
-        $trading_accounts = $user->tradingAccounts;
+        $trading_accounts = TradingAccount::with([
+            'account_type:id,trading_platform_id,color,name',
+            'account_type.trading_platform:id,slug',
+        ])
+            ->where('user_id', $user->id)
+            ->get();
+
         try {
             foreach ($trading_accounts as $trading_account) {
-                (new MetaFourService)->getUserInfo($trading_account->meta_login);
+                $service = TradingPlatformFactory::make($trading_account->account_type->trading_platform->slug);
+
+                $service->getUserInfo($trading_account->meta_login);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error($e->getMessage());
         }
 
-        $trading_accounts = $user->tradingAccounts->map(function($trading_account) {
+        $trading_accounts = $user->tradingAccounts->map(function ($trading_account) {
             return [
                 'id' => $trading_account->id,
                 'meta_login' => $trading_account->meta_login,
@@ -227,6 +345,7 @@ class StructureController extends Controller
                 'credit' => $trading_account->credit,
                 'equity' => $trading_account->equity,
                 'account_type_color' => $trading_account->account_type->color,
+                'trading_platform' => $trading_account->account_type->trading_platform->slug,
             ];
         });
 

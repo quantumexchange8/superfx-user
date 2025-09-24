@@ -47,6 +47,7 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::get('/getAccountTypeByPlatform', [SelectOptionController::class, 'getAccountTypeByPlatform'])->name('getAccountTypeByPlatform');
     Route::get('/getLeverages', [SelectOptionController::class, 'getLeverages'])->name('getLeverages');
     Route::get('/getTradingAccounts', [SelectOptionController::class, 'getTradingAccounts'])->name('getTradingAccounts');
+    Route::get('/getChildren', [SelectOptionController::class, 'getChildren'])->name('getChildren');
 
     /**
      * ==============================

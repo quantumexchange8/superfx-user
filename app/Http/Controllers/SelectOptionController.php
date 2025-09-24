@@ -13,6 +13,7 @@ use App\Models\PaymentMethod;
 use App\Models\Setting;
 use App\Models\SettingLeverage;
 use App\Models\TradingAccount;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -255,6 +256,21 @@ class SelectOptionController extends Controller
 
         return response()->json([
             'accounts' => $trading_accounts,
+        ]);
+    }
+
+    public function getChildren()
+    {
+        $uplines = User::whereIn('id', Auth::user()->getChildrenIds())
+            ->latest()
+            ->select([
+                'id', 'name', 'email', 'id_number'
+            ])
+            ->get()
+            ->toArray();
+
+        return response()->json([
+            'uplines' => $uplines,
         ]);
     }
 }
