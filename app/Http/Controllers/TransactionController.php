@@ -29,6 +29,7 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TransactionDetailExport;
+use Throwable;
 
 class TransactionController extends Controller
 {
@@ -187,7 +188,7 @@ class TransactionController extends Controller
         $adjusted_amount = $amount * $multiplier;
         try {
             $trade = $service->createDeal($tradingAccount->meta_login, $adjusted_amount, "Rebate to account", 'balance', '');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             if ($e->getMessage() == "Not found") {
                 TradingUser::firstWhere('meta_login', $tradingAccount->meta_login)->update(['acc_status' => 'Inactive']);
             } else {
@@ -460,8 +461,6 @@ class TransactionController extends Controller
         ]);
         $validator->validate();
 
-        $user = Auth::user();
-
         $transaction = Transaction::where('transaction_number', $request->transaction_number)->first();
 
         if ($transaction->status == 'processing' || $transaction->status == 'required_confirmation') {
@@ -497,19 +496,21 @@ class TransactionController extends Controller
             }
 
             if ($transaction->category == 'trading_account') {
-                $tradingAccount = TradingAccount::with('account_type')
+                $tradingAccount = TradingAccount::with('account_type.trading_platform')
                     ->where('meta_login', $transaction->from_meta_login)
                     ->first();
                 $multiplier = $tradingAccount->account_type->balance_multiplier;
                 $adjusted_amount = $transaction->amount * $multiplier;
 
+                $service = TradingPlatformFactory::make($tradingAccount->account_type->trading_platform->slug);
+
                 try {
-                    $trade = (new MetaFourService)->createDeal($transaction->from_meta_login, $adjusted_amount, 'Cancelled from ' . $transaction->transaction_number, 'balance', '');
+                    $trade = $service->createDeal($transaction->from_meta_login, $adjusted_amount, 'Cancelled from ' . $transaction->transaction_number, 'balance', '');
 
                     $transaction->update([
                         'ticket' => $trade['ticket'] ?? null,
                     ]);
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     // Log the main error
                     Log::error('Error creating trade: ' . $e->getMessage());
 
