@@ -78,7 +78,7 @@ watch(() => form.account_type_id, () => {
 })
 
 const submitForm = () => {
-    form.post(route('account.create_live_account'), {
+    form.post(route('account.storeLiveAccount'), {
         onSuccess: () => {
             closeDialog();
             form.reset();

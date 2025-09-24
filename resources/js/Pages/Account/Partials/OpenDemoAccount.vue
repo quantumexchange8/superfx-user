@@ -39,7 +39,7 @@ const form = useForm({
 })
 
 const submitForm = () => {
-    form.post(route('account.create_demo_account'), {
+    form.post(route('account.storeDemoAccount'), {
         onSuccess: () => {
             closeDialog();
         }
