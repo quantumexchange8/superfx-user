@@ -8,6 +8,10 @@ import {useForm} from "@inertiajs/vue3";
 import InputError from "@/Components/InputError.vue";
 import {transactionFormat} from "@/Composables/index.js";
 
+const props = defineProps({
+    disabled: Boolean
+})
+
 const visible = ref(false);
 const {formatAmount} = transactionFormat();
 
@@ -62,6 +66,7 @@ const buttonSize = computed(() => {
         class="w-[142px] md:w-full text-nowrap"
         :size="buttonSize"
         @click="openDialog"
+        :disabled="disabled"
     >
         {{ $t('public.demo_account') }}
     </Button>

@@ -78,7 +78,9 @@ const tabs = computed(() => {
                         <OpenLiveAccount
                             :tradingPlatforms="tradingPlatforms"
                         />
-                        <OpenDemoAccount />
+                        <OpenDemoAccount
+                            :disabled="tabs?.[activeIndex]?.value === 'mt5'"
+                        />
                     </div>
                 </div>
             </div>
