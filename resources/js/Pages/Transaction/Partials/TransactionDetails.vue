@@ -131,7 +131,7 @@ const isJson = (str) => {
                     <template v-else>{{ $t(`public.${data.category}`) }}</template>
                 </span>
             </div>
-            <div class="flex items-center gap-1 self-stretch">
+            <div v-if="data.from_login" class="flex items-center gap-1 self-stretch">
                 <span class="w-[120px] text-gray-500 text-xs font-medium">
                     {{ $t('public.account_type') }}
                 </span>
@@ -261,7 +261,7 @@ const isJson = (str) => {
         <div v-if="data.transaction_type === 'withdrawal' || (data.transaction_type === 'deposit' && data.status !== 'processing')" class="flex flex-col items-center py-4 gap-3 self-stretch border-t border-gray-200">
             <div class="flex flex-col items-start gap-1 self-stretch">
                 <span class="h-5 flex flex-col justify-center self-stretch text-gray-500 text-xs font-medium md:w-[120px]">{{ $t('public.remarks') }}</span>
-                <span class="md:max-w-[220px] text-gray-950 text-sm font-medium md:flex-grow w-full">
+                <span class="text-gray-950 text-sm font-medium md:flex-grow w-full">
                     <template v-if="data.remarks">
                         {{ data.remarks }}
                     </template>
@@ -269,7 +269,7 @@ const isJson = (str) => {
                         <TextArea
                             id="remarks"
                             type="text"
-                            class="flex flex-1 self-stretch"
+                            class="flex w-full self-stretch"
                             v-model="cancelForm.remarks"
                             :placeholder="$t('public.remarks_placeholder')"
                             :invalid="!!cancelForm.errors.remarks"

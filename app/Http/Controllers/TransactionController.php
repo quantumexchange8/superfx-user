@@ -296,10 +296,10 @@ class TransactionController extends Controller
 
         if ($paymentWallet->payment_platform == 'crypto') {
             $transaction->update(['status' => 'required_confirmation']);
-            Mail::to($user->email)->queue(new WithdrawalRequestUsdtMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no)));
+            Mail::to($user->email)->queue(new WithdrawalRequestUsdtMail($user, null, $amount, $transaction->created_at, $paymentWallet->account_no, $transaction_number, md5($user->email . $transaction_number . $paymentWallet->account_no), 'mt5'));
         } else {
             $transaction->update(['status' => 'processing']);
-            Mail::to($user->email)->queue(new WithdrawalRequestMail($user, $transaction));
+            Mail::to($user->email)->queue(new WithdrawalRequestMail($user, $transaction, 'mt5'));
         }
 
         return redirect()->back()->with('notification', [
